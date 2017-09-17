@@ -5,6 +5,8 @@ import fnmatch
 from collections import defaultdict
 from Token import Token
 from Mention import Mention
+from StanToken import StanToken
+
 class ECBParser:
 	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
 		print "args:" + str(args)
@@ -18,7 +20,7 @@ class ECBParser:
 
 		self.loadReplacements(args.replacementsFile)
 
-		self.parse(args.corpusPath, args.stitchMentions, args.verbose)
+		self.parseCorpus(args.corpusPath, args.stitchMentions, args.verbose)
 
 	def loadReplacements(self, replacementsFile):
 
@@ -39,7 +41,24 @@ class ECBParser:
 			self.globalIDsToType[newID] = wordType
 			return newID
 
-	def parse(self, corpusDir, stitchMentions=False, isVerbose=False):
+	def parseStanfordOutput(self, stanFile):
+
+		tree = ET.ElementTree(file=stanFile)
+		root = tree.getroot()
+		for elem in tree.iter(tag='sentence'):
+			#print elem.tag, elem.attrib
+			words = ""
+			for tokens in elem:
+				for token in tokens:
+					print "token: " + str(token)
+					for item in token:
+						print item.tag,item.text,item.attrib
+						if item.tag == "word":
+							words += item.text + " "
+					exit(1)
+			print str(elem.attrib) + " " + str(words)
+
+	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
 		
 		# globally sets params
 		self.corpusDir = corpusDir

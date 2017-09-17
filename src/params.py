@@ -1,6 +1,5 @@
 import argparse
-# `` "
-# '' "
+
 def setWriteSentencesToFileParams():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--corpusPath", help="the corpus dir")

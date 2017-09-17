@@ -18,12 +18,14 @@ class ECBHelper:
 		for sent_num in sorted(self.corpus.globalSentenceNumToTokens.keys()):
 			outLine = ""
 
+			if sent_num > 3:
+				break
+
 			lastToken = ""
 			for t in self.corpus.globalSentenceNumToTokens[sent_num]:
 				outLine += t.text + " "
 				lastToken = t.text
-				if self.isVerbose:
-					print t
+
 			lasts.add(lastToken)
 			outLine = outLine.rstrip()
 			fout.write(outLine + "\n")
@@ -45,19 +47,7 @@ class ECBHelper:
 	#				speaker
 	#	sentence #2 of 17
 	# coreference
-	def readStanfordOutput(self, stanFile):
 
-		tree = ET.ElementTree(file=stanFile)
-		root = tree.getroot()
-		for elem in tree.iter(tag='sentence'):
-			#print elem.tag, elem.attrib
-			words = ""
-			for tokens in elem:
-				for token in tokens:
-					for item in token:
-						if item.tag == "word":
-							words += item.text + " "
-			print str(elem.attrib) + " " + str(words)
 		'''
 		tree = ET.parse(stanFile)
 		root = tree.getroot()
