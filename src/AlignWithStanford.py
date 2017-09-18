@@ -11,8 +11,8 @@ class AlignWithStanford:
 		# parses corpus
 		corpus = ECBParser(args)
 
-		corpus.parseStanfordOutput()
-		
+		corpus.parseStanfordOutput(args.stanfordFile)
+
 		# constructs helper without goldTruthFile info
 		#helper = ECBHelper(corpus, args)
 		#helper.readStanfordOutput(args.stanfordFile)

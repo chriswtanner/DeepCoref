@@ -6,6 +6,10 @@ from collections import defaultdict
 from Token import Token
 from Mention import Mention
 from StanToken import StanToken
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 class ECBParser:
 	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
@@ -16,7 +20,6 @@ class ECBParser:
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.endPunctuation = set()
 		self.endPunctuation.update(".", "!", "?")
-
 
 		self.loadReplacements(args.replacementsFile)
 
@@ -43,19 +46,43 @@ class ECBParser:
 
 	def parseStanfordOutput(self, stanFile):
 
+		# creates global vars
+		self.sentenceTokens = defaultdict(lambda : defaultdict(int))
+
 		tree = ET.ElementTree(file=stanFile)
 		root = tree.getroot()
 		for elem in tree.iter(tag='sentence'):
-			#print elem.tag, elem.attrib
-			words = ""
+			sentenceNum = elem.attrib["id"]
+
 			for tokens in elem:
+				print tokens
+				exit(1)
 				for token in tokens:
 					print "token: " + str(token)
+
+					tokenNum = token.attrib["id"]
+					word = ""
+					lemma = ""
+					startIndex = -1
+					endIndex = -1
+					pos = ""
+					ner = ""
 					for item in token:
-						print item.tag,item.text,item.attrib
 						if item.tag == "word":
-							words += item.text + " "
-					exit(1)
+							word = item.text
+						elif item.tag == "lemma":
+							lemma = item.text
+						elif item.tag == "CharacterOffsetBegin":
+							startIndex = item.text
+						elif item.tag == "CharacterOffsetEnd":
+							startIndex = item.text
+						elif item.tag == "POS":
+							pos = item.text
+						elif item.tag == "NER":
+							ner = item.text
+					s = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
+					print "tokenNuM: " + str(tokenNum)
+
 			print str(elem.attrib) + " " + str(words)
 
 	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
