@@ -1,6 +1,7 @@
+# encoding=utf8  
+import sys  
 import re
 import os
-import sys
 import fnmatch
 from collections import defaultdict
 from Token import Token
@@ -12,6 +13,9 @@ try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
 
 class ECBParser:
 	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
@@ -62,10 +66,9 @@ class ECBParser:
 		print sentences
 		print corefs
 
-		#sentences, corefs = 
-		for elem in sentences:#tree.iter(tag='sentence'):
-			#print "elem: " + str(elem)
-			sentenceNum = elem.attrib["id"]
+		for elem in sentences: #tree.iter(tag='sentence'):
+
+			sentenceNum = int(elem.attrib["id"])
 			print "FOUND SENT NUM:  " + str(sentenceNum)
 			for section in elem:
 
@@ -99,6 +102,13 @@ class ECBParser:
 								pos = item.text
 							elif item.tag == "NER":
 								ner = item.text
+
+						for badToken in self.replacementsSet:
+							oldWord = word
+							if badToken in word:
+								word = word.replace(badToken, self.replacements[badToken])
+								print "** CHANGED: [" + str(oldWord) + "] to [" + str(word) + "]"
+
 						print "word; " + str(word)
 						# constructs and saves the StanToken
 						stanToken = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
@@ -117,8 +127,23 @@ class ECBParser:
 						childToken = self.sentenceTokens[sentenceNum][int(child.attrib["idx"])]
 
 						# ensures correctness from Stanford
+						if parentToken.word != parent.text:
+							for badToken in self.replacementsSet:
+								if badToken in parent.text:
+									parent.text = parent.text.replace(badToken, self.replacements[badToken])
+
+						if childToken.word != child.text:
+							for badToken in self.replacementsSet:
+								if badToken in child.text:
+									child.text = child.text.replace(badToken, self.replacements[badToken])
+
+											
 						if parentToken.word != parent.text or childToken.word != child.text:
-							print "MISMATCH"
+							print "STAN's DEPENDENCY TEXT MISMATCHES WITH STAN'S TOKENS"
+							print "1" + str(parentToken.word)
+							print "2" + str(parent.text)
+							print "3" + str(childToken.word)
+							print "4" + str(child.text)
 							exit(1)
 
 						# creates stanford link
@@ -130,15 +155,59 @@ class ECBParser:
 		# iterates through our corpus, trying to align Stanford's tokens
 		ourTokens = []
 		for sent_num in sorted(self.globalSentenceNumToTokens.keys()):
+			print "ours: " + str(sent_num)
 			for t in self.globalSentenceNumToTokens[sent_num]:
 				ourTokens.append(t.text)
 		
 		stanTokens = []
+
 		for sent_num in sorted(self.sentenceTokens.keys()):
+			print "stan: " + str(sent_num)
 			for t in sorted(self.sentenceTokens[sent_num]):
 				if t != 0:
-					stanTokens.append(self.sentenceTokens[sent_num][t].word)
+					curStan = self.sentenceTokens[sent_num][t].word
+					stanTokens.append(curStan)
 
+		#offset = 0
+		j = 0 # i + offset
+		i = 0
+		while i < len(ourTokens):
+			if j >= len(stanTokens):
+				print "ran out of stan tokens"
+				exit(1)
+
+			# get them to equal lengths first
+			stan = stanTokens[j]
+			ours = ourTokens[i]
+			while len(ours) > len(stan):
+				print "stan length is less:" + str(len(ours)) + " vs " + str(len(stan))
+				if j+1 < len(stanTokens):
+					stan += stanTokens[j+1]
+					j += 1
+					print "stan is now:" + str(stan)
+				else:
+					print "ran out of stanTokens"
+					exit(1)
+
+			while len(ours) < len(stan):
+				print "our length is less"
+				if i+1 < len(ourTokens):
+					ours += ourTokens[i+1]
+					i += 1
+					print "ours is now:" + str(ours)
+				else:
+					print "ran out of ourTokens"
+					exit(1)	
+
+			if ours != stan:
+				print "MISMATCH: [" + str(ours) + "] [" + str(stan) + "]"
+			else:
+				print "[" + str(ours) + "] == [" + str(stan) + "]"
+
+			j += 1
+			i += 1
+		'''
+		numMismatched = 0
 		for i in range(len(stanTokens) + 15):
 			ours = ""
 			stans = ""
@@ -147,8 +216,14 @@ class ECBParser:
 			if i < len(stanTokens):
 				stans = stanTokens[i]
 
-			print str(i) + " " + str(ours) + " AND " + str(stans)
+			if ours != stans:
 
+				print "****** " + str(i) + " " + str(ours) + " AND " + str(stans)
+				numMismatched += 1
+			else:
+				print str(i) + " " + str(ours) + " AND " + str(stans)
+		print "# numMismatched: " + str(numMismatched)
+		'''
 
 	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
 		
@@ -203,8 +278,8 @@ class ECBParser:
 				fileContents=myfile.read().replace('\n',' ')
 
 				for badToken in self.replacementsSet:
-					if badToken in fileContents:
-						fileContents = fileContents.replace(badToken, self.replacements[badToken])
+					#if badToken in fileContents:
+					fileContents = fileContents.replace(badToken, self.replacements[badToken])
 
 	        # reads <tokens>
 			it = tuple(re.finditer(r"<token t\_id=\"(\d+)\" sentence=\"(\d+)\" number=\"(\d+)\".*?>(.*?)</(.*?)>", fileContents))

@@ -1,6 +1,12 @@
+# encoding=utf8  
+import sys  
+
 import params
 from ECBParser import ECBParser
 from ECBHelper import ECBHelper
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
 
 class AlignWithStanford:
 	if __name__ == "__main__":

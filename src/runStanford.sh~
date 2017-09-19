@@ -17,5 +17,6 @@ python WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${r
 cd ${stanfordPath}
 java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators tokenize,ssplit,pos,lemma,ner,parse,dcoref -file ${allTokens} -tokenize.options untokenizable=noneKeep -parse.debug
 
+clear 
 cd ${scriptDir}
 python AlignWithStanford.py --corpusPath=${corpusPath} --stanfordFile=${stanfordPath}allTokens1.txt.xml --replacementsFile=${replacementsFile} --verbose=t

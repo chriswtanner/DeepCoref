@@ -17,9 +17,9 @@ class ECBHelper:
 		lasts = set()
 		for sent_num in sorted(self.corpus.globalSentenceNumToTokens.keys()):
 			outLine = ""
-
-			if sent_num > 6:
-				break
+			print "(writing) sent_num:" + str(sent_num)
+			#if sent_num > 5000:
+			#	break
 
 			lastToken = ""
 			for t in self.corpus.globalSentenceNumToTokens[sent_num]:
