@@ -18,7 +18,7 @@ class ECBHelper:
 		for sent_num in sorted(self.corpus.globalSentenceNumToTokens.keys()):
 			outLine = ""
 
-			if sent_num > 3:
+			if sent_num > 6:
 				break
 
 			lastToken = ""

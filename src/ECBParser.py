@@ -6,6 +6,8 @@ from collections import defaultdict
 from Token import Token
 from Mention import Mention
 from StanToken import StanToken
+from StanLink import StanLink
+
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -44,6 +46,8 @@ class ECBParser:
 			self.globalIDsToType[newID] = wordType
 			return newID
 
+	# (1) reads stanford's output, saves it
+	# (2) aligns it w/ our sentence tokens
 	def parseStanfordOutput(self, stanFile):
 
 		# creates global vars
@@ -51,39 +55,100 @@ class ECBParser:
 
 		tree = ET.ElementTree(file=stanFile)
 		root = tree.getroot()
-		for elem in tree.iter(tag='sentence'):
+
+		document = root[0]
+		print document
+		sentences, corefs = document
+		print sentences
+		print corefs
+
+		#sentences, corefs = 
+		for elem in sentences:#tree.iter(tag='sentence'):
+			#print "elem: " + str(elem)
 			sentenceNum = elem.attrib["id"]
+			print "FOUND SENT NUM:  " + str(sentenceNum)
+			for section in elem:
 
-			for tokens in elem:
-				print tokens
-				exit(1)
-				for token in tokens:
-					print "token: " + str(token)
+				# process every token for the given sentence
+				if section.tag == "tokens":
 
-					tokenNum = token.attrib["id"]
-					word = ""
-					lemma = ""
-					startIndex = -1
-					endIndex = -1
-					pos = ""
-					ner = ""
-					for item in token:
-						if item.tag == "word":
-							word = item.text
-						elif item.tag == "lemma":
-							lemma = item.text
-						elif item.tag == "CharacterOffsetBegin":
-							startIndex = item.text
-						elif item.tag == "CharacterOffsetEnd":
-							startIndex = item.text
-						elif item.tag == "POS":
-							pos = item.text
-						elif item.tag == "NER":
-							ner = item.text
-					s = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
-					print "tokenNuM: " + str(tokenNum)
+					# constructs a ROOT StanToken, which represents the NULL ROOT of the DependencyParse
+					rootToken = StanToken(sentenceNum, 0, "ROOT", "ROOT", -1, -1, "-", "-")
+					self.sentenceTokens[sentenceNum][0] = rootToken
 
-			print str(elem.attrib) + " " + str(words)
+					for token in section:
+
+						tokenNum = int(token.attrib["id"])
+						word = ""
+						lemma = ""
+						startIndex = -1
+						endIndex = -1
+						pos = ""
+						ner = ""
+						
+						for item in token:
+							if item.tag == "word":
+								word = item.text
+							elif item.tag == "lemma":
+								lemma = item.text
+							elif item.tag == "CharacterOffsetBegin":
+								startIndex = item.text
+							elif item.tag == "CharacterOffsetEnd":
+								startIndex = item.text
+							elif item.tag == "POS":
+								pos = item.text
+							elif item.tag == "NER":
+								ner = item.text
+						print "word; " + str(word)
+						# constructs and saves the StanToken
+						stanToken = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
+						self.sentenceTokens[sentenceNum][tokenNum] = stanToken
+
+				elif section.tag == "dependencies" and section.attrib["type"] == "basic-dependencies":
+					print "we found basic-dependencies!"
+					
+					# iterates over all dependencies for the given sentence
+					for dep in section:
+						
+						parent, child = dep
+						relationship = dep.attrib["type"]
+
+						parentToken = self.sentenceTokens[sentenceNum][int(parent.attrib["idx"])]
+						childToken = self.sentenceTokens[sentenceNum][int(child.attrib["idx"])]
+
+						# ensures correctness from Stanford
+						if parentToken.word != parent.text or childToken.word != child.text:
+							print "MISMATCH"
+							exit(1)
+
+						# creates stanford link
+						curLink = StanLink(parentToken, childToken, relationship)
+						
+						parentToken.addChild(curLink)
+						childToken.addParent(curLink)
+
+		# iterates through our corpus, trying to align Stanford's tokens
+		ourTokens = []
+		for sent_num in sorted(self.globalSentenceNumToTokens.keys()):
+			for t in self.globalSentenceNumToTokens[sent_num]:
+				ourTokens.append(t.text)
+		
+		stanTokens = []
+		for sent_num in sorted(self.sentenceTokens.keys()):
+			for t in sorted(self.sentenceTokens[sent_num]):
+				if t != 0:
+					stanTokens.append(self.sentenceTokens[sent_num][t].word)
+
+		for i in range(len(stanTokens) + 15):
+			ours = ""
+			stans = ""
+			if i < len(ourTokens):
+				ours = ourTokens[i]
+			if i < len(stanTokens):
+				stans = stanTokens[i]
+
+			print str(i) + " " + str(ours) + " AND " + str(stans)
+
 
 	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
 		
@@ -377,6 +442,8 @@ class ECBParser:
 			#	break
 		# (1) sets the corpus type-based variables AND
 		# (2) sets the globalSentenceTokens so that we can parse the original sentences
+		# (3) sets the startIndex and endIndex based on what we'd output
+		
 		for t in self.corpusTokens:
 			# (1)
 			g_id = self.getGlobalTypeID(t.text)

@@ -9,5 +9,15 @@ class StanToken:
 		self.pos = pos
 		self.ner = ner
 
+		# StanLinks
+		self.parentLinks = []
+		self.childLinks = []
+
+	def addParent(self, parentLink):
+		self.parentLinks.append(parentLink)
+
+	def addChild(self, childLink):
+		self.childLinks.append(childLink)
+
 	def __str__(self):
-		return("stan token")
+		return("[" + str(self.word) + "]")
