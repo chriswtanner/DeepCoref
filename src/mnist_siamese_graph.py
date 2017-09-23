@@ -91,7 +91,7 @@ x_test = x_test.astype('float32')
 x_train /= 255
 x_test /= 255
 input_dim = 784
-epochs = 20
+epochs = 10
 
 # create training+test positive and negative pairs
 digit_indices = [np.where(y_train == i)[0] for i in range(10)]
