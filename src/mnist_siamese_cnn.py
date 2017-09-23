@@ -75,14 +75,14 @@ def create_base_network(input_dim):
     seq.add(Dropout(0.1))
     seq.add(Dense(128, activation='relu'))
     '''
-    model.add(Conv2D(32, kernel_size=(3, 3),
+    seq.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
                  input_shape=input_shape))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu'))
+    seq.add(Conv2D(64, (3, 3), activation='relu'))
+    seq.add(MaxPooling2D(pool_size=(2, 2)))
+    seq.add(Dropout(0.25))
+    seq.add(Flatten())
+    seq.add(Dense(128, activation='relu'))
     return seq
 
 
