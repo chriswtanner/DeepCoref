@@ -86,8 +86,17 @@ def create_base_network(input_dim):
         seq.add(Conv2D(64, (3, 3), activation='relu'))
         seq.add(MaxPooling2D(pool_size=(2, 2)))
         seq.add(Dropout(0.25))
+
+        # added following
+        seq.add(Conv2D(128, (3, 3), activation='relu'))
+        seq.add(Conv2D(256, (3, 3), activation='relu'))
+        seq.add(MaxPooling2D(pool_size=(2, 2)))
+        seq.add(Dropout(0.25))
+        # end of added
+
         seq.add(Flatten())
-        seq.add(Dense(128, activation='relu'))
+        #seq.add(Dense(128, activation='relu'))
+        seq.add(Dense(256, activation='relu'))
     else:
         seq.add(Dense(128, input_shape=(input_dim,), activation='relu'))
         seq.add(Dropout(0.1))
