@@ -43,7 +43,7 @@ def contrastive_loss(y_true, y_pred):
                   (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
 
 
-def create_pairs(x, digit_indices):
+def createsting_pairs(x, digit_indices):
     '''Positive and negative pair creation.
     Alternates between positive and negative pairs.
     '''
@@ -93,12 +93,28 @@ x_test /= 255
 input_dim = 784
 epochs = 10
 
+print('x_train shape2:', x_train.shape)
+print('y_train shape:', y_train.shape)
+print('x_test shape:', x_test.shape)
+print('y_test shape:', y_test.shape)
+
 # create training+test positive and negative pairs
 digit_indices = [np.where(y_train == i)[0] for i in range(10)]
-tr_pairs, tr_y = create_pairs(x_train, digit_indices)
+training_pairs, training_labels = createsting_pairs(x_train, digit_indices)
+
+#print(training_pairs)
+print('training_pairs:', training_pairs.shape)
+print('training_labels:', training_labels.shape)
 
 digit_indices = [np.where(y_test == i)[0] for i in range(10)]
-te_pairs, te_y = create_pairs(x_test, digit_indices)
+testing_pairs, testing_labels = createsting_pairs(x_test, digit_indices)
+
+print('testing_pairs:', testing_pairs.shape)
+print('testing_labels:', testing_labels.shape)
+
+#print(len(training_pairs[:, 0][0]))
+#print(len(training_pairs[:, 1]))
+print('training_labels:', training_labels.shape)
 
 # network definition
 base_network = create_base_network(input_dim)
@@ -106,6 +122,7 @@ base_network = create_base_network(input_dim)
 input_a = Input(shape=(input_dim,))
 input_b = Input(shape=(input_dim,))
 
+exit(1)
 # because we re-use the same instance `base_network`,
 # the weights of the network
 # will be shared across the two branches
@@ -120,16 +137,16 @@ model = Model([input_a, input_b], distance)
 # train
 rms = RMSprop()
 model.compile(loss=contrastive_loss, optimizer=rms)
-model.fit([tr_pairs[:, 0], tr_pairs[:, 1]], tr_y,
+model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
           batch_size=128,
           epochs=epochs,
-          validation_data=([te_pairs[:, 0], te_pairs[:, 1]], te_y))
+          validation_data=([testing_pairs[:, 0], testing_pairs[:, 1]], testing_labels))
 
 # compute final accuracy on training and test sets
-pred = model.predict([tr_pairs[:, 0], tr_pairs[:, 1]])
-tr_acc = compute_accuracy(pred, tr_y)
-pred = model.predict([te_pairs[:, 0], te_pairs[:, 1]])
-te_acc = compute_accuracy(pred, te_y)
+pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
+tr_acc = compute_accuracy(pred, training_labels)
+pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
+te_acc = compute_accuracy(pred, testing_labels)
 
 print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
 print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
