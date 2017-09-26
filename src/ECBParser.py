@@ -3,6 +3,7 @@ import sys
 import re
 import os
 import fnmatch
+#import importlib
 from collections import defaultdict
 from Token import Token
 from Mention import Mention
@@ -14,12 +15,12 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
-reload(sys)  
-sys.setdefaultencoding('utf8')
+#importlib.reload(sys)
+#sys.setdefaultencoding('utf8')
 
 class ECBParser:
 	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
-		print "args:" + str(args)
+		print("args:", str(args))
 
 		# sets global vars
 		self.replacements = {}
@@ -36,7 +37,7 @@ class ECBParser:
 		f = open(replacementsFile, 'r')
 		for line in f:
 			tokens = line.rstrip().split(" ")
-			print tokens
+			print("tokens", tokens)
 			self.replacements[tokens[0]] = tokens[1]
 			self.replacementsSet.add(tokens[0])
 		f.close()
@@ -61,15 +62,15 @@ class ECBParser:
 		root = tree.getroot()
 
 		document = root[0]
-		print document
+		print("doc:", document)
 		sentences, corefs = document
-		print sentences
-		print corefs
+		print("sentences:", sentences)
+		print("corefs:", corefs)
 
 		for elem in sentences: #tree.iter(tag='sentence'):
 
 			sentenceNum = int(elem.attrib["id"])
-			print "FOUND SENT NUM:  " + str(sentenceNum)
+			print("FOUND SENT NUM:  ", str(sentenceNum))
 			for section in elem:
 
 				# process every token for the given sentence
@@ -107,15 +108,14 @@ class ECBParser:
 							oldWord = word
 							if badToken in word:
 								word = word.replace(badToken, self.replacements[badToken])
-								print "** CHANGED: [" + str(oldWord) + "] to [" + str(word) + "]"
+								print("** CHANGED: [", str(oldWord), "] to [", str(word), "]")
 
-						print "word; " + str(word)
+						print("word; ", str(word))
 						# constructs and saves the StanToken
 						stanToken = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
 						self.sentenceTokens[sentenceNum][tokenNum] = stanToken
 
 				elif section.tag == "dependencies" and section.attrib["type"] == "basic-dependencies":
-					print "we found basic-dependencies!"
 					
 					# iterates over all dependencies for the given sentence
 					for dep in section:
@@ -139,11 +139,11 @@ class ECBParser:
 
 											
 						if parentToken.word != parent.text or childToken.word != child.text:
-							print "STAN's DEPENDENCY TEXT MISMATCHES WITH STAN'S TOKENS"
-							print "1" + str(parentToken.word)
-							print "2" + str(parent.text)
-							print "3" + str(childToken.word)
-							print "4" + str(child.text)
+							print("STAN's DEPENDENCY TEXT MISMATCHES WITH STAN'S TOKENS")
+							print("1", str(parentToken.word))
+							print("2", str(parent.text))
+							print("3", str(childToken.word))
+							print("4", str(child.text))
 							exit(1)
 
 						# creates stanford link
@@ -155,14 +155,14 @@ class ECBParser:
 		# iterates through our corpus, trying to align Stanford's tokens
 		ourTokens = []
 		for sent_num in sorted(self.globalSentenceNumToTokens.keys()):
-			print "ours: " + str(sent_num)
+			print("ours: ", str(sent_num))
 			for t in self.globalSentenceNumToTokens[sent_num]:
 				ourTokens.append(t.text)
 		
 		stanTokens = []
 
 		for sent_num in sorted(self.sentenceTokens.keys()):
-			print "stan: " + str(sent_num)
+			print("stan: ", str(sent_num))
 			for t in sorted(self.sentenceTokens[sent_num]):
 				if t != 0:
 					curStan = self.sentenceTokens[sent_num][t].word
@@ -173,36 +173,36 @@ class ECBParser:
 		i = 0
 		while i < len(ourTokens):
 			if j >= len(stanTokens):
-				print "ran out of stan tokens"
+				print("ran out of stan tokens")
 				exit(1)
 
 			# get them to equal lengths first
 			stan = stanTokens[j]
 			ours = ourTokens[i]
 			while len(ours) > len(stan):
-				print "stan length is less:" + str(len(ours)) + " vs " + str(len(stan))
+				print("stan length is less:", str(len(ours)), " vs ", str(len(stan)))
 				if j+1 < len(stanTokens):
 					stan += stanTokens[j+1]
 					j += 1
-					print "stan is now:" + str(stan)
+					print("stan is now:", str(stan))
 				else:
-					print "ran out of stanTokens"
+					print("ran out of stanTokens")
 					exit(1)
 
 			while len(ours) < len(stan):
-				print "our length is less"
+				print("our length is less")
 				if i+1 < len(ourTokens):
 					ours += ourTokens[i+1]
 					i += 1
-					print "ours is now:" + str(ours)
+					print("ours is now:", str(ours))
 				else:
-					print "ran out of ourTokens"
+					print("ran out of ourTokens")
 					exit(1)	
 
 			if ours != stan:
-				print "MISMATCH: [" + str(ours) + "] [" + str(stan) + "]"
+				print("MISMATCH: [", str(ours), "] [", str(stan), "]")
 			else:
-				print "[" + str(ours) + "] == [" + str(stan) + "]"
+				print("[", str(ours), "] == [", str(stan), "]")
 
 			j += 1
 			i += 1
@@ -266,7 +266,7 @@ class ECBParser:
 			dir_num = int(doc_id.split("_")[0])
 
 			if self.isVerbose:
-				print "parsing: " + doc_id + " (file " + str(files.index(f) + 1) + " of " + str(len(files)) + ")"
+				print("parsing: ", doc_id, " (file ", str(files.index(f) + 1), " of ", str(len(files)), ")")
 				sys.stdout.flush()
 
 			tmpDocTokens = [] # we will optionally flip these and optionally stitch Mention tokens together
@@ -349,8 +349,8 @@ class ECBParser:
 			#
 
 			if isVerbose:
-				print "\t" + str(len(tmpDocTokens)) + " doc tokens"
-				print "\t# unique token ids: " + str(len(tmpDocTokenIDsToTokens))
+				print("\t", str(len(tmpDocTokens)), " doc tokens")
+				print("\t# unique token ids: ", str(len(tmpDocTokenIDsToTokens)))
 
 			tokenToStitchedToken = {} # will assign each Token to its stitchedToken (e.g., 3 -> [3,4], 4 -> [3,4])
 			stitchedTokens = []
@@ -378,7 +378,7 @@ class ECBParser:
 					#print "tmpCurrentMentionSpanIDs: " + str(tmpCurrentMentionSpanIDs)
 					spanRange = 1 + max(tmpCurrentMentionSpanIDs) - min(tmpCurrentMentionSpanIDs)
 					if isVerbose and spanRange != len(tmpCurrentMentionSpanIDs):
-						print "*** WARNING: the mention's token range seems to skip over a token id! " + str(tmpCurrentMentionSpanIDs)
+						print("*** WARNING: the mention's token range seems to skip over a token id! ", str(tmpCurrentMentionSpanIDs))
 					else:
 
 						#print "tmpCurrentMentionSpanIDs:" + str(tmpCurrentMentionSpanIDs)
@@ -397,7 +397,7 @@ class ECBParser:
 
 							if cur_token in tokenToStitchedToken.keys():
 								if isVerbose:
-									print "ERROR: OH NO, the same token id (" +  str(token_id) + ") is used in multiple Mentions!"
+									print("ERROR: OH NO, the same token id (", str(token_id), ") is used in multiple Mentions!")
 								#print tokenToStitchedToken[cur_token]
 								#print tmpCurrentMentionSpanIDs
 								#exit(1)
@@ -406,10 +406,10 @@ class ECBParser:
 								tokenToStitchedToken[cur_token] = stitched_token
 
 			if isVerbose and len(stitchedTokens) > 0:
-				print "# stitched tokens: " + str(len(stitchedTokens))
+				print("# stitched tokens: ", str(len(stitchedTokens)))
 				for st in stitchedTokens:
-					print st
-				print "-----------"
+					print(st)
+				print("-----------")
 			# ADDS to the corpusTokens in the correct, optionally reversed, optionally stitched, manner
 			# puts stitched tokens in the right positions
 			# appends to the docTokens[] (each entry is a list of the current doc's tokens);

@@ -10,14 +10,23 @@ class ECBHelper:
 		# sets passed-in params
 		self.corpus = corpus
 		self.isVerbose = args.verbose
+		self.args = args
 
+	'''
+	# NOTE: this should only be read
+	def loadEmbeddings(self, embeddingsFile, embeddingsType):
+		print("* in loadEmbeddings")
+		
+		self.emb
+	'''
+	
 	# iterates through the corpus, printing 1 sentence per line
 	def writeAllSentencesToFile(self, outputFile):
 		fout = open(outputFile, 'w')
 		lasts = set()
 		for sent_num in sorted(self.corpus.globalSentenceNumToTokens.keys()):
 			outLine = ""
-			print "(writing) sent_num:" + str(sent_num)
+			print("(writing) sent_num:", str(sent_num))
 			#if sent_num > 5000:
 			#	break
 
@@ -32,7 +41,7 @@ class ECBHelper:
 		fout.close()
 
 		for i in lasts:
-			print str(i)
+			print(str(i))
 
 	# sentences
 	#	sentence #1 of 17

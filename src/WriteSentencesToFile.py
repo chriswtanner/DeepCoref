@@ -11,7 +11,7 @@ class WriteSentencesToFile:
 		# parses corpus
 		corpus = ECBParser(args)
 
-		# constructs helper without goldTruthFile info
+		# constructs helper
 		helper = ECBHelper(corpus, args)
 
 		helper.writeAllSentencesToFile(args.outputFile)
