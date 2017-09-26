@@ -1,10 +1,24 @@
 #!/bin/bash
 
 # manually set these base params
-scriptDir="/Users/christanner/research/DeepCoref/src/"
-corpusPath="/Users/christanner/research/DeepCoref/data/ECB_SMALL/"
-replacementsFile="/Users/christanner/research/DeepCoref/data/replacements.txt"
-allTokens="/Users/christanner/research/DeepCoref/data/allTokensFull.txt"
+me=`whoami`
+baseDir="/Users/christanner/research/DeepCoref/"
+gridDir="/home/christanner/researchcode/DeepCoref/"
+if [ ${me} = "christanner" ]
+then
+    echo "christanner man!"
+elif [ ${me} = "ctanner" ]
+then
+    baseDir=${gridDir}
+    echo "ctanner man!"
+else
+    echo "who are you?!"
+fi
+exit 1
+scriptDir=${baseDir}"src/"
+corpusPath=${baseDir}"data/ECB_SMALL/"
+replacementsFile=${baseDir}"data/replacements.txt"
+allTokens=${baseDir}"data/allTokensFull.txt"
 verbose="true"
 stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-06-09/"
 stitchMentions="False"
@@ -13,7 +27,7 @@ stitchMentions="False"
 windowSize=10
 embeddingSize=50
 numEpochs=50
-gloveOutput="/Users/christanner/research/DeepCoref/data/gloveEmbeddings"
+gloveOutput=${baseDir}"data/gloveEmbeddings"
 
 # additional coref engine params
 embeddingsFile=${gloveOutput}

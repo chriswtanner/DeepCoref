@@ -1,8 +1,21 @@
 #!/bin/bash
 
 # manually set these base params
+me=`whoami`
+baseDir="/Users/christanner/research/DeepCoref/"
+gridDir="/home/christanner/researchcode/DeepCoref/"
+if [ ${me} = "christanner" ]
+then
+    echo "christanner man!"
+elif [ ${me} = "ctanner" ]
+then
+    echo "ctanner man!"
+else
+    echo "who are you?!"
+fi
+exit 1
 scriptDir="/Users/christanner/research/DeepCoref/src/"
-corpusPath="/Users/christanner/research/DeepCoref/data/ECB_FULL/"
+corpusPath="/Users/christanner/research/DeepCoref/data/ECB_SMALL/"
 replacementsFile="/Users/christanner/research/DeepCoref/data/replacements.txt"
 allTokens="/Users/christanner/research/DeepCoref/data/allTokensFull.txt"
 verbose="true"
@@ -22,7 +35,7 @@ embeddingsType="type"
 cd $scriptDir
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
-# python2 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose}
+# python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose}
 
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
@@ -37,4 +50,4 @@ cd ${stanfordPath}
 java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators tokenize,ssplit,pos,lemma,ner,parse,dcoref -file ${allTokens} -tokenize.options untokenizable=noneKeep -parse.debug
 
 cd ${scriptDir}
-python AlignWithStanford.py --corpusPath=${corpusPath} --stanfordFile=${stanfordPath}allTokens1.txt.xml --replacementsFile=${replacementsFile} --verbose=t
+python3 AlignWithStanford.py --corpusPath=${corpusPath} --stanfordFile=${stanfordPath}allTokens1.txt.xml --replacementsFile=${replacementsFile} --verbose=t
