@@ -4,17 +4,12 @@
 me=`whoami`
 baseDir="/Users/christanner/research/DeepCoref/"
 gridDir="/home/christanner/researchcode/DeepCoref/"
-if [ ${me} = "christanner" ]
-then
-    echo "christanner man!"
-elif [ ${me} = "ctanner" ]
+if [ ${me} = "ctanner" ]
 then
     baseDir=${gridDir}
     echo "ctanner man!"
-else
-    echo "who are you?!"
 fi
-exit 1
+
 scriptDir=${baseDir}"src/"
 corpusPath=${baseDir}"data/ECB_SMALL/"
 replacementsFile=${baseDir}"data/replacements.txt"

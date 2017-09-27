@@ -12,11 +12,11 @@ class CorefEngine:
 		args = params.setCorefEngineParams()
 
 		# parses corpus
-		corpus = ECBParser(args)
+		#corpus = ECBParser(args)
 
 		# constructs helper class
-		helper = ECBHelper(corpus, args)
+		#helper = ECBHelper(corpus, args)
 
 		# trains and tests
-		corefEngine = SiameseCNN(args, corpus, helper)
+		corefEngine = SiameseCNN(args) #, corpus, helper)
 

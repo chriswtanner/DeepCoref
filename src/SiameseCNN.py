@@ -14,16 +14,15 @@ sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 
 class SiameseCNN:
-    def __init__(self, args, corpus, helper):
+    def __init__(self, args): # , corpus, helper):
         print("we in here")
         print("args:", str(args))
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
         print("devices:",device_lib.list_local_devices())
-        self.corpus = corpus
-        self.helper = helper
+        #self.corpus = corpus
+        #self.helper = helper
         self.run()
-
 
     # trains and tests the model
     def run(self):
