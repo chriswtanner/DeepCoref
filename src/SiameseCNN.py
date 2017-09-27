@@ -48,7 +48,7 @@ class SiameseCNN:
         x_test = x_test.astype('float32')
         x_train /= 255
         x_test /= 255
-        epochs = 3
+        epochs = 10
 
         print('x_train shape2:', x_train.shape)
         print('y_train shape:', y_train.shape)
@@ -105,9 +105,9 @@ class SiameseCNN:
 
         # compute final accuracy on training and test sets
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
-        tr_acc = compute_accuracy(pred, training_labels)
+        tr_acc = self.compute_accuracy(pred, training_labels)
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
-        te_acc = compute_accuracy(pred, testing_labels)
+        te_acc = self.compute_accuracy(pred, testing_labels)
 
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
