@@ -9,19 +9,27 @@ from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPool
 from keras.optimizers import RMSprop
 from keras import backend as K
 from tensorflow.python.client import device_lib
+from ECBHelper import *
+from ECBParser import *
 import sys
+
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 
 class SiameseCNN:
-    def __init__(self, args): # , corpus, helper):
-        print("we in here")
+    def __init__(self, args, corpus, helper):
         print("args:", str(args))
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
         print("devices:",device_lib.list_local_devices())
-        #self.corpus = corpus
-        #self.helper = helper
+
+        self.args = args
+
+        self.corpus = corpus
+        self.helper = helper
+
+        # constructs the training and testing files
+        #(self.train_x, self.train_y), (self.test_x, self.test_y) = self.helper.createCCNNData()
         self.run()
 
     # trains and tests the model
@@ -48,19 +56,27 @@ class SiameseCNN:
         x_test = x_test.astype('float32')
         x_train /= 255
         x_test /= 255
-        epochs = 10
 
-        print('x_train shape2:', x_train.shape)
+        print('x_train shape:', x_train.shape)
         print('y_train shape:', y_train.shape)
         print('x_test shape:', x_test.shape)
         print('y_test shape:', y_test.shape)
+        print(x_train)
+        print(y_train)
+        #print('xtrain type:', x_train.type)
+
         # create training+test positive and negative pairs
         digit_indices = [np.where(y_train == i)[0] for i in range(10)]
         #print('digit_indices shape:', len(digit_indices))
         #print('digit_indices', digit_indices)
 
         training_pairs, training_labels = self.create_pairs(x_train, digit_indices)
+        print('trainingpairs',str(training_pairs[0]))
+        print('training_labels',str(training_labels))
 
+        print("training_pairs shape",training_pairs.shape)
+        print("training labels shape:",training_labels.shape)
+        exit(1)
         #print(training_pairs)
         print('training_pairs:', training_pairs.shape)
         print('training_labels:', training_labels.shape)
@@ -73,7 +89,10 @@ class SiameseCNN:
 
         #print(len(training_pairs[:, 0][0]))
         #print(len(training_pairs[:, 1]))
+
         print('training_labels:', training_labels.shape)
+
+
 
         # network definition
         base_network = self.create_base_network(input_shape)
@@ -100,7 +119,7 @@ class SiameseCNN:
         model.compile(loss=self.contrastive_loss, optimizer=rms)
         model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
                   batch_size=128,
-                  epochs=epochs,
+                  epochs=self.args.numEpochs,
                   validation_data=([testing_pairs[:, 0], testing_pairs[:, 1]], testing_labels))
 
         # compute final accuracy on training and test sets

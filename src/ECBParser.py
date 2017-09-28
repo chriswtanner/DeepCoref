@@ -21,16 +21,31 @@ except ImportError:
 class ECBParser:
 	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
 		print("args:", str(args))
-
+		self.ensureAllMentionsPresent = False # this should be true when we're actually using the entire corpus
 		# sets global vars
 		self.replacements = {}
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.endPunctuation = set()
 		self.endPunctuation.update(".", "!", "?")
+		self.validMentions = set()
 
 		self.loadReplacements(args.replacementsFile)
 
+		self.loadValidMentions(args.mentionsFile)
+
 		self.parseCorpus(args.corpusPath, args.stitchMentions, args.verbose)
+
+	# loads a file (e.g., goldTruth_events.txt) which tells our Parser which Mentions to save
+	def loadValidMentions(self, mentionsFile):
+		self.validMentions = set()
+		f = open(mentionsFile, 'r')
+		for line in f:
+			line = line.rstrip().lower()
+			tokens = line.split(";")
+			(dirNum, ref, docID, m_id, text, lemma) = line.split(";")
+			dm = (docID, int(m_id))
+			self.validMentions.add(dm)
+		f.close()
 
 	def loadReplacements(self, replacementsFile):
 
@@ -488,7 +503,11 @@ class ECBParser:
 
 					curMention = Mention(dir_num, doc_id, m_id, tmpTokens, tmpMentionCorpusIndices, text, isPred)
 					self.dmToMention[(doc_id,m_id)] = curMention
-					self.mentions.append(curMention)
+
+					# we only save the Mentions that are in self.validMentions,
+					# that way, we can always iterate over self.mentions (since we care about them all)
+					if (doc_id,m_id) in self.validMentions:
+						self.mentions.append(curMention)
 
 					'''
 					if doc_id == "23_1ecbplus.xml":
@@ -526,3 +545,10 @@ class ECBParser:
 			
 			# (2)
 			self.globalSentenceNumToTokens[int(t.globalSentenceNum)].append(t)
+
+		# ensures we have found all of the valid mentions in our corpus
+		if self.ensureAllMentionsPresent: # this should be true when we're actually using the entire corpus
+			for m in self.validMentions:
+				if m not in self.dmToMention:
+					print("* ERROR, our corpus never parsed: ", str(m))
+					exit(1)
