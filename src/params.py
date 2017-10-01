@@ -47,8 +47,10 @@ def setCorefEngineParams():
 	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
 	
 	# CCNN
+	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
 	parser.add_argument("--embeddingsFile", help="the file that contains the embeddings")
 	parser.add_argument("--embeddingsType", help="type or token") # no default, because this could be tricky, so we want to make it deliberate
+	parser.add_argument("--numNegPerPos", help="# of neg examples per pos in training (e.g., 1,2,5)", type=int)
 	parser.add_argument("--numEpochs", help="type or token", type=int)
 	parser.add_argument("--windowSize", help="# of tokens before/after the Mention to use", type=int)
 	#parser.add_argument("--verbose",

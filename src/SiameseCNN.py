@@ -16,6 +16,14 @@ import sys
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 
+'''
+TODO: why doens'et it work???
+- try mnist again
+- what is our type?  is it float32?
+- is it because the values aren't 0-1?
+- try on smaller dataset, to see if it's the actual values that are causing the issues
+(e.g., maybe dims are fine, but the values aren't in some cases)
+'''
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
         print("args:", str(args))
@@ -28,18 +36,22 @@ class SiameseCNN:
         self.corpus = corpus
         self.helper = helper
 
-        # constructs the training and testing files
-        #(self.train_x, self.train_y), (self.test_x, self.test_y) = self.helper.createCCNNData()
         self.run()
 
     # trains and tests the model
     def run(self):
 
-        # loads training and test
-        (x_train, y_train), (x_test, y_test) = mnist.load_data()
-        print('x_train shape1:', x_train.shape)
+        # constructs the training and testing files
+        (training_pairs, training_labels), (testing_pairs, testing_labels) = self.helper.createCCNNData()
+
+        input_shape = training_pairs.shape[2:]
+        print("input_shape:",str(input_shape))
+
+        #(x_train, y_train), (x_test, y_test) = mnist.load_data()
+        print('training_pairs shape1:', training_pairs.shape)
 
         # input image dimensions
+        '''
         img_rows, img_cols = 28, 28
         if K.image_data_format() == 'channels_first':
             print("channels first")
@@ -51,36 +63,35 @@ class SiameseCNN:
             x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
             x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
             input_shape = (img_rows, img_cols, 1)
-
+        
         x_train = x_train.astype('float32')
         x_test = x_test.astype('float32')
-        x_train /= 255
-        x_test /= 255
-
-        print('x_train shape:', x_train.shape)
-        print('y_train shape:', y_train.shape)
-        print('x_test shape:', x_test.shape)
-        print('y_test shape:', y_test.shape)
-        print(x_train)
-        print(y_train)
+        #x_train /= 255
+        #x_test /= 255
+        '''
+        print('training_pairs shape:', training_pairs.shape)
+        print('training_labels shape:', training_labels.shape)
+        print('testing pairs shape:', testing_pairs.shape)
+        print('testing_labels shape:', testing_labels.shape)
+        #print(x_train)
+        #print(y_train)
         #print('xtrain type:', x_train.type)
 
         # create training+test positive and negative pairs
-        digit_indices = [np.where(y_train == i)[0] for i in range(10)]
+        #digit_indices = [np.where(y_train == i)[0] for i in range(10)]
         #print('digit_indices shape:', len(digit_indices))
         #print('digit_indices', digit_indices)
 
-        training_pairs, training_labels = self.create_pairs(x_train, digit_indices)
-        print('trainingpairs',str(training_pairs[0]))
-        print('training_labels',str(training_labels))
-
-        print("training_pairs shape",training_pairs.shape)
-        print("training labels shape:",training_labels.shape)
-        exit(1)
+        #training_pairs, training_labels = self.create_pairs(x_train, digit_indices)
+        #print('trainingpairs',str(training_pairs[0]))
+        #print('training_labels',str(training_labels))
+        #print("training_pairs shape",training_pairs.shape)
+        #print("training labels shape:",training_labels.shape)
+        #exit(1)
         #print(training_pairs)
-        print('training_pairs:', training_pairs.shape)
-        print('training_labels:', training_labels.shape)
-
+        #print('training_pairs:', training_pairs.shape)
+        #print('training_labels:', training_labels.shape)
+        '''
         digit_indices = [np.where(y_test == i)[0] for i in range(10)]
         testing_pairs, testing_labels = self.create_pairs(x_test, digit_indices)
 
@@ -91,7 +102,7 @@ class SiameseCNN:
         #print(len(training_pairs[:, 1]))
 
         print('training_labels:', training_labels.shape)
-
+        '''
 
 
         # network definition
@@ -177,7 +188,7 @@ class SiameseCNN:
         seq = Sequential()
         seq.add(Conv2D(32, kernel_size=(3, 3),activation='relu', input_shape=input_shape))
         seq.add(Conv2D(64, (3, 3), activation='relu'))
-        seq.add(MaxPooling2D(pool_size=(2, 2)))
+        seq.add(MaxPooling2D(pool_size=(2, 2),dim_ordering="th"))
         seq.add(Dropout(0.25))
 
         # added following
@@ -190,8 +201,8 @@ class SiameseCNN:
         '''
 
         seq.add(Flatten())
-        #seq.add(Dense(128, activation='relu'))
-        seq.add(Dense(256, activation='relu'))
+        seq.add(Dense(128, activation='relu'))
+        #seq.add(Dense(256, activation='relu'))
         return seq
 
     # Compute classification accuracy with a fixed threshold on distances.

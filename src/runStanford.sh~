@@ -19,16 +19,19 @@ stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-0
 stitchMentions="False"
 
 # glove param
-windowSize=10
+gWindowSize=10
 embeddingSize=50
 numEpochs=50
 gloveOutput=${baseDir}"data/gloveEmbeddings.txt"
 
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
+shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=10
+numEpochs=5
+windowSize=2
+numNegPerPos=5
 cd $scriptDir
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
@@ -36,9 +39,9 @@ cd $scriptDir
 
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
-# ./demo.sh ${allTokens} ${windowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
+# ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
 
-python3 CorefEngine.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose}
+python3 CorefEngine.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos}
 
 exit 1
 

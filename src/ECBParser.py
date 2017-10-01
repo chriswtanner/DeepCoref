@@ -256,6 +256,7 @@ class ECBParser:
 		self.dmToMention = {} # (doc_id,m_id) -> Mention
 		self.dmToREF = {}
 		self.refToDMs = defaultdict(list)
+		self.dirToREFs = defaultdict(list)
 
 		# same tokens as corpusTokens, just made into lists according
 		# to each doc.  (1 doc = 1 list of tokens); used for printing corpus to .txt file
@@ -502,12 +503,12 @@ class ECBParser:
 					tmpMentionCorpusIndices.sort() # regardless of if we reverse the corpus or not, these indices should be in ascending order
 
 					curMention = Mention(dir_num, doc_id, m_id, tmpTokens, tmpMentionCorpusIndices, text, isPred)
-					self.dmToMention[(doc_id,m_id)] = curMention
-
+					
 					# we only save the Mentions that are in self.validMentions,
 					# that way, we can always iterate over self.mentions (since we care about them all)
 					if (doc_id,m_id) in self.validMentions:
 						self.mentions.append(curMention)
+						self.dmToMention[(doc_id,m_id)] = curMention
 
 					'''
 					if doc_id == "23_1ecbplus.xml":
@@ -530,6 +531,9 @@ class ECBParser:
 						continue
 					self.dmToREF[(doc_id,m_id)] = ref_id
 					self.refToDMs[ref_id].append((doc_id,m_id))
+					dirNum = int(doc_id[0:doc_id.find("_")])
+					if ref_id not in self.dirToREFs[dirNum]:
+						self.dirToREFs[dirNum].append(ref_id)
 
 			#if globalSentenceNum > 2:
 			#	print "globalSentenceNum: " + str(globalSentenceNum)
