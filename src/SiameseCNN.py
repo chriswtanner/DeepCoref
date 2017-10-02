@@ -27,7 +27,8 @@ TODO: why doens'et it work???
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
         print("args:", str(args))
-        sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+        #sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+        CUDA_VISIBLE_DEVICES=""
         config = tf.ConfigProto(
             device_count = {'GPU': 0}
         )
