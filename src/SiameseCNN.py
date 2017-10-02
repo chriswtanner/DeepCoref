@@ -139,12 +139,12 @@ class SiameseCNN:
 
         # compute final accuracy on training and test sets
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
-        for i in range(30):
-            print(str(i),"trainpred:",str(pred[i]),"traingold:",str(training_labels[i]))
+        #for i in range(30):
+        #    print(str(i),"trainpred:",str(pred[i]),"traingold:",str(training_labels[i]))
         tr_acc = self.compute_accuracy(pred, training_labels)
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
-        for i in range(30):
-            print(str(i),"testpred:",str(pred[i]),"testgold:",str(testing_labels[i]))
+        #for i in range(30):
+        #    print(str(i),"testpred:",str(pred[i]),"testgold:",str(testing_labels[i]))
         te_acc = self.compute_accuracy(pred, testing_labels)
 
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
@@ -195,21 +195,21 @@ class SiameseCNN:
     def create_base_network(self, input_shape):
         seq = Sequential()
         seq.add(Conv2D(32, kernel_size=(3, 3),activation='relu', input_shape=input_shape))
-        seq.add(Conv2D(64, (3, 3), activation='relu'))
-        seq.add(MaxPooling2D(pool_size=(2, 2),dim_ordering="th"))
+        seq.add(Conv2D(64, (3, 3), activation='relu',data_format="channels_first"))
+        seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
         seq.add(Dropout(0.25))
 
         # added following
-        '''
-        seq.add(Conv2D(128, (3, 3), activation='relu'))
-        seq.add(Conv2D(256, (3, 3), activation='relu'))
-        seq.add(MaxPooling2D(pool_size=(2, 2)))
+        
+        seq.add(Conv2D(128, (3, 3), activation='relu',data_format="channels_first"))
+        seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
+        seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
         seq.add(Dropout(0.25))
         # end of added
-        '''
+        
         seq.add(Flatten())
-        seq.add(Dense(128, activation='relu'))
-        #seq.add(Dense(256, activation='relu'))
+        #seq.add(Dense(128, activation='relu'))
+        seq.add(Dense(256, activation='relu'))
         return seq
 
     # Compute classification accuracy with a fixed threshold on distances.

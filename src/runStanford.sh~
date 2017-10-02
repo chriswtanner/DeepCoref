@@ -29,7 +29,7 @@ mentionsFile=${baseDir}"data/goldTruth_events.txt"
 shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=10
+numEpochs=5
 windowSize=2
 numNegPerPos=5
 cd $scriptDir
