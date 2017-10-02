@@ -28,6 +28,10 @@ class SiameseCNN:
     def __init__(self, args, corpus, helper):
         print("args:", str(args))
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+        config = tf.ConfigProto(
+            device_count = {'GPU': 0}
+        )
+        sess = tf.Session(config=config)
         print(sess)
         print("devices:",device_lib.list_local_devices())
 
@@ -196,24 +200,22 @@ class SiameseCNN:
         seq.add(Dropout(0.25))
 
         # added following
-        
+        '''
         seq.add(Conv2D(128, (3, 3), activation='relu'))
         seq.add(Conv2D(256, (3, 3), activation='relu'))
         seq.add(MaxPooling2D(pool_size=(2, 2)))
         seq.add(Dropout(0.25))
         # end of added
-        
-
+        '''
         seq.add(Flatten())
-        #seq.add(Dense(128, activation='relu'))
-        seq.add(Dense(256, activation='relu'))
+        seq.add(Dense(128, activation='relu'))
+        #seq.add(Dense(256, activation='relu'))
         return seq
 
     # Compute classification accuracy with a fixed threshold on distances.
     def compute_accuracy(self, predictions, labels):
         print(predictions[0:30])
         preds = predictions.ravel() < 0.5
-        print(preds[0:30])
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
