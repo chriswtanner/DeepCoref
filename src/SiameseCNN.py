@@ -121,7 +121,7 @@ class SiameseCNN:
         distance = Lambda(self.euclidean_distance,
                           output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        print('distance:', distance.shape)
+        #print('distance:', distance.shape)
 
         model = Model([input_a, input_b], distance)
 
@@ -135,8 +135,12 @@ class SiameseCNN:
 
         # compute final accuracy on training and test sets
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
+        for i in range(30):
+            print(str(i),"trainpred:",str(pred[i]),"traingold:",str(training_labels[i]))
         tr_acc = self.compute_accuracy(pred, training_labels)
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
+        for i in range(30):
+            print(str(i),"testpred:",str(pred[i]),"testgold:",str(testing_labels[i]))
         te_acc = self.compute_accuracy(pred, testing_labels)
 
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
@@ -192,22 +196,24 @@ class SiameseCNN:
         seq.add(Dropout(0.25))
 
         # added following
-        '''
+        
         seq.add(Conv2D(128, (3, 3), activation='relu'))
         seq.add(Conv2D(256, (3, 3), activation='relu'))
         seq.add(MaxPooling2D(pool_size=(2, 2)))
         seq.add(Dropout(0.25))
         # end of added
-        '''
+        
 
         seq.add(Flatten())
-        seq.add(Dense(128, activation='relu'))
-        #seq.add(Dense(256, activation='relu'))
+        #seq.add(Dense(128, activation='relu'))
+        seq.add(Dense(256, activation='relu'))
         return seq
 
     # Compute classification accuracy with a fixed threshold on distances.
     def compute_accuracy(self, predictions, labels):
+        print(predictions[0:30])
         preds = predictions.ravel() < 0.5
+        print(preds[0:30])
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 

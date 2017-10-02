@@ -207,6 +207,8 @@ model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
 
 # compute final accuracy on training and test sets
 pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
+for i in range(30):
+    print(str(i),"pred:",str(pred[i]),"gold:",str(training_labels[i]))
 tr_acc = compute_accuracy(pred, training_labels)
 pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
 te_acc = compute_accuracy(pred, testing_labels)
