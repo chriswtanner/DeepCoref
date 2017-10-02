@@ -29,9 +29,9 @@ mentionsFile=${baseDir}"data/goldTruth_events.txt"
 shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=5
+numEpochs=10
 windowSize=2
-numNegPerPos=5
+numNegPerPos=3
 cd $scriptDir
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate

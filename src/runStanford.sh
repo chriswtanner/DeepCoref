@@ -8,6 +8,7 @@ if [ ${me} = "ctanner" ]
 then
     baseDir=${gridDir}
     echo "ctanner man!"
+    source /home/jrasley/set_cuda8_cudnn6.sh
 fi
 
 scriptDir=${baseDir}"src/"
