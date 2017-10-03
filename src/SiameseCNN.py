@@ -14,8 +14,8 @@ from ECBParser import *
 import sys
 import os
 
-sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
-sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
+#sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
+#sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
 print(tensorflow.__version__)
 
