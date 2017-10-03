@@ -1,9 +1,5 @@
 #!/bin/bash
 ./home/jrasley/set_cuda8_cudnn6.sh
-export CUDA_HOME=/contrib/projects/cuda8.0
-export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
-export PATH=${CUDA_HOME}/bin:${PATH}
-
 echo $CUDA_HOME
 
 # manually set these base params
@@ -14,7 +10,11 @@ if [ ${me} = "ctanner" ]
 then
     baseDir=${gridDir}
     echo "ctanner man!"
-    source /home/jrasley/set_cuda8_cudnn6.sh
+    export CUDA_HOME=/contrib/projects/cuda8.0
+    export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
+    export PATH=${CUDA_HOME}/bin:${PATH}
+    ./home/jrasley/set_cuda8_cudnn6.sh
+    echo $CUDA_HOME
 fi
 
 scriptDir=${baseDir}"src/"
@@ -36,9 +36,10 @@ mentionsFile=${baseDir}"data/goldTruth_events.txt"
 shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=1
-windowSize=2
-numNegPerPos=3
+numEpochs=$1
+windowSize=$2
+numNegPerPos=$3
+
 cd $scriptDir
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate

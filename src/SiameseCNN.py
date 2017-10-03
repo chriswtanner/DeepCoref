@@ -79,7 +79,7 @@ class SiameseCNN:
         model.compile(loss=self.contrastive_loss, optimizer=rms, metrics=[self.acc])
         print(model.summary())
         model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
-                  batch_size=32,
+                  batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
                   validation_data=([testing_pairs[:, 0], testing_pairs[:, 1]], testing_labels))
 
@@ -120,13 +120,12 @@ class SiameseCNN:
         seq.add(Dropout(0.25))
 
         # added following
-        '''
-        seq.add(Conv2D(128, (3, 3), activation='relu',data_format="channels_first"))
+        seq.add(Conv2D(128, (4, 4), activation='relu'))
         seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
         seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
         seq.add(Dropout(0.25))
         # end of added
-        '''
+        
         seq.add(Flatten())
         seq.add(Dense(128, activation='relu'))
         #seq.add(Dense(256, activation='relu'))
