@@ -82,9 +82,11 @@ class SiameseCNN:
         # compute final accuracy on training and test sets
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
         tr_acc = self.compute_accuracy(pred, training_labels)
+        print("training")
         self.compute_f1(pred, training_labels)
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
         te_acc = self.compute_accuracy(pred, testing_labels)
+        print("testing")
         self.compute_f1(pred, testing_labels)
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
@@ -124,11 +126,46 @@ class SiameseCNN:
         #seq.add(Dense(256, activation='relu'))
         return seq
 
-    def compute_f1(self, predictions, gold):
-        preds = predictions.ravel() < 0.5
-        for i in range(30):
-            print("pred:",str(preds[i]),"gold:",str(gold[i]))
+    def compute_f1(self, predictions, golds):
+        preds = []
+        for p in predictions:
+            if p < 0.5:
+                preds.append(1)
+            else:
+                preds.append(0)
+        
+        num_predicted_true = 0
+        num_predicted_false = 0
+        num_golds_true = 0
+        num_tp = 0
+        num_correct = 0
+        for i in range(len(golds)):
+            if golds[i] == 1:
+                num_golds_true = num_golds_true + 1
 
+        for i in range(len(preds)):
+            if preds[i] == 1:
+                num_predicted_true = num_predicted_true + 1
+                if golds[i] == 1:
+                    num_tp = num_tp + 1
+                    num_correct += 1
+            else:
+                num_predicted_false += 1
+                if golds[i] == 0:
+                    num_correct += 1
+        recall = float(num_tp) / float(num_golds_true)
+        prec = 0
+        if num_predicted_true > 0:
+            prec = float(num_tp) / float(num_predicted_true)
+        
+        f1 = 0
+        if prec > 0 or recall > 0:
+            f1 = 2*float(prec * recall) / float(prec + recall)
+
+        accuracy = float(num_correct) / float(len(golds))
+        print("------")
+        print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
+        print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
 
     def acc(self, y_true, y_pred):
         ones = K.ones_like(y_pred)
