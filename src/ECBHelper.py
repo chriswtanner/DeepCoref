@@ -20,48 +20,6 @@ class ECBHelper:
 
 		self.embeddingLength = 0 # filled in by loadEmbeddings()
 
-		emb1 = [1]*50
-		emb2 = [2]*50
-		emb3 = [3]*50
-
-		emb4 = [4]*50
-		emb5 = [5]*50
-		emb6 = [6]*50
-
-		emb7 = [7]*50
-		emb8 = [8]*50
-		emb9 = [9]*50
-
-		m1 = np.empty(shape=(3,50))
-		m1[0] = emb1
-		m1[1] = emb2
-		m1[2] = emb3
-
-		m2 = np.empty(shape=(3,50))
-		m2[0] = emb4
-		m2[1] = emb5
-		m2[2] = emb6
-
-		m3 = np.empty(shape=(3,50))
-		m3[0] = emb7
-		m3[1] = emb8
-		m3[2] = emb9
-
-
-
-		m1 = np.asarray(m1).reshape(3,50,1)
-		m2 = np.asarray(m2).reshape(3,50,1)
-		m3 = np.asarray(m3).reshape(3,50,1)
-		pair1 = np.asarray([m1,m2])
-		pair2 = np.asarray([m1,m3])
-		pair3 = np.asarray([m2,m3])
-		pairs = []
-		pairs.append(pair1)
-		pairs.append(pair2)
-		pairs.append(pair3)
-		print(np.asarray(pairs).shape)
-		print(pairs[0])
-
 	def constructTestingPairs(self):
 		testingPairs = []
 		testingLabels = []

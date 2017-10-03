@@ -71,13 +71,20 @@ def create_base_network(input_dim):
     seq.add(Dense(128, activation='relu'))
     seq.add(Dropout(0.1))
     seq.add(Dense(128, activation='relu'))
+
+    # added
+    #seq.add(Dropout(0.25))
+    #model.add(Dense(2,activation='softmax'))
     return seq
 
+def acc(y_true, y_pred):
+    ones = K.ones_like(y_pred)
+    return K.mean(K.equal(y_true, ones - K.clip(K.round(y_pred), 0, 1)), axis=-1)
 
 def compute_accuracy(predictions, labels):
     '''Compute classification accuracy with a fixed threshold on distances.
     '''
-    preds = predictions.ravel() < 0.5
+    preds = predictions.ravel() < 0.6
     return ((preds & labels).sum() +
             (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
@@ -91,7 +98,7 @@ x_test = x_test.astype('float32')
 x_train /= 255
 x_test /= 255
 input_dim = 784
-epochs = 10
+epochs = 3
 
 print('x_train shape2:', x_train.shape)
 print('y_train shape:', y_train.shape)
@@ -122,7 +129,6 @@ base_network = create_base_network(input_dim)
 input_a = Input(shape=(input_dim,))
 input_b = Input(shape=(input_dim,))
 
-exit(1)
 # because we re-use the same instance `base_network`,
 # the weights of the network
 # will be shared across the two branches
@@ -136,7 +142,7 @@ model = Model([input_a, input_b], distance)
 
 # train
 rms = RMSprop()
-model.compile(loss=contrastive_loss, optimizer=rms)
+model.compile(loss=contrastive_loss, optimizer=rms, metrics=[acc])
 model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
           batch_size=128,
           epochs=epochs,
@@ -144,6 +150,7 @@ model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
 
 # compute final accuracy on training and test sets
 pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
+print("pred:",str(pred))
 tr_acc = compute_accuracy(pred, training_labels)
 pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
 te_acc = compute_accuracy(pred, testing_labels)

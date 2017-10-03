@@ -1,4 +1,7 @@
 #!/bin/bash
+source /home/jrasley/set_cuda8_cudnn6.sh
+./home/jrasley/set_cuda8_cudnn6.sh
+echo $CUDA_HOME
 
 # manually set these base params
 me=`whoami`
@@ -30,7 +33,7 @@ mentionsFile=${baseDir}"data/goldTruth_events.txt"
 shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=10
+numEpochs=1
 windowSize=2
 numNegPerPos=3
 cd $scriptDir

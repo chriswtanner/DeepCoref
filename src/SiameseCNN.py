@@ -52,63 +52,13 @@ class SiameseCNN:
         input_shape = training_pairs.shape[2:]
         print("input_shape:",str(input_shape))
 
-        #(x_train, y_train), (x_test, y_test) = mnist.load_data()
         print('training_pairs shape1:', training_pairs.shape)
 
         # input image dimensions
-        '''
-        img_rows, img_cols = 28, 28
-        if K.image_data_format() == 'channels_first':
-            print("channels first")
-            x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-            x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-            input_shape = (1, img_rows, img_cols)
-        else:
-            print("not channels first")
-            x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-            x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-            input_shape = (img_rows, img_cols, 1)
-        
-        x_train = x_train.astype('float32')
-        x_test = x_test.astype('float32')
-        #x_train /= 255
-        #x_test /= 255
-        '''
         print('training_pairs shape:', training_pairs.shape)
         print('training_labels shape:', training_labels.shape)
         print('testing pairs shape:', testing_pairs.shape)
         print('testing_labels shape:', testing_labels.shape)
-        #print(x_train)
-        #print(y_train)
-        #print('xtrain type:', x_train.type)
-
-        # create training+test positive and negative pairs
-        #digit_indices = [np.where(y_train == i)[0] for i in range(10)]
-        #print('digit_indices shape:', len(digit_indices))
-        #print('digit_indices', digit_indices)
-
-        #training_pairs, training_labels = self.create_pairs(x_train, digit_indices)
-        #print('trainingpairs',str(training_pairs[0]))
-        #print('training_labels',str(training_labels))
-        #print("training_pairs shape",training_pairs.shape)
-        #print("training labels shape:",training_labels.shape)
-        #exit(1)
-        #print(training_pairs)
-        #print('training_pairs:', training_pairs.shape)
-        #print('training_labels:', training_labels.shape)
-        '''
-        digit_indices = [np.where(y_test == i)[0] for i in range(10)]
-        testing_pairs, testing_labels = self.create_pairs(x_test, digit_indices)
-
-        print('testing_pairs:', testing_pairs.shape)
-        print('testing_labels:', testing_labels.shape)
-
-        #print(len(training_pairs[:, 0][0]))
-        #print(len(training_pairs[:, 1]))
-
-        print('training_labels:', training_labels.shape)
-        '''
-
 
         # network definition
         base_network = self.create_base_network(input_shape)
@@ -117,37 +67,30 @@ class SiameseCNN:
         input_b = Input(shape=input_shape)
         print('input_a',input_a.shape)
 
-        # because we re-use the same instance `base_network`,
-        # the weights of the network
-        # will be shared across the two branches
         processed_a = base_network(input_a)
         processed_b = base_network(input_b)
 
         distance = Lambda(self.euclidean_distance,
                           output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        #print('distance:', distance.shape)
-
         model = Model([input_a, input_b], distance)
 
         # train
         rms = RMSprop()
-        model.compile(loss=self.contrastive_loss, optimizer=rms)
+        model.compile(loss=self.contrastive_loss, optimizer=rms, metrics=[self.acc])
+        print(model.summary())
         model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
-                  batch_size=128,
+                  batch_size=32,
                   epochs=self.args.numEpochs,
                   validation_data=([testing_pairs[:, 0], testing_pairs[:, 1]], testing_labels))
 
         # compute final accuracy on training and test sets
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
-        #for i in range(30):
-        #    print(str(i),"trainpred:",str(pred[i]),"traingold:",str(training_labels[i]))
         tr_acc = self.compute_accuracy(pred, training_labels)
+        self.compute_f1(pred, training_labels)
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
-        #for i in range(30):
-        #    print(str(i),"testpred:",str(pred[i]),"testgold:",str(testing_labels[i]))
         te_acc = self.compute_accuracy(pred, testing_labels)
-
+        self.compute_f1(pred, testing_labels)
         print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
@@ -159,69 +102,45 @@ class SiameseCNN:
         shape1, shape2 = shapes
         return (shape1[0], 1)
 
-
     # Contrastive loss from Hadsell-et-al.'06
     # http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
     def contrastive_loss(self, y_true, y_pred):
         margin = 1
         return K.mean(y_true * K.square(y_pred) + (1 - y_true) * K.square(K.maximum(margin - y_pred, 0)))
 
-    # Positive and negative pair creation.
-    # Alternates between positive and negative pairs.
-    def create_pairs(self, x, digit_indices):
-        pairs = []
-        labels = []
-        b = [len(digit_indices[d]) for d in range(10)]
-        print("b", b)
-        n = min([len(digit_indices[d]) for d in range(10)]) - 1
-        print("n: ",str(n))
-        for d in range(10):
-            for i in range(n):
-                
-                # adds positive
-                z1, z2 = digit_indices[d][i], digit_indices[d][i + 1]
-                pairs += [[x[z1], x[z2]]]
-                
-                # adds negative
-                inc = random.randrange(1, 10)
-                dn = (d + inc) % 10
-                z1, z2 = digit_indices[d][i], digit_indices[dn][i]
-                pairs += [[x[z1], x[z2]]]
-                
-                # adds labels
-                labels += [1, 0]
-        return np.array(pairs), np.array(labels)
-
     # Base network to be shared (eq. to feature extraction).
     def create_base_network(self, input_shape):
         seq = Sequential()
-        seq.add(Conv2D(32, kernel_size=(3, 3),activation='relu', input_shape=input_shape))
-        seq.add(Conv2D(64, (3, 3), activation='relu',data_format="channels_first"))
-        seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
+        seq.add(Conv2D(32, kernel_size=(5, 5),activation='relu', input_shape=input_shape, data_format="channels_last"))
+        seq.add(Conv2D(64, (5, 5), activation='relu',data_format="channels_first"))
+        seq.add(MaxPooling2D(pool_size=(5, 5),data_format="channels_first"))
         seq.add(Dropout(0.25))
 
         # added following
-        
+        '''
         seq.add(Conv2D(128, (3, 3), activation='relu',data_format="channels_first"))
         seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
         seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
         seq.add(Dropout(0.25))
         # end of added
-        
+        '''
         seq.add(Flatten())
-        #seq.add(Dense(128, activation='relu'))
-        seq.add(Dense(256, activation='relu'))
+        seq.add(Dense(128, activation='relu'))
+        #seq.add(Dense(256, activation='relu'))
         return seq
+
+    def compute_f1(self, predictions, gold):
+        preds = predictions.ravel() < 0.5
+        for i in range(30):
+            print("pred:",str(preds[i]),"gold:",str(gold[i]))
+        
+
+    def acc(self, y_true, y_pred):
+        ones = K.ones_like(y_pred)
+        return K.mean(K.equal(y_true, ones - K.clip(K.round(y_pred), 0, 1)), axis=-1)
 
     # Compute classification accuracy with a fixed threshold on distances.
     def compute_accuracy(self, predictions, labels):
-        print(predictions[0:30])
         preds = predictions.ravel() < 0.5
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
-
-
-'''
-
-
-'''
