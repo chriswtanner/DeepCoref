@@ -12,18 +12,12 @@ from tensorflow.python.client import device_lib
 from ECBHelper import *
 from ECBParser import *
 import sys
+import os
 
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
-'''
-TODO: why doens'et it work???
-- try mnist again
-- what is our type?  is it float32?
-- is it because the values aren't 0-1?
-- try on smaller dataset, to see if it's the actual values that are causing the issues
-(e.g., maybe dims are fine, but the values aren't in some cases)
-'''
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
         print("args:", str(args))
@@ -133,7 +127,7 @@ class SiameseCNN:
         preds = predictions.ravel() < 0.5
         for i in range(30):
             print("pred:",str(preds[i]),"gold:",str(gold[i]))
-        
+
 
     def acc(self, y_true, y_pred):
         ones = K.ones_like(y_pred)
