@@ -1,4 +1,5 @@
 #!/bin/bash
+./home/jrasley/set_cuda8_cudnn6.sh
 echo $CUDA_HOME
 
 # manually set these base params
@@ -7,12 +8,13 @@ baseDir="/Users/christanner/research/DeepCoref/"
 gridDir="/home/christanner/researchcode/DeepCoref/"
 if [ ${me} = "ctanner" ]
 then
-    echo "ON THE GRID!"
     baseDir=${gridDir}
-    ./home/jrasley/set_cuda8_cudnn6.sh
+    echo "ctanner man!"
+
     export CUDA_HOME=/contrib/projects/cuda8.0
     export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
     export PATH=${CUDA_HOME}/bin:${PATH}
+    ./home/jrasley/set_cuda8_cudnn6.sh
     echo $CUDA_HOME
 fi
 
