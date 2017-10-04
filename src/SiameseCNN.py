@@ -16,7 +16,7 @@ import os
 
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+#os.environ['CUDA_VISIBLE_DEVICES'] = ''
 print(tf.__version__)
 
 class SiameseCNN:
@@ -27,13 +27,12 @@ class SiameseCNN:
         # GPU stuff
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
-        config = tf.ConfigProto(
-            device_count = {'GPU': 0}
-        )
+        #config = tf.ConfigProto(
+        #    device_count = {'GPU': 0}
+        #)
         sess = tf.Session(config=config)
         print(sess)
         print("devices:",device_lib.list_local_devices())
-
 
         self.trainingCutoff = 25 # anything higher than this will be testing
 
