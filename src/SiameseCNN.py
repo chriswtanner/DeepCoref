@@ -30,8 +30,8 @@ class SiameseCNN:
         #config = tf.ConfigProto(
         #    device_count = {'GPU': 0}
         #)
-        sess = tf.Session(config=config)
-        print(sess)
+        #sess = tf.Session(config=config)
+        #print(sess)
         print("devices:",device_lib.list_local_devices())
 
         self.trainingCutoff = 25 # anything higher than this will be testing
