@@ -50,8 +50,8 @@ class SiameseCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
         # constructs the training and dev files
-        (training_pairs, training_labels) = self.createData(self.trainingDirs)
-        (dev_pairs, dev_labels) = self.creatData(self.devDirs)
+        (training_pairs, training_labels) = self.createData(self.trainingDirs, True)
+        (dev_pairs, dev_labels) = self.createData(self.devDirs, False)
 
         input_shape = training_pairs.shape[2:]
         '''
@@ -94,7 +94,7 @@ class SiameseCNN:
         dev_pairs = None
         dev_labels = None
 
-        (testing_pairs, testing_labels) = self.creatData(self.testingDirs)
+        (testing_pairs, testing_labels) = self.createData(self.testingDirs)
         print("predicting testing")
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
         self.compute_optimal_f1(pred, testing_labels)
@@ -124,12 +124,13 @@ class SiameseCNN:
         seq.add(Dropout(0.25))
 
         # added following
+        '''
         seq.add(Conv2D(128, (4, 4), activation='relu'))
         seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
         seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
         seq.add(Dropout(0.25))
         # end of added
-        
+        '''
         seq.add(Flatten())
         seq.add(Dense(128, activation='relu'))
         #seq.add(Dense(256, activation='relu'))
@@ -137,11 +138,11 @@ class SiameseCNN:
 
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, predictions, golds):
-
+        print("* in compute_optimal_f1()")
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
         valToDMPair = defaultdict(list)
-        for i in range(predictions):
+        for i in range(len(predictions)):
             DMPair = "a"
             val = predictions[i]
             valToDMPair[val].append(DMPair)
@@ -199,7 +200,8 @@ class SiameseCNN:
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
-    def constructDMPairs(self, dirs):
+    def constructAllDMPairs(self, dirs):
+        print("* in constructAllDMPairs()")
         pairs = []
         labels = []
         for dirNum in sorted(self.corpus.dirToREFs.keys()):
@@ -219,23 +221,21 @@ class SiameseCNN:
                     if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
                         labels.append(1)
                     else:
-                        labels.append(0) 
+                        labels.append(0)
 
                     added.add((dm1,dm2))
                     added.add((dm2,dm1))
         return (pairs, labels)
 
-
-TODO: when and how am i calling this fuction
-    def constructTrainingPairs(self):
-        print("* in constructListsOfTrainingPairs")
+    def constructSubsampledDMPairs(self, dirs):
+        print("* in constructSubsampledDMPairs()")
         trainingPositives = []
         trainingNegatives = []
 
         for dirNum in sorted(self.corpus.dirToREFs.keys()):
 
             # only process the training dirs
-            if dirNum > self.trainingCutoff:
+            if dirNum not in dirs:
                 continue
 
             added = set() # so we don't add the same pair twice
@@ -313,9 +313,12 @@ TODO: when and how am i calling this fuction
                 self.embeddingLength = len(emb)
             f.close()
 
-    def createData(self, dirs):
+    def createData(self, dirs, subSample):
 
-        (pairs, labels) = self.constructDMPairs(dirs)
+        if subSample: # training (we want just some of the negs)
+            (pairs, labels) = self.constructSubsampledDMPairs(dirs)
+        else: # for dev and test (we want all negative examples)
+            (pairs, labels) = self.constructAllDMPairs(dirs)
 
         # constructs the DM matrix for every mention
         dmToMatrix = {}
@@ -333,7 +336,8 @@ TODO: when and how am i calling this fuction
             menEmbedding = [0]*numCols
             for t in m.corpusTokenIndices:
                 token = self.corpus.corpusTokens[t]
-
+                if token.text == "awards\t":
+                    print("token:",str(token))
                 curEmbedding = self.wordTypeToEmbedding[token.text]
                 menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
 

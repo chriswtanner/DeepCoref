@@ -308,7 +308,7 @@ class ECBParser:
 			for match in it:
 				t_id = match.group(1)
 				sentenceNum = int(match.group(2))
-				tokenText = match.group(4).lower()
+				tokenText = match.group(4).lower().rstrip()
 				# removes tokens that end in : (e.g., newspaper:) but leaves the atomic ":" alone
 				if len(tokenText) > 1 and tokenText[-1] == ":":
 					tokenText = tokenText[:-1]
