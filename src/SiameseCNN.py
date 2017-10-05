@@ -34,7 +34,9 @@ class SiameseCNN:
         #print(sess)
         print("devices:",device_lib.list_local_devices())
 
-        self.trainingCutoff = 25 # anything higher than this will be testing
+        self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+        self.devDirs = [23,24,25]
+        self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 
         self.corpus = corpus
         self.helper = helper
@@ -44,57 +46,60 @@ class SiameseCNN:
     # trains and tests the model
     def run(self):
 
-        # constructs the training and testing files
-        (training_pairs, training_labels), (testing_pairs, testing_labels) = self.createCCNNData()
+        # loads embeddings
+        self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
+
+        # constructs the training and dev files
+        (training_pairs, training_labels) = self.createData(self.trainingDirs)
+        (dev_pairs, dev_labels) = self.creatData(self.devDirs)
 
         input_shape = training_pairs.shape[2:]
+        '''
         print("input_shape:",str(input_shape))
-
         print('training_pairs shape1:', training_pairs.shape)
-
-        # input image dimensions
-        print('training_pairs shape:', training_pairs.shape)
         print('training_labels shape:', training_labels.shape)
         print('testing pairs shape:', testing_pairs.shape)
         print('testing_labels shape:', testing_labels.shape)
-
+        '''
         # network definition
         base_network = self.create_base_network(input_shape)
 
         input_a = Input(shape=input_shape)
         input_b = Input(shape=input_shape)
-        print('input_a',input_a.shape)
 
         processed_a = base_network(input_a)
         processed_b = base_network(input_b)
 
-        distance = Lambda(self.euclidean_distance,
-                          output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
+        distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
         model = Model([input_a, input_b], distance)
 
         # train
         rms = RMSprop()
-        model.compile(loss=self.contrastive_loss, optimizer=rms, metrics=[self.acc])
+        model.compile(loss=self.contrastive_loss, optimizer=rms)
         print(model.summary())
         model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
-                  validation_data=([testing_pairs[:, 0], testing_pairs[:, 1]], testing_labels))
+                  validation_data=([dev_pairs[:, 0], dev_pairs[:, 1]], dev_labels))
 
         # compute final accuracy on training and test sets
         print("predicting training")
         pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
-        tr_acc = self.compute_accuracy(pred, training_labels)
-        #print("training")
-        #self.compute_f1(pred, training_labels)
+        self.compute_optimal_f1(pred, training_labels)
+
+        # clears up ram
+        training_pairs = None
+        training_labels = None
+        dev_pairs = None
+        dev_labels = None
+
+        (testing_pairs, testing_labels) = self.creatData(self.testingDirs)
         print("predicting testing")
         pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
-        te_acc = self.compute_accuracy(pred, testing_labels)
-        print("computing f1")
-        self.compute_f1(pred, testing_labels)
-        print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
-        print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
+        self.compute_optimal_f1(pred, testing_labels)
+        #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
+        #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
     def euclidean_distance(self, vects):
         x, y = vects
@@ -129,6 +134,18 @@ class SiameseCNN:
         seq.add(Dense(128, activation='relu'))
         #seq.add(Dense(256, activation='relu'))
         return seq
+
+    # from a list of predictions, find the optimal f1 point
+    def compute_optimal_f1(self, predictions, golds):
+
+        # sorts the predictions from smallest to largest
+        # (where smallest means most likely a pair)
+        valToDMPair = defaultdict(list)
+        for i in range(predictions):
+            DMPair = "a"
+            val = predictions[i]
+            valToDMPair[val].append(DMPair)
+        print("# of unique vals:",len(valToDMPair.keys()))
 
     def compute_f1(self, predictions, golds):
         preds = []
@@ -182,11 +199,11 @@ class SiameseCNN:
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
-    def constructTestingPairs(self):
-        testingPairs = []
-        testingLabels = []
+    def constructDMPairs(self, dirs):
+        pairs = []
+        labels = []
         for dirNum in sorted(self.corpus.dirToREFs.keys()):
-            if dirNum <= self.trainingCutoff:
+            if dirNum not in dirs:
                 continue
             dirDMs = []
             for ref in self.corpus.dirToREFs[dirNum]:
@@ -198,16 +215,18 @@ class SiameseCNN:
                     if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
                         continue
 
-                    testingPairs.append((dm1,dm2))
+                    pairs.append((dm1,dm2))
                     if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
-                        testingLabels.append(1)
+                        labels.append(1)
                     else:
-                        testingLabels.append(0) 
+                        labels.append(0) 
 
                     added.add((dm1,dm2))
                     added.add((dm2,dm1))
-        return (testingPairs, testingLabels)
+        return (pairs, labels)
 
+
+TODO: when and how am i calling this fuction
     def constructTrainingPairs(self):
         print("* in constructListsOfTrainingPairs")
         trainingPositives = []
@@ -294,14 +313,9 @@ class SiameseCNN:
                 self.embeddingLength = len(emb)
             f.close()
 
-    def createCCNNData(self):
+    def createData(self, dirs):
 
-        # loads embeddings
-        self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
-
-        # loads the list of DM pairs we'll care about constructing
-        (trainingPairs, trainingLabels) = self.constructTrainingPairs()
-        (testingPairs, testingLabels) = self.constructTestingPairs()
+        (pairs, labels) = self.constructDMPairs(dirs)
 
         # constructs the DM matrix for every mention
         dmToMatrix = {}
@@ -362,20 +376,12 @@ class SiameseCNN:
 
             dmToMatrix[(m.doc_id,int(m.m_id))] = curMentionMatrix
 
-        # constructs final training 5D matrix
-        train_X = []
-        for (dm1,dm2) in trainingPairs:
+        # constructs final 5D matrix
+        X = []
+        for (dm1,dm2) in pairs:
             pair = np.asarray([dmToMatrix[dm1],dmToMatrix[dm2]])
-            train_X.append(pair)
-        train_Y = np.asarray(trainingLabels)
-        train_X = np.asarray(train_X)
+            X.append(pair)
+        Y = np.asarray(labels)
+        X = np.asarray(X)
 
-        # constructs final testing 5D matrix
-        test_X = []
-        for (dm1,dm2) in testingPairs:
-            pair = np.asarray([dmToMatrix[dm1],dmToMatrix[dm2]])
-            test_X.append(pair)
-        test_Y = np.asarray(testingLabels)
-        test_X = np.asarray(test_X)
-
-        return ((train_X,train_Y),(test_X, test_Y))
+        return (X,Y)
