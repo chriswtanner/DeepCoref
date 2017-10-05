@@ -50,10 +50,10 @@ class SiameseCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
         # constructs the training and dev files
-        (training_pairs, training_labels) = self.createData(self.trainingDirs, True)
-        (dev_pairs, dev_labels) = self.createData(self.devDirs, False)
+        training_pairs, training_data, training_labels = self.createData(self.trainingDirs, True)
+        dev_pairs, dev_data, dev_labels = self.createData(self.devDirs, False)
 
-        input_shape = training_pairs.shape[2:]
+        input_shape = training_data.shape[2:]
         '''
         print("input_shape:",str(input_shape))
         print('training_pairs shape1:', training_pairs.shape)
@@ -78,26 +78,26 @@ class SiameseCNN:
         rms = RMSprop()
         model.compile(loss=self.contrastive_loss, optimizer=rms)
         print(model.summary())
-        model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
+        model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
-                  validation_data=([dev_pairs[:, 0], dev_pairs[:, 1]], dev_labels))
+                  validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
 
         # compute final accuracy on training and test sets
         print("predicting training")
-        pred = model.predict([training_pairs[:, 0], training_pairs[:, 1]])
-        self.compute_optimal_f1(pred, training_labels)
+        pred = model.predict([training_data[:, 0], training_data[:, 1]])
+        self.compute_optimal_f1(training_pairs, pred, training_labels)
 
         # clears up ram
-        training_pairs = None
+        training_data = None
         training_labels = None
-        dev_pairs = None
+        dev_data = None
         dev_labels = None
 
-        (testing_pairs, testing_labels) = self.createData(self.testingDirs)
+        testing_pairs, testing_data, testing_labels = self.createData(self.testingDirs)
         print("predicting testing")
-        pred = model.predict([testing_pairs[:, 0], testing_pairs[:, 1]])
-        self.compute_optimal_f1(pred, testing_labels)
+        pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
+        self.compute_optimal_f1(testing_pairs, pred, testing_labels)
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
@@ -137,16 +137,17 @@ class SiameseCNN:
         return seq
 
     # from a list of predictions, find the optimal f1 point
-    def compute_optimal_f1(self, predictions, golds):
+    def compute_optimal_f1(self, dmPairs, predictions, golds):
         print("* in compute_optimal_f1()")
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
-        valToDMPair = defaultdict(list)
+        predToIndices = defaultdict(list)
+        indexToGold = {}
         for i in range(len(predictions)):
-            DMPair = "a"
-            val = predictions[i]
-            valToDMPair[val].append(DMPair)
-        print("# of unique vals:",len(valToDMPair.keys()))
+            pred = predictions[i]
+            predToIndices[pred].append(i)
+            indexToGold[i] = golds[i]
+        print("# unique preds:",str(len(predToIndices.keys())))
 
     def compute_f1(self, predictions, golds):
         preds = []
@@ -388,4 +389,4 @@ class SiameseCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
 
-        return (X,Y)
+        return (pairs,X,Y)
