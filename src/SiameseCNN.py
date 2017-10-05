@@ -147,8 +147,8 @@ class SiameseCNN:
             pred = predictions[i]
             predToIndices[pred].append(i)
             indexToGold[i] = golds[i]
-        print("# unique preds:",str(len(predToIndices.keys())))
-
+        print("# unique preds:",str(len(predToIndices.keys())),flush=True)
+        sys.stdout.flush()
     def compute_f1(self, predictions, golds):
         preds = []
         for p in predictions:
