@@ -150,10 +150,32 @@ class SiameseCNN:
             indexToGold[i] = golds[i]
         print("# unique preds:",str(len(predToIndices.keys())),flush=True)
         sys.stdout.flush()
-    def compute_f1(self, predictions, golds):
+
+        given = self.compute_f1(0.5, predictions, golds)
+        print("< 0.5 = coref yields:",str(given))
+        bestProb = 0.5
+        bestF1 = given
+        
+        lowestProb = 0.2
+        highestProb = 1.1
+        numTried = 0
+        for p in predToIndices.sort():
+            if p < lowestProb or p > highestProb:
+                continue
+
+            f1 = self.compute_f1(p, predictions, golds)
+            print("prob: ",str(p), "yielded f1:", str(f1))
+            if f1 > bestF1:
+                bestF1 = f1
+                bestProb = p
+            numTried += 1
+        print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), ":", str(bestF1))
+        
+
+    def compute_f1(self, prob, predictions, golds):
         preds = []
         for p in predictions:
-            if p < 0.5:
+            if p < prob:
                 preds.append(1)
             else:
                 preds.append(0)
@@ -187,9 +209,10 @@ class SiameseCNN:
             f1 = 2*float(prec * recall) / float(prec + recall)
 
         accuracy = float(num_correct) / float(len(golds))
-        print("------")
-        print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
-        print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
+        #print("------")
+        #print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
+        #print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
+        return f1
 
     def acc(self, y_true, y_pred):
         ones = K.ones_like(y_pred)
