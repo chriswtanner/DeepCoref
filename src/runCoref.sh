@@ -18,6 +18,7 @@ then
 	if [ ${hn} = "titanx" ]
 	then
 		echo "*\tON TITAN!"
+		./home/jrasley/set_cuda8_cudnn6.sh
 	else
     	echo "*\tON THE GRID!"
     fi 
