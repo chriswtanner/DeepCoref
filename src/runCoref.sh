@@ -15,11 +15,10 @@ then
 	echo "[ ON BROWN NETWORK ]"
 	baseDir=${brownDir}
 	echo $CUDA_HOME
-	if [${hn} = "titanx"]
+	if [ ${hn} = "titanx" ]
 	then
 		echo "*\tON TITAN!"
-	elif
-	then
+	else
     	echo "*\tON THE GRID!"
     fi 
 fi
