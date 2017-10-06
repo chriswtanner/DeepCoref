@@ -5,7 +5,7 @@ echo $CUDA_HOME
 me=`whoami`
 hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
-brownDir="/home/christanner/researchcode/DeepCoref/"
+brownDir="/home/ctanner/researchcode/DeepCoref/"
 # ./home/jrasley/set_cuda8_cudnn6.sh
 # export CUDA_HOME=/contrib/projects/cuda8.0
 # export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
