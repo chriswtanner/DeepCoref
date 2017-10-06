@@ -18,7 +18,9 @@ then
 	if [ ${hn} = "titanx" ]
 	then
 		echo "*\tON TITAN!"
-		./home/jrasley/set_cuda8_cudnn6.sh
+		export CUDA_HOME=/usr/local/cuda/
+		export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
+		export PATH=${CUDA_HOME}/bin:${PATH}
 	else
     	echo "*\tON THE GRID!"
     fi 
