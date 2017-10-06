@@ -3,17 +3,25 @@ echo $CUDA_HOME
 
 # manually set these base params
 me=`whoami`
+hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
-gridDir="/home/christanner/researchcode/DeepCoref/"
+brownDir="/home/christanner/researchcode/DeepCoref/"
+# ./home/jrasley/set_cuda8_cudnn6.sh
+# export CUDA_HOME=/contrib/projects/cuda8.0
+# export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
+# export PATH=${CUDA_HOME}/bin:${PATH}
 if [ ${me} = "ctanner" ]
 then
-    echo "ON THE GRID!"
-    baseDir=${gridDir}
-    #./home/jrasley/set_cuda8_cudnn6.sh
-    #export CUDA_HOME=/contrib/projects/cuda8.0
-    #export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
-    #export PATH=${CUDA_HOME}/bin:${PATH}
-    echo $CUDA_HOME
+	echo "[ ON BROWN NETWORK ]"
+	baseDir=${brownDir}
+	echo $CUDA_HOME
+	if [${hn} = "titanx"]
+	then
+		echo "*\tON TITAN!"
+	elif
+	then
+    	echo "*\tON THE GRID!"
+    fi 
 fi
 
 scriptDir=${baseDir}"src/"
