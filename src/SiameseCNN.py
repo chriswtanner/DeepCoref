@@ -142,7 +142,7 @@ class SiameseCNN:
 
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, startingProb, dmPairs, predictions, golds):
-        #print("* in compute_optimal_f1!!!()")
+        print("* in compute_optimal_f1!!!()")
         #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
