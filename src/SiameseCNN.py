@@ -171,7 +171,7 @@ class SiameseCNN:
                 bestF1 = f1
                 bestProb = p
             numTried += 1
-            p += 0.05
+            p += 0.025
         print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), " (", str(bestF1), ")")
         return bestProb
 
