@@ -17,12 +17,14 @@ import os
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 #
-print(tf.__version__)
+
 
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
+        
         self.args = args
         print("args:", str(args))
+        print(tf.__version__)
         
         # GPU stuff
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
