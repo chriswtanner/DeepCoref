@@ -142,15 +142,15 @@ class SiameseCNN:
 
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, startingProb, dmPairs, predictions, golds):
-        print("* in compute_optimal_f1!!!()")
-        print("# preds:",str(len(predictions)))
+        #print("* in compute_optimal_f1!!!()")
+        #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
         preds = set()
         for i in range(len(predictions)):
             preds.add(predictions[i][0])
 
-        print("# unique preds:",str(len(preds)),flush=True)
+        #print("# unique preds:",str(len(preds)),flush=True)
         sys.stdout.flush()
 
         print("< ",str(0.5)," = coref yields:",str(self.compute_f1(0.5, predictions, golds)))
