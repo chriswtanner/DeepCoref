@@ -86,9 +86,6 @@ class SiameseCNN:
         # compute final accuracy on training and test sets
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
-        print(pred[0])
-        print(pred)
-        exit(1)
         self.compute_optimal_f1(training_pairs, pred, training_labels)
 
         # clears up ram
@@ -148,7 +145,7 @@ class SiameseCNN:
         predToIndices = defaultdict(list)
         indexToGold = {}
         for i in range(len(predictions)):
-            pred = predictions[i]
+            pred = predictions[i][0]
             predToIndices[pred].append(i)
             indexToGold[i] = golds[i]
         print("# unique preds:",str(len(predToIndices.keys())),flush=True)
@@ -178,7 +175,7 @@ class SiameseCNN:
     def compute_f1(self, prob, predictions, golds):
         preds = []
         for p in predictions:
-            if p < prob:
+            if p[0] < prob:
                 preds.append(1)
             else:
                 preds.append(0)
