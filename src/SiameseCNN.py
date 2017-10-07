@@ -83,10 +83,14 @@ class SiameseCNN:
                   epochs=self.args.numEpochs,
                   validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
 
-        # compute final accuracy on training and test sets
+        # train accuracy
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
-        self.compute_optimal_f1(training_pairs, pred, training_labels)
+        bestProb = self.compute_optimal_f1(0.5, training_pairs, pred, training_labels)
+
+        # dev accuracy
+        pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
+        bestProb = self.compute_optimal_f1(bestProb, dev_pairs, pred, dev_labels)
 
         # clears up ram
         training_data = None
@@ -97,7 +101,7 @@ class SiameseCNN:
         testing_pairs, testing_data, testing_labels = self.createData(self.testingDirs, False)
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        self.compute_optimal_f1(testing_pairs, pred, testing_labels)
+        self.compute_optimal_f1(bestProb, testing_pairs, pred, testing_labels)
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
@@ -137,40 +141,39 @@ class SiameseCNN:
         return seq
 
     # from a list of predictions, find the optimal f1 point
-    def compute_optimal_f1(self, dmPairs, predictions, golds):
+    def compute_optimal_f1(self, startingProb, dmPairs, predictions, golds):
         print("* in compute_optimal_f1!!!()")
         print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
-        predToIndices = defaultdict(list)
-        indexToGold = {}
+        preds = set()
         for i in range(len(predictions)):
-            pred = predictions[i][0]
-            predToIndices[pred].append(i)
-            indexToGold[i] = golds[i]
+            preds.add(predictions[i][0])
+
         print("# unique preds:",str(len(predToIndices.keys())),flush=True)
         sys.stdout.flush()
 
-        given = self.compute_f1(0.5, predictions, golds)
-        print("< 0.5 = coref yields:",str(given))
-        bestProb = 0.5
+        print("< ",str(0.5)," = coref yields:",str(self.compute_f1(0.5, predictions, golds)))
+
+        given = self.compute_f1(startingProb, predictions, golds)
+        print("< ",str(startingProb)," = coref yields:",str(given))
+        bestProb = startingProb
         bestF1 = given
         
         lowestProb = 0.2
         highestProb = 1.1
         numTried = 0
-        for p in sorted(predToIndices):
+        for p in sorted(preds):
             if p < lowestProb or p > highestProb:
                 continue
 
             f1 = self.compute_f1(p, predictions, golds)
-            print("prob: ",str(p), "yielded f1:", str(f1))
             if f1 > bestF1:
                 bestF1 = f1
                 bestProb = p
             numTried += 1
         print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), ":", str(bestF1))
-
+        return bestProb
 
     def compute_f1(self, prob, predictions, golds):
         preds = []
@@ -211,7 +214,7 @@ class SiameseCNN:
         accuracy = float(num_correct) / float(len(golds))
         #print("------")
         #print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
-        print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
+        #print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
         return f1
 
     def acc(self, y_true, y_pred):
