@@ -89,6 +89,7 @@ class SiameseCNN:
         bestProb = self.compute_optimal_f1(0.5, training_pairs, pred, training_labels)
 
         # dev accuracy
+        print("predicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1(bestProb, dev_pairs, pred, dev_labels)
 
@@ -102,7 +103,7 @@ class SiameseCNN:
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
         self.compute_optimal_f1(bestProb, testing_pairs, pred, testing_labels)
-        print("tested on # pairs:",str(len(pred)))
+        #print("tested on # pairs:",str(len(pred)))
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
@@ -143,7 +144,7 @@ class SiameseCNN:
 
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, startingProb, dmPairs, predictions, golds):
-        print("* in compute_optimal_f1!!!()")
+        #print("* in compute_optimal_f1!!!()")
         #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
@@ -173,7 +174,7 @@ class SiameseCNN:
                 bestProb = p
             numTried += 1
             p += 0.025
-        print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), " (", str(bestF1), ")")
+        print("BEST F1: ", str(bestProb), " (", str(bestF1), ")")
         return bestProb
 
     def compute_f1(self, prob, predictions, golds):
