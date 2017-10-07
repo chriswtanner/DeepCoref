@@ -24,7 +24,7 @@ then
 		echo ${CUDA_HOME}
 		echo ${LD_LIBRARY_PATH}
 	else
-    	    echo "*   ON THE GRID!"
+		echo "*   ON THE GRID!"
     fi 
 fi
 
