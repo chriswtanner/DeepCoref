@@ -87,6 +87,7 @@ class SiameseCNN:
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
         print(pred[0])
+        print(pred)
         exit(1)
         self.compute_optimal_f1(training_pairs, pred, training_labels)
 
