@@ -68,10 +68,10 @@ cd $scriptDir
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
 # ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
-if [ ${device} = "cpu" ]
-then
-	export CUDA_VISIBLE_DEVICES=
-fi
+# if [ ${device} = "cpu" ]
+# then
+#	export CUDA_VISIBLE_DEVICES=
+# fi
 
 python3 CorefEngine.py --device=${device} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
 
