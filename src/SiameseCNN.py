@@ -50,8 +50,8 @@ class SiameseCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
         # constructs the training and dev files
-        training_pairs, training_data, training_labels = self.createData(self.trainingDirs, True)
-        dev_pairs, dev_data, dev_labels = self.createData(self.devDirs, False)
+        training_data, training_labels = self.createData(self.trainingDirs, True)
+        dev_data, dev_labels = self.createData(self.devDirs, False)
 
         input_shape = training_data.shape[2:]
         '''
@@ -86,12 +86,12 @@ class SiameseCNN:
         # train accuracy
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
-        bestProb = self.compute_optimal_f1(0.5, training_pairs, pred, training_labels)
+        bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
 
         # dev accuracy
         print("predicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        bestProb = self.compute_optimal_f1(bestProb, dev_pairs, pred, dev_labels)
+        bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
 
         # clears up ram
         training_data = None
@@ -99,10 +99,10 @@ class SiameseCNN:
         dev_data = None
         dev_labels = None
 
-        testing_pairs, testing_data, testing_labels = self.createData(self.testingDirs, False)
+        testing_data, testing_labels = self.createData(self.testingDirs, False)
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        self.compute_optimal_f1(bestProb, testing_pairs, pred, testing_labels)
+        self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
         #print("tested on # pairs:",str(len(pred)))
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
@@ -143,7 +143,7 @@ class SiameseCNN:
         return seq
 
     # from a list of predictions, find the optimal f1 point
-    def compute_optimal_f1(self, startingProb, dmPairs, predictions, golds):
+    def compute_optimal_f1(self, label, startingProb, predictions, golds):
         #print("* in compute_optimal_f1!!!()")
         #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
@@ -174,7 +174,7 @@ class SiameseCNN:
                 bestProb = p
             numTried += 1
             p += 0.025
-        print("BEST F1: ", str(bestProb), " (", str(bestF1), ")")
+        print(str(label), " BEST F1: ", str(bestProb), " (", str(bestF1), ")")
         return bestProb
 
     def compute_f1(self, prob, predictions, golds):
@@ -418,4 +418,4 @@ class SiameseCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
 
-        return (pairs,X,Y)
+        return (X,Y)
