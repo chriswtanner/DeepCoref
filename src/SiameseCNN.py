@@ -102,6 +102,7 @@ class SiameseCNN:
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
         self.compute_optimal_f1(bestProb, testing_pairs, pred, testing_labels)
+        print("tested on # pairs:",str(len(pred)))
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
