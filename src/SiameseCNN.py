@@ -163,15 +163,15 @@ class SiameseCNN:
         lowestProb = 0.2
         highestProb = 1.1
         numTried = 0
-        for p in sorted(preds):
-            if p < lowestProb or p > highestProb:
-                continue
-
+        #for p in sorted(preds):
+        p = lowestProb
+        while p < highestProb:
             f1 = self.compute_f1(p, predictions, golds)
             if f1 > bestF1:
                 bestF1 = f1
                 bestProb = p
             numTried += 1
+            p += 0.05
         print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), " (", str(bestF1), ")")
         return bestProb
 
