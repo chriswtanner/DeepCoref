@@ -172,7 +172,7 @@ class SiameseCNN:
                 bestF1 = f1
                 bestProb = p
             numTried += 1
-        print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), ":", str(bestF1))
+        print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), " (", str(bestF1), ")")
         return bestProb
 
     def compute_f1(self, prob, predictions, golds):
