@@ -16,7 +16,7 @@ import os
 
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
-#os.environ['CUDA_VISIBLE_DEVICES'] = ''
+#
 print(tf.__version__)
 
 class SiameseCNN:
@@ -28,8 +28,9 @@ class SiameseCNN:
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
         if args.device == "cpu":
-            config = tf.ConfigProto(device_count = {'GPU': 0})
-            sess = tf.Session(config=config)
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
+            #config = tf.ConfigProto(device_count = {'GPU': 0})
+            #sess = tf.Session(config=config)
             print(sess)
         print("devices:",device_lib.list_local_devices())
 
