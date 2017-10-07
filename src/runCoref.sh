@@ -47,10 +47,11 @@ mentionsFile=${baseDir}"data/goldTruth_events.txt"
 shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-numEpochs=$1
-windowSize=$2
-numNegPerPos=$3
-batchSize=$4
+device=$1
+numEpochs=$2
+windowSize=$3
+numNegPerPos=$4
+batchSize=$5
 
 cd $scriptDir
 

@@ -27,11 +27,10 @@ class SiameseCNN:
         # GPU stuff
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
-        #config = tf.ConfigProto(
-        #    device_count = {'GPU': 0}
-        #)
-        #sess = tf.Session(config=config)
-        #print(sess)
+        if args.device == "cpu":
+            config = tf.ConfigProto(device_count = {'GPU': 0})
+            sess = tf.Session(config=config)
+            print(sess)
         print("devices:",device_lib.list_local_devices())
 
         self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
