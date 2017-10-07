@@ -86,6 +86,8 @@ class SiameseCNN:
         # compute final accuracy on training and test sets
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
+        print(pred[0])
+        exit(1)
         self.compute_optimal_f1(training_pairs, pred, training_labels)
 
         # clears up ram
@@ -170,7 +172,7 @@ class SiameseCNN:
                 bestProb = p
             numTried += 1
         print("after trying ", str(numTried), " probs, we found the best to be ", str(bestProb), ":", str(bestF1))
-        
+
 
     def compute_f1(self, prob, predictions, golds):
         preds = []
