@@ -17,12 +17,14 @@ then
 	echo $CUDA_HOME
 	if [ ${hn} = "titanx" ]
 	then
-		echo "*\tON TITAN!"
+		echo "*   ON TITAN!"
 		export CUDA_HOME=/usr/local/cuda/
 		export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
 		export PATH=${CUDA_HOME}/bin:${PATH}
+		echo ${CUDA_HOME}
+		echo ${LD_LIBRARY_PATH}
 	else
-    	echo "*\tON THE GRID!"
+    	    echo "*   ON THE GRID!"
     fi 
 fi
 
