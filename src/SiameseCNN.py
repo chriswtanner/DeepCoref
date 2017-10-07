@@ -150,7 +150,7 @@ class SiameseCNN:
         for i in range(len(predictions)):
             preds.add(predictions[i][0])
 
-        print("# unique preds:",str(len(predToIndices.keys())),flush=True)
+        print("# unique preds:",str(len(preds)),flush=True)
         sys.stdout.flush()
 
         print("< ",str(0.5)," = coref yields:",str(self.compute_f1(0.5, predictions, golds)))
