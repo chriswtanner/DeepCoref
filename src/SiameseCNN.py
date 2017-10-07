@@ -94,7 +94,7 @@ class SiameseCNN:
         dev_data = None
         dev_labels = None
 
-        testing_pairs, testing_data, testing_labels = self.createData(self.testingDirs)
+        testing_pairs, testing_data, testing_labels = self.createData(self.testingDirs, False)
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
         self.compute_optimal_f1(testing_pairs, pred, testing_labels)
@@ -211,7 +211,7 @@ class SiameseCNN:
         accuracy = float(num_correct) / float(len(golds))
         #print("------")
         #print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
-        #print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
+        print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
         return f1
 
     def acc(self, y_true, y_pred):
