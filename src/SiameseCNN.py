@@ -27,23 +27,24 @@ class SiameseCNN:
         print(tf.__version__)
 
         if args.device == "cpu":
+            print("WE WANT TO USE CPU!!")
             sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
             print(sess)
             os.environ['CUDA_VISIBLE_DEVICES'] = ''
             #config = tf.ConfigProto(device_count = {'GPU': 0})
             #sess = tf.Session(config=config)
             print(sess)
-        
-        print("devices:",device_lib.list_local_devices())
+        with tf.device("/gpu:0"):      
+            print("devices:",device_lib.list_local_devices())
 
-        self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
-        self.devDirs = [23,24,25]
-        self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+            self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+            self.devDirs = [23,24,25]
+            self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 
-        self.corpus = corpus
-        self.helper = helper
+            self.corpus = corpus
+            self.helper = helper
 
-        self.run()
+            self.run()
 
     # trains and tests the model
     def run(self):
