@@ -48,6 +48,7 @@ def setCorefEngineParams():
 	
 	# CCNN
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
+	parser.add_argument("--numLayers", help="1 or 2 conv sections", type=int)
 	parser.add_argument("--embeddingsFile", help="the file that contains the embeddings")
 	parser.add_argument("--embeddingsType", help="type or token") # no default, because this could be tricky, so we want to make it deliberate
 	parser.add_argument("--numNegPerPos", help="# of neg examples per pos in training (e.g., 1,2,5)", type=int)

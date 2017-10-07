@@ -51,14 +51,15 @@ gloveOutput=${baseDir}"data/gloveEmbeddings.txt"
 
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
-shuffleTraining="f"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
 device=$1
-numEpochs=$2
-windowSize=$3
-numNegPerPos=$4
-batchSize=$5
+shuffleTraining=$2
+numLayers=$3
+numEpochs=$4
+windowSize=$5
+numNegPerPos=$6
+batchSize=$7
 
 cd $scriptDir
 
@@ -73,7 +74,7 @@ cd $scriptDir
 #	export CUDA_VISIBLE_DEVICES=
 # fi
 
-python3 CorefEngine.py --device=${device} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
+python3 CorefEngine.py --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
 
 exit 1
 

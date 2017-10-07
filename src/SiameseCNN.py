@@ -25,7 +25,7 @@ class SiameseCNN:
         self.args = args
         print("args:", str(args))
         print(tf.__version__)
-        
+
         # GPU stuff
         sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
         print(sess)
@@ -132,16 +132,22 @@ class SiameseCNN:
         seq.add(Dropout(0.25))
 
         # added following
-        '''
-        seq.add(Conv2D(128, (4, 4), activation='relu'))
-        seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
-        seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
-        seq.add(Dropout(0.25))
-        # end of added
-        '''
+        if self.args.numLayers == 2:
+            print("doing deep!! 2 sections of convolution")
+            seq.add(Conv2D(128, (4, 4), activation='relu'))
+            seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
+            seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
+            seq.add(Dropout(0.25))
+            # end of added
+        
         seq.add(Flatten())
-        seq.add(Dense(128, activation='relu'))
-        #seq.add(Dense(256, activation='relu'))
+        if self.args.numLayers ==1:
+            seq.add(Dense(128, activation='relu'))
+        elif self.args.numLayers == 2:
+            seq.add(Dense(256, activation='relu'))
+        else:
+            print("** ERROR: wrong # of convo layers")
+            exit(1)
         return seq
 
     # from a list of predictions, find the optimal f1 point
