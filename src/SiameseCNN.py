@@ -159,7 +159,7 @@ class SiameseCNN:
         lowestProb = 0.2
         highestProb = 1.1
         numTried = 0
-        for p in predToIndices.sort():
+        for p in predToIndices.keys().sort():
             if p < lowestProb or p > highestProb:
                 continue
 
