@@ -142,7 +142,7 @@ class SiameseCNN:
             # end of added
         
         seq.add(Flatten())
-        if self.args.numLayers ==1:
+        if self.args.numLayers == 1:
             seq.add(Dense(128, activation='relu'))
         elif self.args.numLayers == 2:
             seq.add(Dense(256, activation='relu'))
