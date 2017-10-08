@@ -183,7 +183,7 @@ class SiameseCNN:
                 bestProb = p
             numTried += 1
             p += 0.025
-        print(str(label), " BEST F1: ", str(bestProb), " (", str(bestF1), ")")
+        print(str(label)," BEST F1: ",str(bestProb)," = ", str(bestF1))
         return bestProb
 
     def compute_f1(self, prob, predictions, golds):
