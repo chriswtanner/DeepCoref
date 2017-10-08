@@ -393,7 +393,7 @@ class SiameseCNN:
             for i in range(self.args.windowSize):
                 ind = t_startIndex - self.args.windowSize + i
 
-                emb = [0]*50
+                emb = [0]*numCols
                 if ind >= 0:
                     token = self.corpus.corpusTokens[ind]
                     if token.text in self.wordTypeToEmbedding:
@@ -406,7 +406,7 @@ class SiameseCNN:
             for i in range(self.args.windowSize):
                 ind = t_endIndex + 1 + i
 
-                emb = [0] * 50
+                emb = [0] * numCols
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
                     #print("next",str(token))
