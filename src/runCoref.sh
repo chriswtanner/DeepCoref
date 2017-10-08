@@ -44,10 +44,10 @@ stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-0
 stitchMentions="False"
 
 # glove param
-gWindowSize=10
-embeddingSize=50
+gWindowSize=6
+embeddingSize=$8
 numEpochs=50
-gloveOutput=${baseDir}"data/gloveEmbeddings.txt"
+gloveOutput=${baseDir}"data/gloveEmbeddings"${embeddingSize}".txt"
 
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
@@ -63,7 +63,7 @@ shuffleTraining=$7
 cd $scriptDir
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
-# python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
+#python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
 
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
@@ -72,7 +72,6 @@ cd $scriptDir
 # then
 #	export CUDA_VISIBLE_DEVICES=
 # fi
-
 python3 CorefEngine.py --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
 
 exit 1
