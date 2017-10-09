@@ -3,6 +3,8 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 import numpy as np
+from collections import defaultdict
+from get_coref_metrics import *
 from random import randint
 class ECBHelper:
 
@@ -20,203 +22,57 @@ class ECBHelper:
 
 		self.embeddingLength = 0 # filled in by loadEmbeddings()
 
-	def constructTestingPairs(self):
-		testingPairs = []
-		testingLabels = []
-		for dirNum in sorted(self.corpus.dirToREFs.keys()):
-			if dirNum <= self.trainingCutoff:
+	def constructCoNLLClustersFromFile(self, responseFile):
+		ret = set()
+		f = open(responseFile, 'r')
+		f.readline()
+		clusterToDMs = defaultdict(set)
+		for line in f:
+			line = line.rstrip()
+			if line == "#end document":
+				break
+			_, dm, clusterID = line.rstrip().split()
+			clusterToDMs[clusterID].add(dm)
+		for clusterID in clusterToDMs.keys():
+			ret.add(clusterToDMs[clusterID])
+		return ret
+
+	def constructCoNLLTestFileWD(self, outputFile):
+		f = open(outputFile, 'w')
+		f.write("#begin document (t);\n")
+		refNum = 0
+		for d in self.corpus.dirToREFs:
+			if d < 26:
 				continue
-			dirDMs = []
-			for ref in self.corpus.dirToREFs[dirNum]:
+			for ref in self.corpus.dirToREFs[d]:
+				docsFoundSoFar = {}
 				for dm in self.corpus.refToDMs[ref]:
-					dirDMs.append(dm)
-			added = set()
-			for dm1 in dirDMs:
-				for dm2 in dirDMs:
-					if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
-						continue
+					m = self.corpus.dmToMention[dm]
+					if m.doc_id not in docsFoundSoFar.keys():
+						docsFoundSoFar[m.doc_id] = refNum + 1
+						refNum += 1
 
-					testingPairs.append((dm1,dm2))
-					if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
-						testingLabels.append(1)
-					else:
-						testingLabels.append(0)	
+					clusterNum = docsFoundSoFar[m.doc_id]
+					f.write(str(m.dirNum) + "\t" + str(m.doc_id) + ";" + \
+						str(m.m_id) + "\t(" + str(clusterNum) + ")\n")
+		f.write("#end document\n")
+		f.close()
 
-					added.add((dm1,dm2))
-					added.add((dm2,dm1))
-		return (testingPairs, testingLabels)
-
-	def constructTrainingPairs(self):
-		print("* in constructListsOfTrainingPairs")
-		trainingPositives = []
-		trainingNegatives = []
-
-		for dirNum in sorted(self.corpus.dirToREFs.keys()):
-
-			# only process the training dirs
-			if dirNum > self.trainingCutoff:
+	def constructCoNLLTestFileCD(self, outputFile):
+		f = open(outputFile, 'w')
+		f.write("#begin document (t);\n")
+		refNum = 0
+		for d in self.corpus.dirToREFs:
+			if d < 26:
 				continue
-
-			added = set() # so we don't add the same pair twice
-
-			numRefsForThisDir = len(self.corpus.dirToREFs[dirNum]) 
-			for i in range(numRefsForThisDir):
-				ref1 = self.corpus.dirToREFs[dirNum][i]
-				for dm1 in self.corpus.refToDMs[ref1]:
-					for dm2 in self.corpus.refToDMs[ref1]:
-						if (dm1,dm2) not in added and (dm2,dm1) not in added:
-							# adds a positive example
-							trainingPositives.append((dm1,dm2))
-							added.add((dm1,dm2))
-							added.add((dm2,dm1))
-
-							numNegsAdded = 0
-							j = i + 1
-							while numNegsAdded < self.args.numNegPerPos:
-								ref2 = self.corpus.dirToREFs[dirNum][j%numRefsForThisDir]
-								if ref2 == ref1:
-									continue
-								numDMs = len(self.corpus.refToDMs[ref2])
-								dm3 = self.corpus.refToDMs[ref2][randint(0, numDMs-1)]
-								#if (dm1,dm3) not in added and (dm3,dm1) not in added:
-								trainingNegatives.append((dm1,dm3))
-									#added.add((dm1,dm3))
-									#added.add((dm3,dm1))
-								numNegsAdded += 1
-								j += 1
-								
-		# shuffle training
-		if self.args.shuffleTraining:
-			numPositives = len(trainingPositives)
-			for i in range(numPositives):
-				# pick 2 to change in place
-				a = randint(0,numPositives-1)
-				b = randint(0,numPositives-1)
-				swap = trainingPositives[a]
-				trainingPositives[a] = trainingPositives[b]
-				trainingPositives[b] = swap
-
-			numNegatives = len(trainingNegatives)
-			for i in range(numNegatives):
-				# pick 2 to change in place
-				a = randint(0,numNegatives-1)
-				b = randint(0,numNegatives-1)
-				swap = trainingNegatives[a]
-				trainingNegatives[a] = trainingNegatives[b]
-				trainingNegatives[b] = swap
-
-		print("#pos:",str(len(trainingPositives)))
-		print("#neg:",str(len(trainingNegatives)))
-		trainingPairs = []
-		trainingLabels = []
-		j = 0
-		for i in range(len(trainingPositives)):
-			trainingPairs.append(trainingPositives[i])
-			trainingLabels.append(1)
-			for _ in range(self.args.numNegPerPos):
-				trainingPairs.append(trainingNegatives[j])
-				trainingLabels.append(0)
-				j+=1
-		return (trainingPairs,trainingLabels)
-
-	def loadEmbeddings(self, embeddingsFile, embeddingsType):
-		print("* in loadEmbeddings")
-		if embeddingsType == "type":
-			self.wordTypeToEmbedding = {}
-			f = open(embeddingsFile, 'r')
-			for line in f:
-				tokens = line.rstrip().split(" ")
-				wordType = tokens[0]
-				emb = [float(x) for x in tokens[1:]]
-				self.wordTypeToEmbedding[wordType] = emb
-				self.embeddingLength = len(emb)
-			f.close()
-
-	def createCCNNData(self):
-
-		# loads embeddings
-		self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
-
-		# loads the list of DM pairs we'll care about constructing
-		(trainingPairs, trainingLabels) = self.constructTrainingPairs()
-		(testingPairs, testingLabels) = self.constructTestingPairs()
-
-		# constructs the DM matrix for every mention
-		dmToMatrix = {}
-
-		numRows = 1 + 2*self.args.windowSize
-		numCols = self.embeddingLength
-		for m in self.corpus.mentions:
-			
-			curMentionMatrix = np.zeros(shape=(numRows,numCols))
-			#print("mention:",str(m))
-			t_startIndex = 99999999
-			t_endIndex = -1
-
-			# gets token indices and constructs the Mention embedding
-			menEmbedding = [0]*numCols
-			for t in m.corpusTokenIndices:
-				token = self.corpus.corpusTokens[t]
-
-				curEmbedding = self.wordTypeToEmbedding[token.text]
-				menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
-
-				ind = self.corpus.corpusTokensToCorpusIndex[token]
-				if ind < t_startIndex:
-					t_startIndex = ind
-				if ind > t_endIndex:
-					t_endIndex = ind
-
-			# sets the center
-			curMentionMatrix[self.args.windowSize] = [x / float(len(m.corpusTokenIndices)) for x in menEmbedding]
-
-			# the prev tokens
-			for i in range(self.args.windowSize):
-				ind = t_startIndex - self.args.windowSize + i
-
-				emb = [0]*50
-				if ind >= 0:
-					token = self.corpus.corpusTokens[ind]
-					if token.text in self.wordTypeToEmbedding:
-						emb = self.wordTypeToEmbedding[token.text]
-					else:
-						print("* ERROR, we don't have:",str(token.text))
-
-				curMentionMatrix[i] = emb
-
-			for i in range(self.args.windowSize):
-				ind = t_endIndex + 1 + i
-
-				emb = [0] * 50
-				if ind < self.corpus.numCorpusTokens - 1:
-					token = self.corpus.corpusTokens[ind]
-					#print("next",str(token))
-					if token.text in self.wordTypeToEmbedding:
-						emb = self.wordTypeToEmbedding[token.text]
-					else:
-						print("* ERROR, we don't have:",str(token.text))
-				curMentionMatrix[self.args.windowSize+1+i] = emb
-			curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,numCols,1)
-
-			dmToMatrix[(m.doc_id,int(m.m_id))] = curMentionMatrix
-
-		# constructs final training 5D matrix
-		train_X = []
-		for (dm1,dm2) in trainingPairs:
-			pair = np.asarray([dmToMatrix[dm1],dmToMatrix[dm2]])
-			train_X.append(pair)
-		train_Y = np.asarray(trainingLabels)
-		train_X = np.asarray(train_X)
-
-		# constructs final testing 5D matrix
-		test_X = []
-		for (dm1,dm2) in testingPairs:
-			pair = np.asarray([dmToMatrix[dm1],dmToMatrix[dm2]])
-			test_X.append(pair)
-		test_Y = np.asarray(testingLabels)
-		test_X = np.asarray(test_X)
-
-		return ((train_X,train_Y),(test_X, test_Y))
+			for ref in self.corpus.dirToREFs[d]:
+				for dm in self.corpus.refToDMs[ref]:
+					m = self.corpus.dmToMention[dm]
+					f.write(str(m.dirNum) + "\t" + str(m.doc_id) + ";" + \
+						str(m.m_id) + "\t(" + str(refNum) + ")\n")
+				refNum += 1
+		f.write("#end document\n")
+		f.close()
 
 	# iterates through the corpus, printing 1 sentence per line
 	def writeAllSentencesToFile(self, outputFile):

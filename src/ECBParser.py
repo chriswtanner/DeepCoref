@@ -3,7 +3,6 @@ import sys
 import re
 import os
 import fnmatch
-#import importlib
 from collections import defaultdict
 from Token import Token
 from Mention import Mention
@@ -19,7 +18,7 @@ except ImportError:
 #sys.setdefaultencoding('utf8')
 
 class ECBParser:
-	def __init__(self, args): #corpusDir, stitchMentions=False, isVerbose=False):
+	def __init__(self, args):
 		print("args:", str(args))
 		self.ensureAllMentionsPresent = False # this should be true when we're actually using the entire corpus
 		# sets global vars
@@ -31,21 +30,7 @@ class ECBParser:
 
 		self.loadReplacements(args.replacementsFile)
 
-		self.loadValidMentions(args.mentionsFile)
-
 		self.parseCorpus(args.corpusPath, args.stitchMentions, args.verbose)
-
-	# loads a file (e.g., goldTruth_events.txt) which tells our Parser which Mentions to save
-	def loadValidMentions(self, mentionsFile):
-		self.validMentions = set()
-		f = open(mentionsFile, 'r')
-		for line in f:
-			line = line.rstrip().lower()
-			tokens = line.split(";")
-			(dirNum, ref, docID, m_id, text, lemma) = line.split(";")
-			dm = (docID, int(m_id))
-			self.validMentions.add(dm)
-		f.close()
 
 	def loadReplacements(self, replacementsFile):
 
@@ -241,7 +226,8 @@ class ECBParser:
 		'''
 
 	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
-		
+		print("* parseCorpus()")
+
 		# globally sets params
 		self.corpusDir = corpusDir
 		self.stitchMentions = stitchMentions
@@ -277,13 +263,16 @@ class ECBParser:
 				files.append(os.path.join(root, filename))
 
 		globalSentenceNum = 0
+
 		for f in files:
 			doc_id = f[f.rfind("/") + 1:]
 			dir_num = int(doc_id.split("_")[0])
 
+			'''
 			if self.isVerbose:
 				print("parsing: ", doc_id, " (file ", str(files.index(f) + 1), " of ", str(len(files)), ")")
 				sys.stdout.flush()
+			'''
 
 			tmpDocTokens = [] # we will optionally flip these and optionally stitch Mention tokens together
 			tmpDocTokenIDsToTokens = {}
@@ -294,7 +283,6 @@ class ECBParser:
 				fileContents=myfile.read().replace('\n',' ')
 
 				for badToken in self.replacementsSet:
-					#if badToken in fileContents:
 					fileContents = fileContents.replace(badToken, self.replacements[badToken])
 
 	        # reads <tokens>
@@ -362,14 +350,16 @@ class ECBParser:
 				endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, ".")
 				tmpDocTokens.append(endToken)
 			globalSentenceNum = globalSentenceNum + 1
-			#
 
+			'''
 			if isVerbose:
 				print("\t", str(len(tmpDocTokens)), " doc tokens")
 				print("\t# unique token ids: ", str(len(tmpDocTokenIDsToTokens)))
+			'''
 
 			tokenToStitchedToken = {} # will assign each Token to its stitchedToken (e.g., 3 -> [3,4], 4 -> [3,4])
 			stitchedTokens = []
+
 			# reads <markables> 1st time
 			regex = r"<([\w]+) m_id=\"(\d+)?\".*?>(.*?)?</.*?>"
 			markables = fileContents[fileContents.find("<Markables>")+11:fileContents.find("</Markables>")]
@@ -426,6 +416,7 @@ class ECBParser:
 				for st in stitchedTokens:
 					print(st)
 				print("-----------")
+
 			# ADDS to the corpusTokens in the correct, optionally reversed, optionally stitched, manner
 			# puts stitched tokens in the right positions
 			# appends to the docTokens[] (each entry is a list of the current doc's tokens);
@@ -469,7 +460,8 @@ class ECBParser:
 			it = tuple(re.finditer(regex, markables))
 			for match in it:
 				isPred = False
-				if "ACTION" in match.group(1):
+				entityType = match.group(1)
+				if "ACTION" in entityType:
 					isPred = True
 				m_id = int(match.group(2))
 				
@@ -502,32 +494,31 @@ class ECBParser:
 
 					tmpMentionCorpusIndices.sort() # regardless of if we reverse the corpus or not, these indices should be in ascending order
 
-					curMention = Mention(dir_num, doc_id, m_id, tmpTokens, tmpMentionCorpusIndices, text, isPred)
+					curMention = Mention(dir_num, doc_id, m_id, tmpTokens, tmpMentionCorpusIndices, text, isPred, entityType)
 					
 					# we only save the Mentions that are in self.validMentions,
 					# that way, we can always iterate over self.mentions (since we care about them all)
-					if (doc_id,m_id) in self.validMentions:
+					if isPred:
+					#if (doc_id,m_id) in self.validMentions:
+						self.validMentions.add(curMention)
 						self.mentions.append(curMention)
 						self.dmToMention[(doc_id,m_id)] = curMention
 
-					'''
-					if doc_id == "23_1ecbplus.xml":
-						print "parsed: " + str(curMention)
-						print "\thas tokens: " + str(curMention.tokens[0])
-						numFound += 1
-					'''
 			# reads <relations>
 			relations = fileContents[fileContents.find("<Relations>"):fileContents.find("</Relations>")]
 			regex = r"<CROSS_DOC_COREF.*?note=\"(.+?)\".*?>(.*?)?</.*?>"
 			it = tuple(re.finditer(regex, relations))
 			for match in it:
 				ref_id = match.group(1)
+
 				regex2 = r"<source m_id=\"(\d+)\".*?/>"
 				it2 = tuple(re.finditer(regex2, match.group(2)))
 
+				# only keep track of REFs for which we have found Mentions
 				for match2 in it2:
 					m_id = int(match2.group(1))
 					if (doc_id,m_id) not in self.dmToMention.keys():
+						#print("*** MISSING MENTION!")
 						continue
 					self.dmToREF[(doc_id,m_id)] = ref_id
 					self.refToDMs[ref_id].append((doc_id,m_id))
@@ -551,8 +542,27 @@ class ECBParser:
 			self.globalSentenceNumToTokens[int(t.globalSentenceNum)].append(t)
 
 		# ensures we have found all of the valid mentions in our corpus
+		'''
 		if self.ensureAllMentionsPresent: # this should be true when we're actually using the entire corpus
 			for m in self.validMentions:
 				if m not in self.dmToMention:
 					print("* ERROR, our corpus never parsed: ", str(m))
 					exit(1)
+		'''
+		# TEMP
+		'''
+		responseFile="/Users/christanner/research/DeepCoref/results/test_hddcrp2.response"
+		f = open(responseFile, 'r')
+		validDMs = set()
+		f.readline()
+		for line in f:
+			line = line.rstrip()
+			if line == "#end document":
+				break
+			_, dm, clusterID = line.rstrip().split()
+			validDMs.add(dm)
+		print("# valid DMs:",str(len(validDMs)))
+		f.close()
+		'''
+
+

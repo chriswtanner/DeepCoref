@@ -1,6 +1,6 @@
 class Mention:
 
-	def __init__(self, dirNum, doc_id, m_id, tokens, corpusTokenIndices, text, isPred):
+	def __init__(self, dirNum, doc_id, m_id, tokens, corpusTokenIndices, text, isPred, mentionType):
 		self.dirNum = dirNum
 		self.doc_id = doc_id
 		self.m_id = m_id
@@ -10,6 +10,7 @@ class Mention:
 		self.isPred = isPred
 		self.relativeTokenIndices = []
 		self.suffix = doc_id[doc_id.find("ecb"):]
+		self.mentionType = mentionType
 
 	def setPrevTokenRelativeIndex(self, prevTokenRelativeIndex, prevToken):
 		self.prevTokenRelativeIndex = prevTokenRelativeIndex

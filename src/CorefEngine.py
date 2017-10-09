@@ -26,7 +26,10 @@ class CorefEngine:
 
 		# constructs helper class
 		helper = ECBHelper(corpus, args)
-
+		response = helper.constructCoNLLClustersFromFile("/Users/christanner/research/DeepCoref/results/test_hddcrp2.response")
+		print(str(len(response)))
+		#helper.constructCoNLLTestFileCD("/Users/christanner/research/DeepCoref/results/test_cd.keys")
+		#helper.constructCoNLLTestFileWD("/Users/christanner/research/DeepCoref/results/test_wd.keys")
+		exit(1)
 		# trains and tests
 		corefEngine = SiameseCNN(args, corpus, helper)
-
