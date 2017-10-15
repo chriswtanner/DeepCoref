@@ -3,6 +3,7 @@ import sys
 import re
 import os
 import fnmatch
+import codecs
 from collections import defaultdict
 from Token import Token
 from Mention import Mention
@@ -33,10 +34,10 @@ class ECBParser:
 		self.parseCorpus(args.corpusPath, args.stitchMentions, args.verbose)
 
 	def loadReplacements(self, replacementsFile):
-		f = open(replacementsFile, 'r')
+		f = open(replacementsFile, 'r', encoding="utf-8")
 		for line in f:
 			tokens = line.rstrip().split(" ")
-			print("tokens", tokens)
+			# print("tokens", tokens)
 			self.replacements[tokens[0]] = tokens[1]
 			self.replacementsSet.add(tokens[0])
 		f.close()
@@ -284,7 +285,8 @@ class ECBParser:
 			docTokenIDToCorpusIndex = {}
 
 			# opens the xml file and makes needed replacements
-			with open (f, 'r') as myfile:
+
+			with open (f, 'r', encoding="utf-8") as myfile:
 				fileContents=myfile.read().replace('\n',' ')
 
 				for badToken in self.replacementsSet:

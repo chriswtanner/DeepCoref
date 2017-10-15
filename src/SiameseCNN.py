@@ -251,7 +251,7 @@ class SiameseCNN:
         print("* in loadEmbeddings")
         if embeddingsType == "type":
             self.wordTypeToEmbedding = {}
-            f = open(embeddingsFile, 'r')
+            f = open(embeddingsFile, 'r', encoding="utf-8")
             for line in f:
                 tokens = line.rstrip().split(" ")
                 wordType = tokens[0]

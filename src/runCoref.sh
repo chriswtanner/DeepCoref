@@ -1,6 +1,6 @@
 #!/bin/bash
 echo $CUDA_HOME
-
+export PYTHONIOENCODING=UTF-8
 # manually set these base params
 me=`whoami`
 hn=`hostname`
@@ -10,8 +10,9 @@ brownDir="/home/ctanner/researchcode/DeepCoref/"
 # export CUDA_HOME=/contrib/projects/cuda8.0
 # export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
 # export PATH=${CUDA_HOME}/bin:${PATH}
+source ~/researchcode/DeepCoref/oldcpu/bin/activate
 
-if [ ${me} = "ctanner" ]
+if [ ${me} = "christanner" ]
 then
 	echo "[ ON BROWN NETWORK ]"
 	baseDir=${brownDir}
@@ -72,7 +73,7 @@ echo ${device}
 # then
 #	export CUDA_VISIBLE_DEVICES=
 # fi
-python3 CorefEngine.py --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
+python3 -u CorefEngine.py --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize}
 
 exit 1
 
