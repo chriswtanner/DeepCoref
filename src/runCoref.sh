@@ -36,7 +36,7 @@ then
 fi
 
 scriptDir=${baseDir}"src/"
-corpusPath=${baseDir}"data/ECB_TINY/"
+corpusPath=${baseDir}"data/ECB_FULL/"
 replacementsFile=${baseDir}"data/replacements.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 verbose="true"
