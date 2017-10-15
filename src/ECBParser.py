@@ -33,7 +33,6 @@ class ECBParser:
 		self.parseCorpus(args.corpusPath, args.stitchMentions, args.verbose)
 
 	def loadReplacements(self, replacementsFile):
-
 		f = open(replacementsFile, 'r')
 		for line in f:
 			tokens = line.rstrip().split(" ")
@@ -244,6 +243,10 @@ class ECBParser:
 		self.refToDMs = defaultdict(list)
 		self.dirToREFs = defaultdict(list)
 
+		self.dirToDocs = defaultdict(list)
+		self.docsToREFs = defaultdict(list)
+		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
+		self.docToDMs = defaultdict(list)
 		# same tokens as corpusTokens, just made into lists according
 		# to each doc.  (1 doc = 1 list of tokens); used for printing corpus to .txt file
 		self.docTokens = []
@@ -267,6 +270,8 @@ class ECBParser:
 		for f in files:
 			doc_id = f[f.rfind("/") + 1:]
 			dir_num = int(doc_id.split("_")[0])
+
+			self.dirToDocs[dir_num].append(doc_id)
 
 			'''
 			if self.isVerbose:
@@ -300,6 +305,9 @@ class ECBParser:
 				# removes tokens that end in : (e.g., newspaper:) but leaves the atomic ":" alone
 				if len(tokenText) > 1 and tokenText[-1] == ":":
 					tokenText = tokenText[:-1]
+
+				if tokenText == "''":
+					tokenText = "\""
 
 				# TMP
 				if sentenceNum > self.docToHighestSentenceNum[doc_id]:
@@ -523,9 +531,22 @@ class ECBParser:
 					self.dmToREF[(doc_id,m_id)] = ref_id
 					self.refToDMs[ref_id].append((doc_id,m_id))
 					dirNum = int(doc_id[0:doc_id.find("_")])
+
+					# stores the REF for the current doc_id
+					if ref_id not in self.docsToREFs[doc_id]:
+						self.docsToREFs[doc_id].append(ref_id)
+
+					# stores the DM for the current (doc_id,ref_id) pair
+					# this is so that we can easily make training/dev/test pairs
+					if (doc_id,m_id) not in self.docREFsToDMs[(doc_id,ref_id)]:
+						self.docREFsToDMs[(doc_id,ref_id)].append((doc_id,m_id))
+
+					# stores the REF for the current DIRECTORY
 					if ref_id not in self.dirToREFs[dirNum]:
 						self.dirToREFs[dirNum].append(ref_id)
 
+					if (doc_id,m_id) not in self.docToDMs[doc_id]:
+						self.docToDMs[doc_id].append((doc_id,m_id))
 			#if globalSentenceNum > 2:
 			#	print "globalSentenceNum: " + str(globalSentenceNum)
 			#	break

@@ -9,7 +9,10 @@ from random import randint
 class ECBHelper:
 
 	def __init__(self, corpus, args): # goldTruthFile, goldLegendFile, isVerbose):
-		
+		self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+		self.devDirs = [23,24,25]
+		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+
 		self.trainingCutoff = 25 # anything higher than this will be testing
 
 		# sets passed-in params
@@ -22,22 +25,258 @@ class ECBHelper:
 
 		self.embeddingLength = 0 # filled in by loadEmbeddings()
 
+##################################################
+#    creates DM pairs for train/dev/test
+##################################################
+##################################################
+
+## WITHIN-DOC
+	def constructAllWDDMPairs(self, dirs):
+		pairs = []
+		labels = []
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+			if dirNum not in dirs:
+				continue
+
+			for doc_id in self.corpus.dirToDocs[dirNum]:
+				docDMs = []
+				for ref in self.corpus.docsToREFs[doc_id]:
+					for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
+						if dm not in docDMs:
+							docDMs.append(dm)
+
+				added = set()
+				for dm1 in docDMs:
+					for dm2 in docDMs:
+						if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+							continue
+
+						pairs.append((dm1,dm2))
+						if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+							labels.append(1)
+						else:
+							labels.append(0)
+
+						added.add((dm1,dm2))
+						added.add((dm2,dm1))
+		return (pairs, labels)
+
+	def constructSubsampledWDDMPairs(self, dirs):
+		print("* in constructSubsampledWDDMPairs()")
+		trainingPositives = []
+		trainingNegatives = []
+
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+
+		    # only process the training dirs
+			if dirNum not in dirs:
+				continue
+
+			added = set() # so we don't add the same pair twice
+			for doc_id in self.corpus.dirToDocs[dirNum]:
+				numRefsForThisDoc = len(self.corpus.docsToREFs[doc_id])
+				for i in range(numRefsForThisDoc):
+					ref1 = self.corpus.docsToREFs[doc_id][i]
+					for dm1 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+						for dm2 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+							if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
+
+								# adds a positive example
+								trainingPositives.append((dm1,dm2))
+								added.add((dm1,dm2))
+								added.add((dm2,dm1))
+								numNegsAdded = 0
+								j = i + 1
+								while numNegsAdded < self.args.numNegPerPos:
+
+									# pick the next REF
+									ref2 = self.corpus.docsToREFs[doc_id][j%numRefsForThisDoc]
+									if numRefsForThisDoc == 1:
+										doc_id2 = doc_id
+										while doc_id2 == doc_id:
+											numDocsInDir = len(self.corpus.dirToDocs[dirNum])
+											doc_id2 = self.corpus.dirToDocs[dirNum][randint(0,numDocsInDir-1)]
+										numRefsForDoc2 = len(self.corpus.docsToREFs[doc_id2])
+										ref2 = self.corpus.docsToREFs[doc_id2][j%numRefsForDoc2]
+
+										numDMs = len(self.corpus.docREFsToDMs[(doc_id2,ref2)])
+
+										# pick a random negative from a different REF and different DOC
+										dm3 = self.corpus.docREFsToDMs[(doc_id2,ref2)][randint(0, numDMs-1)]
+										trainingNegatives.append((dm1,dm3))
+										numNegsAdded += 1
+
+									elif ref2 != ref1:
+										numDMs = len(self.corpus.docREFsToDMs[(doc_id,ref2)])
+
+										# pick a random negative from the different REF
+										dm3 = self.corpus.docREFsToDMs[(doc_id,ref2)][randint(0, numDMs-1)]
+										trainingNegatives.append((dm1,dm3))
+										numNegsAdded += 1
+									j += 1
+		# shuffle training
+		if self.args.shuffleTraining:
+			numPositives = len(trainingPositives)
+			for i in range(numPositives):
+				# pick 2 to change in place
+				a = randint(0,numPositives-1)
+				b = randint(0,numPositives-1)
+				swap = trainingPositives[a]
+				trainingPositives[a] = trainingPositives[b]
+				trainingPositives[b] = swap
+
+			numNegatives = len(trainingNegatives)
+			for i in range(numNegatives):
+				# pick 2 to change in place
+				a = randint(0,numNegatives-1)
+				b = randint(0,numNegatives-1)
+				swap = trainingNegatives[a]
+				trainingNegatives[a] = trainingNegatives[b]
+				trainingNegatives[b] = swap
+
+		print("#pos:",str(len(trainingPositives)))
+		print("#neg:",str(len(trainingNegatives)))
+		trainingPairs = []
+		trainingLabels = []
+		j = 0
+		for i in range(len(trainingPositives)):
+			trainingPairs.append(trainingPositives[i])
+			trainingLabels.append(1)
+			for _ in range(self.args.numNegPerPos):
+			    trainingPairs.append(trainingNegatives[j])
+			    trainingLabels.append(0)
+			    j+=1
+		return (trainingPairs,trainingLabels)
+
+#### CROSS-DOC (aka all pairs) #####
+	def constructAllCDDMPairs(self, dirs):
+		print("* in constructAllDMPairs()")
+		pairs = []
+		labels = []
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+			if dirNum not in dirs:
+				continue
+			dirDMs = []
+			for ref in self.corpus.dirToREFs[dirNum]:
+				for dm in self.corpus.refToDMs[ref]:
+					dirDMs.append(dm)
+			added = set()
+			for dm1 in dirDMs:
+				for dm2 in dirDMs:
+					if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+						continue
+
+					pairs.append((dm1,dm2))
+					if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+						labels.append(1)
+					else:
+						labels.append(0)
+
+					added.add((dm1,dm2))
+					added.add((dm2,dm1))
+		return (pairs, labels)
+
+	def constructSubsampledCDDMPairs(self, dirs):
+		print("* in constructSubsampledDMPairs()")
+		trainingPositives = []
+		trainingNegatives = []
+
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+
+			# only process the training dirs
+			if dirNum not in dirs:
+				continue
+
+			added = set() # so we don't add the same pair twice
+
+			numRefsForThisDir = len(self.corpus.dirToREFs[dirNum]) 
+			for i in range(numRefsForThisDir):
+				ref1 = self.corpus.dirToREFs[dirNum][i]
+				for dm1 in self.corpus.refToDMs[ref1]:
+					for dm2 in self.corpus.refToDMs[ref1]:
+						if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
+							# adds a positive example
+							trainingPositives.append((dm1,dm2))
+							added.add((dm1,dm2))
+							added.add((dm2,dm1))
+
+							numNegsAdded = 0
+							j = i + 1
+							while numNegsAdded < self.args.numNegPerPos:
+
+								# pick the next REF
+								ref2 = self.corpus.dirToREFs[dirNum][j%numRefsForThisDir]
+								if ref2 == ref1:
+									j += 1
+									continue
+								numDMs = len(self.corpus.refToDMs[ref2])
+
+								# pick a random negative from the non-same REF
+								dm3 = self.corpus.refToDMs[ref2][randint(0, numDMs-1)]
+								trainingNegatives.append((dm1,dm3))
+								numNegsAdded += 1
+								j += 1
+		                        
+		# shuffle training
+		if self.args.shuffleTraining:
+			numPositives = len(trainingPositives)
+			for i in range(numPositives):
+			    # pick 2 to change in place
+			    a = randint(0,numPositives-1)
+			    b = randint(0,numPositives-1)
+			    swap = trainingPositives[a]
+			    trainingPositives[a] = trainingPositives[b]
+			    trainingPositives[b] = swap
+
+			numNegatives = len(trainingNegatives)
+			for i in range(numNegatives):
+				# pick 2 to change in place
+				a = randint(0,numNegatives-1)
+				b = randint(0,numNegatives-1)
+				swap = trainingNegatives[a]
+				trainingNegatives[a] = trainingNegatives[b]
+				trainingNegatives[b] = swap
+
+		print("#pos:",str(len(trainingPositives)))
+		print("#neg:",str(len(trainingNegatives)))
+		trainingPairs = []
+		trainingLabels = []
+		j = 0
+		for i in range(len(trainingPositives)):
+			trainingPairs.append(trainingPositives[i])
+			trainingLabels.append(1)
+			for _ in range(self.args.numNegPerPos):
+				trainingPairs.append(trainingNegatives[j])
+				trainingLabels.append(0)
+				j+=1
+		return (trainingPairs,trainingLabels)
+
+##################################################
+#     CoNLL output files
+##################################################
+##################################################
+	# returns a hashmap of clusters (sets)
 	def constructCoNLLClustersFromFile(self, responseFile):
-		ret = set()
+		ret = defaultdict(set)
 		f = open(responseFile, 'r')
 		f.readline()
-		clusterToDMs = defaultdict(set)
 		for line in f:
 			line = line.rstrip()
 			if line == "#end document":
 				break
 			_, dm, clusterID = line.rstrip().split()
-			clusterToDMs[clusterID].add(dm)
-		for clusterID in clusterToDMs.keys():
-			ret.add(clusterToDMs[clusterID])
+			clusterID = clusterID[1:-1]
+			ret[clusterID].add(dm)
+			#if clusterID in clusterToDMs.keys():
+			#	clusterToDMs[clusterID].add(dm)
+			#else:
+			#	tmp = set()
+			#	tmp.add(dm)
+			#	clusterToDMs[clusterID] = tmp
 		return ret
 
-	def constructCoNLLTestFileWD(self, outputFile):
+	# constructs Truth WD file; used for evaluating via the CoNLL scorer.pl
+	def writeCoNLLTruthFileWD(self, outputFile):
 		f = open(outputFile, 'w')
 		f.write("#begin document (t);\n")
 		refNum = 0
@@ -58,7 +297,8 @@ class ECBHelper:
 		f.write("#end document\n")
 		f.close()
 
-	def constructCoNLLTestFileCD(self, outputFile):
+	# constructs Truth CD file; used for evaluating via the CoNLL scorer.pl
+	def writeCoNLLTruthFileCD(self, outputFile):
 		f = open(outputFile, 'w')
 		f.write("#begin document (t);\n")
 		refNum = 0
@@ -74,6 +314,10 @@ class ECBHelper:
 		f.write("#end document\n")
 		f.close()
 
+##################################################
+##################################################
+
+	# outputs our ECB corpus in plain-text format;
 	# iterates through the corpus, printing 1 sentence per line
 	def writeAllSentencesToFile(self, outputFile):
 		fout = open(outputFile, 'w')

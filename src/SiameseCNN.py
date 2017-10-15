@@ -13,11 +13,11 @@ from ECBHelper import *
 from ECBParser import *
 import sys
 import os
-
+import math
+import operator
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 #
-
 
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
@@ -35,16 +35,10 @@ class SiameseCNN:
             #sess = tf.Session(config=config)
             print(sess)
      
-        print("devices:",device_lib.list_local_devices())
-
-        self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
-        self.devDirs = [23,24,25]
-        self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+        #print("devices:",device_lib.list_local_devices())
 
         self.corpus = corpus
         self.helper = helper
-
-        self.run()
 
     # trains and tests the model
     def run(self):
@@ -53,8 +47,9 @@ class SiameseCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
         # constructs the training and dev files
-        training_data, training_labels = self.createData(self.trainingDirs, True)
-        dev_data, dev_labels = self.createData(self.devDirs, False)
+        training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
+
+        dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
 
         input_shape = training_data.shape[2:]
         '''
@@ -91,21 +86,34 @@ class SiameseCNN:
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
         bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
 
+        '''
+        for i in range(len(pairs)):
+            gold = "false"
+            dm1,dm2 = pairs[i]
+            if self.dmToREF[dm1] == self.dmToREF[dm2]:
+                gold = "COREF"
+            print(str(dm1),str(dm2)," pred:",str(pred[i]), "; gold:", str(gold))
+        exit(1)
+        '''
         # dev accuracy
         print("predicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
 
         # clears up ram
+        training_pairs = None
         training_data = None
         training_labels = None
+        dev_pairs = None
         dev_data = None
         dev_labels = None
 
-        testing_data, testing_labels = self.createData(self.testingDirs, False)
+        testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
         self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
+
+        return (pairs, pred)
         #print("tested on # pairs:",str(len(pred)))
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
@@ -239,106 +247,6 @@ class SiameseCNN:
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
-    def constructAllDMPairs(self, dirs):
-        print("* in constructAllDMPairs()")
-        pairs = []
-        labels = []
-        for dirNum in sorted(self.corpus.dirToREFs.keys()):
-            if dirNum not in dirs:
-                continue
-            dirDMs = []
-            for ref in self.corpus.dirToREFs[dirNum]:
-                for dm in self.corpus.refToDMs[ref]:
-                    dirDMs.append(dm)
-            added = set()
-            for dm1 in dirDMs:
-                for dm2 in dirDMs:
-                    if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
-                        continue
-
-                    pairs.append((dm1,dm2))
-                    if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
-                        labels.append(1)
-                    else:
-                        labels.append(0)
-
-                    added.add((dm1,dm2))
-                    added.add((dm2,dm1))
-        return (pairs, labels)
-
-    def constructSubsampledDMPairs(self, dirs):
-        print("* in constructSubsampledDMPairs()")
-        trainingPositives = []
-        trainingNegatives = []
-
-        for dirNum in sorted(self.corpus.dirToREFs.keys()):
-
-            # only process the training dirs
-            if dirNum not in dirs:
-                continue
-
-            added = set() # so we don't add the same pair twice
-
-            numRefsForThisDir = len(self.corpus.dirToREFs[dirNum]) 
-            for i in range(numRefsForThisDir):
-                ref1 = self.corpus.dirToREFs[dirNum][i]
-                for dm1 in self.corpus.refToDMs[ref1]:
-                    for dm2 in self.corpus.refToDMs[ref1]:
-                        if (dm1,dm2) not in added and (dm2,dm1) not in added:
-                            # adds a positive example
-                            trainingPositives.append((dm1,dm2))
-                            added.add((dm1,dm2))
-                            added.add((dm2,dm1))
-
-                            numNegsAdded = 0
-                            j = i + 1
-                            while numNegsAdded < self.args.numNegPerPos:
-                                ref2 = self.corpus.dirToREFs[dirNum][j%numRefsForThisDir]
-                                if ref2 == ref1:
-                                    continue
-                                numDMs = len(self.corpus.refToDMs[ref2])
-                                dm3 = self.corpus.refToDMs[ref2][randint(0, numDMs-1)]
-                                #if (dm1,dm3) not in added and (dm3,dm1) not in added:
-                                trainingNegatives.append((dm1,dm3))
-                                    #added.add((dm1,dm3))
-                                    #added.add((dm3,dm1))
-                                numNegsAdded += 1
-                                j += 1
-                                
-        # shuffle training
-        if self.args.shuffleTraining:
-            numPositives = len(trainingPositives)
-            for i in range(numPositives):
-                # pick 2 to change in place
-                a = randint(0,numPositives-1)
-                b = randint(0,numPositives-1)
-                swap = trainingPositives[a]
-                trainingPositives[a] = trainingPositives[b]
-                trainingPositives[b] = swap
-
-            numNegatives = len(trainingNegatives)
-            for i in range(numNegatives):
-                # pick 2 to change in place
-                a = randint(0,numNegatives-1)
-                b = randint(0,numNegatives-1)
-                swap = trainingNegatives[a]
-                trainingNegatives[a] = trainingNegatives[b]
-                trainingNegatives[b] = swap
-
-        print("#pos:",str(len(trainingPositives)))
-        print("#neg:",str(len(trainingNegatives)))
-        trainingPairs = []
-        trainingLabels = []
-        j = 0
-        for i in range(len(trainingPositives)):
-            trainingPairs.append(trainingPositives[i])
-            trainingLabels.append(1)
-            for _ in range(self.args.numNegPerPos):
-                trainingPairs.append(trainingNegatives[j])
-                trainingLabels.append(0)
-                j+=1
-        return (trainingPairs,trainingLabels)
-
     def loadEmbeddings(self, embeddingsFile, embeddingsType):
         print("* in loadEmbeddings")
         if embeddingsType == "type":
@@ -352,13 +260,25 @@ class SiameseCNN:
                 self.embeddingLength = len(emb)
             f.close()
 
+    # TEMP
+    def getCosineSim(self, a, b):
+        numerator = 0
+        denomA = 0
+        denomB = 0
+        for i in range(len(a)):
+            numerator = numerator + a[i]*b[i]
+            denomA = denomA + (a[i]*a[i])
+            denomB = denomB + (b[i]*b[i])   
+        return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
+
     def createData(self, dirs, subSample):
 
         if subSample: # training (we want just some of the negs)
-            (pairs, labels) = self.constructSubsampledDMPairs(dirs)
+            (pairs, labels) = self.helper.constructSubsampledWDDMPairs(dirs)
         else: # for dev and test (we want all negative examples)
-            (pairs, labels) = self.constructAllDMPairs(dirs)
+            (pairs, labels) = self.helper.constructAllWDDMPairs(dirs)
 
+        print("# pairs:",str(len(pairs)))
         # constructs the DM matrix for every mention
         dmToMatrix = {}
 
@@ -375,8 +295,6 @@ class SiameseCNN:
             menEmbedding = [0]*numCols
             for t in m.corpusTokenIndices:
                 token = self.corpus.corpusTokens[t]
-                if token.text == "awards\t":
-                    print("token:",str(token))
                 curEmbedding = self.wordTypeToEmbedding[token.text]
                 menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
 
@@ -419,6 +337,38 @@ class SiameseCNN:
 
             dmToMatrix[(m.doc_id,int(m.m_id))] = curMentionMatrix
 
+        # TEMP; sanity check; just to test if our vectors are
+        # constructed correctly
+        # and how close they are (cosine sim.) to other mentions
+        '''
+        added = set()
+        for doc in self.corpus.docToDMs:
+            
+            if len(self.corpus.docToDMs[doc]) < 8:
+                continue
+            cosineScores = {}
+            for dm in self.corpus.docToDMs[doc]:
+                print(dm)
+                v1 = dmToMatrix[dm][0]
+                for dm2 in self.corpus.docToDMs[doc]:
+                    if dm != dm2 and (dm,dm2) not in added and (dm2,dm) not in added:
+                        v2 = dmToMatrix[dm2][0]
+                        cs = self.getCosineSim(v1,v2)
+                        cosineScores[dm2] = cs
+                        added.add((dm,dm2))
+                        added.add((dm2,dm))
+                print(str(self.corpus.dmToMention[dm].text))
+                # sorts them
+                sorted_distances = sorted(cosineScores.items(), key=operator.itemgetter(1))
+                print(len(sorted_distances))
+                for _ in range(5):
+                    i = len(sorted_distances)-5+_
+                    a = sorted_distances[i]
+                    print(str(self.corpus.dmToMention[a[0]].text),":",str(a))
+                for _ in range(5):
+                    a = sorted_distances[_]
+                    print(str(self.corpus.dmToMention[a[0]].text),":",str(a))
+        '''
         # constructs final 5D matrix
         X = []
         for (dm1,dm2) in pairs:
@@ -427,4 +377,4 @@ class SiameseCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
 
-        return (X,Y)
+        return (pairs, X,Y)
