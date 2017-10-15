@@ -4,7 +4,7 @@ numLayers=(2)
 numEpochs=(3) # 5 25 50)
 windowSize=(2) # 5)
 numNeg=(2) # 5 10)
-batchSize=(28) # 128)
+batchSize=(1024) # 128)
 shuffle=(f) # t)
 embSize=(400) # 50
 source ~/researchcode/DeepCoref/venv/bin/activate

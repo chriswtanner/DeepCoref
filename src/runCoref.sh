@@ -10,9 +10,9 @@ brownDir="/home/ctanner/researchcode/DeepCoref/"
 # export CUDA_HOME=/contrib/projects/cuda8.0
 # export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
 # export PATH=${CUDA_HOME}/bin:${PATH}
-source ~/researchcode/DeepCoref/oldcpu/bin/activate
+source ~/researchcode/DeepCoref/venv/bin/activate
 
-if [ ${me} = "christanner" ]
+if [ ${me} = "ctanner" ]
 then
 	echo "[ ON BROWN NETWORK ]"
 	baseDir=${brownDir}
@@ -31,9 +31,9 @@ then
 		# export CUDA_HOME=/contrib/projects/cuda8.0
 		# export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
 		# export PATH=${CUDA_HOME}/bin:${PATH}
-    	echo ${CUDA_HOME}
+    		echo ${CUDA_HOME}
 		echo ${LD_LIBRARY_PATH}
-    fi 
+	fi 
 fi
 
 scriptDir=${baseDir}"src/"
