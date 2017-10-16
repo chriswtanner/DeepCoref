@@ -40,7 +40,7 @@ class ECBHelper:
 
 			for doc_id in self.corpus.dirToDocs[dirNum]:
 				docDMs = []
-				for ref in self.corpus.docsToREFs[doc_id]:
+				for ref in self.corpus.docToREFs[doc_id]:
 					for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
 						if dm not in docDMs:
 							docDMs.append(dm)
@@ -74,9 +74,9 @@ class ECBHelper:
 
 			added = set() # so we don't add the same pair twice
 			for doc_id in self.corpus.dirToDocs[dirNum]:
-				numRefsForThisDoc = len(self.corpus.docsToREFs[doc_id])
+				numRefsForThisDoc = len(self.corpus.docToREFs[doc_id])
 				for i in range(numRefsForThisDoc):
-					ref1 = self.corpus.docsToREFs[doc_id][i]
+					ref1 = self.corpus.docToREFs[doc_id][i]
 					for dm1 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
 						for dm2 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
 							if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
@@ -90,14 +90,14 @@ class ECBHelper:
 								while numNegsAdded < self.args.numNegPerPos:
 
 									# pick the next REF
-									ref2 = self.corpus.docsToREFs[doc_id][j%numRefsForThisDoc]
+									ref2 = self.corpus.docToREFs[doc_id][j%numRefsForThisDoc]
 									if numRefsForThisDoc == 1:
 										doc_id2 = doc_id
 										while doc_id2 == doc_id:
 											numDocsInDir = len(self.corpus.dirToDocs[dirNum])
 											doc_id2 = self.corpus.dirToDocs[dirNum][randint(0,numDocsInDir-1)]
-										numRefsForDoc2 = len(self.corpus.docsToREFs[doc_id2])
-										ref2 = self.corpus.docsToREFs[doc_id2][j%numRefsForDoc2]
+										numRefsForDoc2 = len(self.corpus.docToREFs[doc_id2])
+										ref2 = self.corpus.docToREFs[doc_id2][j%numRefsForDoc2]
 
 										numDMs = len(self.corpus.docREFsToDMs[(doc_id2,ref2)])
 

@@ -16,7 +16,6 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 #importlib.reload(sys)
-#sys.setdefaultencoding('utf8')
 
 class ECBParser:
 	def __init__(self, args):
@@ -245,7 +244,7 @@ class ECBParser:
 		self.dirToREFs = defaultdict(list)
 
 		self.dirToDocs = defaultdict(list)
-		self.docsToREFs = defaultdict(list)
+		self.docToREFs = defaultdict(list)
 		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
 		self.docToDMs = defaultdict(list)
 		# same tokens as corpusTokens, just made into lists according
@@ -535,8 +534,8 @@ class ECBParser:
 					dirNum = int(doc_id[0:doc_id.find("_")])
 
 					# stores the REF for the current doc_id
-					if ref_id not in self.docsToREFs[doc_id]:
-						self.docsToREFs[doc_id].append(ref_id)
+					if ref_id not in self.docToREFs[doc_id]:
+						self.docToREFs[doc_id].append(ref_id)
 
 					# stores the DM for the current (doc_id,ref_id) pair
 					# this is so that we can easily make training/dev/test pairs

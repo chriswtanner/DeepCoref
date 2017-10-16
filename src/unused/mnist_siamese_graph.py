@@ -65,13 +65,21 @@ def createsting_pairs(x, digit_indices):
 def create_base_network(input_dim):
     '''Base network to be shared (eq. to feature extraction).
     '''
+    '''
     seq = Sequential()
     seq.add(Dense(128, input_shape=(input_dim,), activation='relu'))
     seq.add(Dropout(0.1))
     seq.add(Dense(128, activation='relu'))
     seq.add(Dropout(0.1))
     seq.add(Dense(128, activation='relu'))
-
+    '''
+    input = Input(shape=(input_dim,))
+    x = Dense(128, activation='relu')(input)
+    x = Dropout(0.1)(x)
+    x = Dense(128, activation='relu')(x)
+    x = Dropout(0.1)(x)
+    x = Dense(128, activation='relu')(x)
+    return Model(input, x)
     # added
     #seq.add(Dropout(0.25))
     #model.add(Dense(2,activation='softmax'))
@@ -87,7 +95,6 @@ def compute_accuracy(predictions, labels):
     preds = predictions.ravel() < 0.6
     return ((preds & labels).sum() +
             (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
-
 
 # the data, shuffled and split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -140,9 +147,14 @@ distance = Lambda(euclidean_distance,
 
 model = Model([input_a, input_b], distance)
 
+print("* training data shape:",str(training_pairs.shape))
+print("* inputA's shape:", str(training_pairs[:, 0].shape))
+print("input_dim:",str(input_dim))
+#print("* input_a shape:",str(input_a.shape))
 # train
 rms = RMSprop()
 model.compile(loss=contrastive_loss, optimizer=rms, metrics=[acc])
+print(model.summary())
 model.fit([training_pairs[:, 0], training_pairs[:, 1]], training_labels,
           batch_size=128,
           epochs=epochs,

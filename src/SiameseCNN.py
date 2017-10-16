@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 import random
+import keras
 from keras.datasets import mnist
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPooling2D
@@ -48,7 +49,8 @@ class SiameseCNN:
 
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
-
+        print("* training data shape:",str(training_data.shape))
+        print("* inputA's shape:",str(training_data[:, 0].shape))
         dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
 
         input_shape = training_data.shape[2:]
@@ -60,6 +62,7 @@ class SiameseCNN:
         print('testing_labels shape:', testing_labels.shape)
         '''
         # network definition
+        print("* input_shape:",str(input_shape))
         base_network = self.create_base_network(input_shape)
 
         input_a = Input(shape=input_shape)
@@ -85,6 +88,7 @@ class SiameseCNN:
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
         bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
+        print("training acc:", str(self.compute_accuracy(bestProb, pred, training_labels)))
 
         '''
         for i in range(len(pairs)):
@@ -99,6 +103,7 @@ class SiameseCNN:
         print("predicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
+        print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
 
         # clears up ram
         training_pairs = None
@@ -111,9 +116,10 @@ class SiameseCNN:
         testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
         print("predicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
-
-        return (pairs, pred)
+        bestProb = self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
+        print("test acc:", str(self.compute_accuracy(bestProb, pred, testing_labels)))
+        print("testing size:", str(len(testing_data)))
+        return (testing_pairs, pred)
         #print("tested on # pairs:",str(len(pred)))
         #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
         #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
@@ -135,18 +141,19 @@ class SiameseCNN:
     # Base network to be shared (eq. to feature extraction).
     def create_base_network(self, input_shape):
         seq = Sequential()
-        seq.add(Conv2D(32, kernel_size=(5, 5),activation='relu', input_shape=input_shape, data_format="channels_last"))
-        seq.add(Conv2D(64, (5, 5), activation='relu',data_format="channels_first"))
-        seq.add(MaxPooling2D(pool_size=(5, 5),data_format="channels_first"))
-        seq.add(Dropout(0.25))
-
+        seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, data_format="channels_last"))
+        seq.add(Dropout(0.2))
+        seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', data_format="channels_last"))
+        seq.add(MaxPooling2D(pool_size=(2, 2)))
+        
         # added following
         if self.args.numLayers == 2:
             print("doing deep!! 2 sections of convolution")
-            seq.add(Conv2D(128, (4, 4), activation='relu'))
-            seq.add(Conv2D(256, (3, 3), activation='relu',data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(2, 2),data_format="channels_first"))
-            seq.add(Dropout(0.25))
+            seq.add(Conv2D(96, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
+            seq.add(Conv2D(128, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
             # end of added
         
         seq.add(Flatten())
@@ -241,9 +248,8 @@ class SiameseCNN:
         return K.mean(K.equal(y_true, ones - K.clip(K.round(y_pred), 0, 1)), axis=-1)
 
     # Compute classification accuracy with a fixed threshold on distances.
-    def compute_accuracy(self, predictions, labels):
-        print("* computing accuracy")
-        preds = predictions.ravel() < 0.5
+    def compute_accuracy(self, threshold, predictions, labels):
+        preds = predictions.ravel() < threshold
         return ((preds & labels).sum() +
                 (np.logical_not(preds) & np.logical_not(labels)).sum()) / float(labels.size)
 
@@ -337,37 +343,32 @@ class SiameseCNN:
 
             dmToMatrix[(m.doc_id,int(m.m_id))] = curMentionMatrix
 
-        # TEMP; sanity check; just to test if our vectors are
-        # constructed correctly
-        # and how close they are (cosine sim.) to other mentions
+        # TEMP; sanity check; just to test if our vectors are constructed correctly
         '''
         added = set()
+        x = 0
         for doc in self.corpus.docToDMs:
-            
-            if len(self.corpus.docToDMs[doc]) < 8:
-                continue
-            cosineScores = {}
-            for dm in self.corpus.docToDMs[doc]:
-                print(dm)
-                v1 = dmToMatrix[dm][0]
-                for dm2 in self.corpus.docToDMs[doc]:
-                    if dm != dm2 and (dm,dm2) not in added and (dm2,dm) not in added:
+            print("doc:",str(doc), " has # DMs:", str(len(self.corpus.docToDMs[doc])), " and # REFs:", str(len(self.corpus.docToREFs[doc])))
+            for ref in self.corpus.docToREFs[doc]:
+                print("\tREF:",str(ref)," has # DMs:", str(len(self.corpus.docREFsToDMs[(doc,ref)])) + ":" + \
+                    str(self.corpus.docREFsToDMs[(doc,ref)]))
+                for dm1 in self.corpus.docREFsToDMs[(doc,ref)]:
+                    print("\t\tDM:",str(dm1)," text:",str(self.corpus.dmToMention[dm1].text))
+                    cosineScores = {}
+                    v1 = dmToMatrix[dm1][0]
+                    for dm2 in self.corpus.docToDMs[doc]:
+                        if dm1 == dm2:
+                            continue
                         v2 = dmToMatrix[dm2][0]
                         cs = self.getCosineSim(v1,v2)
                         cosineScores[dm2] = cs
-                        added.add((dm,dm2))
-                        added.add((dm2,dm))
-                print(str(self.corpus.dmToMention[dm].text))
-                # sorts them
-                sorted_distances = sorted(cosineScores.items(), key=operator.itemgetter(1))
-                print(len(sorted_distances))
-                for _ in range(5):
-                    i = len(sorted_distances)-5+_
-                    a = sorted_distances[i]
-                    print(str(self.corpus.dmToMention[a[0]].text),":",str(a))
-                for _ in range(5):
-                    a = sorted_distances[_]
-                    print(str(self.corpus.dmToMention[a[0]].text),":",str(a))
+                    sorted_distances = sorted(cosineScores.items(), key=operator.itemgetter(1), reverse=True)
+                    for _ in sorted_distances:
+                        dm3 = _[0]
+                        if self.corpus.dmToREF[dm3] == self.corpus.dmToREF[dm1]:
+                            print ("\t\t\t***", str(_), str(self.corpus.dmToMention[dm3].text))
+                        else:
+                            print("\t\t\t",str(_), str(self.corpus.dmToMention[dm3].text))
         '''
         # constructs final 5D matrix
         X = []
