@@ -87,6 +87,7 @@ class SiameseCNN:
         # train accuracy
         print("predicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
+        sys.stdout.flush()
         bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
         print("training acc:", str(self.compute_accuracy(bestProb, pred, training_labels)))
 
@@ -168,7 +169,8 @@ class SiameseCNN:
 
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, label, startingProb, predictions, golds):
-        #print("* in compute_optimal_f1!!!()")
+        print("* in compute_optimal_f1!!!()")
+        sys.stdout.flush()
         #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
