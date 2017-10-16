@@ -142,9 +142,9 @@ class SiameseCNN:
     # Base network to be shared (eq. to feature extraction).
     def create_base_network(self, input_shape):
         seq = Sequential()
-        seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, data_format="channels_last"))
+        seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_last"))
         seq.add(Dropout(0.2))
-        seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', data_format="channels_last"))
+        seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding="same", data_format="channels_last"))
         seq.add(MaxPooling2D(pool_size=(2, 2), padding="same"))
         
         # added following
@@ -156,12 +156,26 @@ class SiameseCNN:
             seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_last"))
             seq.add(Dropout(0.2))
             # end of added
+        elif self.args.numLayers == 3:
+            print("doing deeper!! 3 sections of convolution")
+            seq.add(Conv2D(96, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
+            seq.add(Conv2D(128, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
         
+            seq.add(Conv2D(196, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
+            seq.add(Conv2D(256, (2, 2), activation='relu', padding="same", data_format="channels_last"))
+            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_last"))
+            seq.add(Dropout(0.2))
         seq.add(Flatten())
         if self.args.numLayers == 1:
             seq.add(Dense(128, activation='relu'))
         elif self.args.numLayers == 2:
             seq.add(Dense(256, activation='relu'))
+        elif self.args.numLayers == 3:
+            seq.add(Dense(512, activation='relu'))
         else:
             print("** ERROR: wrong # of convo layers")
             exit(1)

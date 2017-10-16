@@ -63,6 +63,9 @@ batchSize=$6
 shuffleTraining=$7
 cd $scriptDir
 echo ${device}
+echo "numLayers:" $numLayers
+echo "windowSize:" $windowSize
+
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
 #python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
 
