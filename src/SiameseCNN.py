@@ -36,7 +36,7 @@ class SiameseCNN:
             #sess = tf.Session(config=config)
             print(sess)
      
-        #print("devices:",device_lib.list_local_devices())
+        print("devices:",device_lib.list_local_devices())
 
         self.corpus = corpus
         self.helper = helper
@@ -145,7 +145,7 @@ class SiameseCNN:
         seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=input_shape, data_format="channels_last"))
         seq.add(Dropout(0.2))
         seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', data_format="channels_last"))
-        seq.add(MaxPooling2D(pool_size=(2, 2)))
+        seq.add(MaxPooling2D(pool_size=(2, 2), padding="same"))
         
         # added following
         if self.args.numLayers == 2:
