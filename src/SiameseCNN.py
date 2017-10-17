@@ -9,6 +9,8 @@ import os
 import math
 import operator
 import copy
+from collections import OrderedDict
+from operator import itemgetter
 from keras.datasets import mnist
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPooling2D
@@ -71,18 +73,30 @@ class SiameseCNN:
                 print("mismatch in DMs!!")
                 exit(1)
 
-
+            print("docToDMPredictions:",str(docToDMPredictions[doc_id]))
             # sanity check: ensure lower prediction score is good
-            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0),reverse=True)
-            print("best:",str(sorted_x[0]))
-            (dm1,dm2) = sorted_x[0][0]
-            print("\tdm1:",str(self.corpus.dmToMention[dm1]))
-            print("\tdm2:",str(self.corpus.dmToMention[dm2]))
-            print("worst:",str(sorted_x[-1]))
-            (dm1,dm2) = sorted_x[-1][0]
-            print("\tdm1:",str(self.corpus.dmToMention[dm1]))
-            print("\tdm2:",str(self.corpus.dmToMention[dm2]))
+
+            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0))
+            bestDM = ""
+            bestPred = 9999
+            worstDM = ""
+            worstPred = -99
+            for dmPair in docToDMPredictions[doc_id]:
+                pred = docToDMPredictions[doc_id][dmPair]
+                if pred < bestPred:
+                    bestPred = pred
+                    bestDM = dmPair
+                if pred > worstPred:
+                    worstPred = pred
+                    worstDM = dmPair
+
             
+            print("best:",str(bestDM)," had score:",str(bestPred))
+            print("\tdm1:",str(self.corpus.dmToMention[bestDM[0]]))
+            print("\tdm2:",str(self.corpus.dmToMention[bestDM[1]]))
+            print("worst:",str(worstDM)," had score:",str(worstPred))
+            print("\tdm1:",str(self.corpus.dmToMention[worstDM[0]]))
+            print("\tdm2:",str(self.corpus.dmToMention[worstDM[1]]))
 
             # construct the golden truth for the current doc
             goldenTruthDirClusters = {}
@@ -104,12 +118,12 @@ class SiameseCNN:
                 a.add(dm)
                 ourDirClusters[i] = a
 
-            print("golden:",str(goldenTruthDirClusters))
+            #print("golden:",str(goldenTruthDirClusters))
 
 
             bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
             bestClustering = copy.deepcopy(ourDirClusters)
-            print("ourclusters:",str(ourDirClusters))
+            #print("ourclusters:",str(ourDirClusters))
             print("\tyielded an INITIAL score:",str(bestScore))
             # performs agglomerative, checking our performance after each merge
             while len(ourDirClusters.keys()) > 1:
@@ -136,8 +150,8 @@ class SiameseCNN:
                                 if dist < closestDist:
                                     closestDist = dist
                                     closestClusterKeys = (c1,c2)
-                                    print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
-                print("trying to merge:",str(closestClusterKeys))
+                                    #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                #print("trying to merge:",str(closestClusterKeys))
                 newCluster = set()
                 (c1,c2) = closestClusterKeys
                 for _ in ourDirClusters[c1]:
@@ -147,15 +161,15 @@ class SiameseCNN:
                 ourDirClusters.pop(c1, None)
                 ourDirClusters.pop(c2, None)
                 ourDirClusters[c1] = newCluster
-                print("* our updated clusters",str(ourDirClusters))
+                #print("* our updated clusters",str(ourDirClusters))
                 curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
-                print("\tyielded a score:",str(curScore))
+                #print("\tyielded a score:",str(curScore))
                 if curScore > bestScore:
-                    print("(which is a new best!!")
+                    #print("(which is a new best!!")
                     bestScore = curScore
                     bestClustering = copy.deepcopy(ourDirClusters)
             # end of current doc
-            print("best clustering:",str(bestClustering))
+            print("best clustering yielded:",str(bestScore),":",str(bestClustering))
         # end of going through every doc
         return clusters
 
