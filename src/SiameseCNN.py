@@ -87,6 +87,8 @@ class SiameseCNN:
                 dm = docToDMs[doc_id][i]
                 ourDirClusters[i] = set(dm)
             
+            print("golden:",str(goldenTruthDirClusters))
+            print("ours:",str(ourDirClusters))
             # performs agglomerative, checking our performance after each merge
             print(get_conll_f1(goldenTruthDirClusters, ourDirClusters))
         return clusters
