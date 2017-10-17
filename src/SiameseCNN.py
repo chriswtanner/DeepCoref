@@ -66,7 +66,7 @@ class SiameseCNN:
             docToDMPredictions[doc_id][(dm1,dm2)] = prediction
 
         for doc_id in docToDMPredictions.keys():
-            print("-----------\ncurrent doc\n-----------:",str(doc_id))
+            print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
             
             # ensures we have all DMs
             if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
@@ -124,8 +124,7 @@ class SiameseCNN:
             bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
             bestClustering = copy.deepcopy(ourDirClusters)
             #print("ourclusters:",str(ourDirClusters))
-            print("\tyielded an INITIAL score:",str(bestScore))
-            print("# initial clusters:",str(len(ourDirClusters.keys())))
+            print("# initial clusters:",str(len(ourDirClusters.keys()))," had score:",str(bestScore))
             # performs agglomerative, checking our performance after each merge
             while len(ourDirClusters.keys()) > 1:
                 # find best merge
