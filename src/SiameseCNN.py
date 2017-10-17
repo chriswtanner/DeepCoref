@@ -8,6 +8,7 @@ import sys
 import os
 import math
 import operator
+import copy
 from keras.datasets import mnist
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPooling2D
@@ -55,6 +56,7 @@ class SiameseCNN:
             prediction = predictions[i]
 
             doc_id = dm1[0]
+
             if dm1 not in docToDMs[doc_id]:
                 docToDMs[doc_id].append(dm1)
             if dm2 not in docToDMs[doc_id]:
@@ -62,12 +64,25 @@ class SiameseCNN:
             docToDMPredictions[doc_id][(dm1,dm2)] = prediction
 
         for doc_id in docToDMPredictions.keys():
-            print("current doc:",str(doc_id))
+            print("-----------\ncurrent doc\n-----------:",str(doc_id))
             
             # ensures we have all DMs
             if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
                 print("mismatch in DMs!!")
                 exit(1)
+
+
+            # sanity check: ensure lower prediction score is good
+            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0))
+            print("best:",str(sorted_x[0]))
+            (dm1,dm2) = sorted_x[0][0]
+            print("\tdm1:",str(self.corpus.dmToMention[dm1]))
+            print("\tdm2:",str(self.corpus.dmToMention[dm2]))
+            print("worst:",str(sorted_x[0]))
+            (dm1,dm2) = sorted_x[-1][0]
+            print("\tdm1:",str(self.corpus.dmToMention[dm1]))
+            print("\tdm2:",str(self.corpus.dmToMention[dm2]))
+            
 
             # construct the golden truth for the current doc
             goldenTruthDirClusters = {}
@@ -77,7 +92,7 @@ class SiameseCNN:
                 for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
                     tmp.add(dm)
                 goldenTruthDirClusters[i] = tmp
-            print("golden clusters:", str(goldenTruthDirClusters))
+            #print("golden clusters:", str(goldenTruthDirClusters))
             
             goldenK = len(self.corpus.docToREFs[doc_id])
 
@@ -85,12 +100,63 @@ class SiameseCNN:
             ourDirClusters = {}
             for i in range(len(docToDMs[doc_id])):
                 dm = docToDMs[doc_id][i]
-                ourDirClusters[i] = set(dm)
-            
+                a = set()
+                a.add(dm)
+                ourDirClusters[i] = a
+
             print("golden:",str(goldenTruthDirClusters))
-            print("ours:",str(ourDirClusters))
+
+
+            bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
+            bestClustering = copy.deepcopy(ourDirClusters)
+            print("ourclusters:",str(ourDirClusters))
+            print("\tyielded an INITIAL score:",str(bestScore))
             # performs agglomerative, checking our performance after each merge
-            print(get_conll_f1(goldenTruthDirClusters, ourDirClusters))
+            while len(ourDirClusters.keys()) > 1:
+                # find best merge
+                closestDist = 999999
+                closestClusterKeys = (-1,-1)
+
+                # looks at all combinations of pairs
+                
+                for c1 in ourDirClusters.keys():
+                    for c2 in ourDirClusters.keys():
+                        if c1 == c2:
+                            continue
+
+                        for dm1 in ourDirClusters[c1]:
+                            for dm2 in ourDirClusters[c2]:
+                                dist = 99999
+                                if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                    dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                    dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                else:
+                                    print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                if dist < closestDist:
+                                    closestDist = dist
+                                    closestClusterKeys = (c1,c2)
+                                    print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                print("trying to merge:",str(closestClusterKeys))
+                newCluster = set()
+                (c1,c2) = closestClusterKeys
+                for _ in ourDirClusters[c1]:
+                    newCluster.add(_)
+                for _ in ourDirClusters[c2]:
+                    newCluster.add(_)
+                ourDirClusters.pop(c1, None)
+                ourDirClusters.pop(c2, None)
+                ourDirClusters[c1] = newCluster
+                print("* our updated clusters",str(ourDirClusters))
+                curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
+                print("\tyielded a score:",str(curScore))
+                if curScore > bestScore:
+                    print("(which is a new best!!")
+                    bestScore = curScore
+                    bestClustering = copy.deepcopy(ourDirClusters)
+            # end of current doc
+            print("best clustering:",str(bestClustering))
+        # end of going through every doc
         return clusters
 
     # trains and tests the model
