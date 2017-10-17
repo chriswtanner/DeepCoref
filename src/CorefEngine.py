@@ -28,6 +28,6 @@ class CorefEngine:
 
 		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions)
 		#goldenClusters = helper.getGoldenClusters(pairs)
-		get_conll_f1(goldenClusters, predictedClusters)
+		print(get_conll_f1(goldenClusters, predictedClusters))
 		#helper.evaluateCoNLL(predictedClusters, goldenClusters)
 
