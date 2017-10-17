@@ -143,9 +143,19 @@ def get_conll_scores(gold, response):
     ceafe_p, ceafe_r, ceafe_f1 = get_prf(pn,pd,rn,rd)
     return bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, (bcub_f1+muc_f1+ceafe_f1)/3.0
 
+def get_conll_f1(gold, response):
+    pn,pd,rn,rd = bcub(gold, response)
+    bcub_p, bcub_r, bcub_f1 = get_prf(pn,pd,rn,rd)
+    pn,pd,rn,rd = muc(gold, response)
+    muc_p, muc_r, muc_f1 = get_prf(pn,pd,rn,rd)
+    pn,pd,rn,rd = ceafe(gold, response)
+    ceafe_p, ceafe_r, ceafe_f1 = get_prf(pn,pd,rn,rd)
+    return (bcub_f1+muc_f1+ceafe_f1)/3.0
+
 #####################################################################################################
 #Test implementation
 #####################################################################################################
+'''
 TEST = 1
 if TEST:
     g1 = {1:set(['a','b','c']), 2:set(['d','e','f','g'])}
@@ -153,4 +163,5 @@ if TEST:
     r = {1:set(['a','b']), 2:set(['d','c']), 3:set(['f','g','h','i'])}
     print(g1)
     print(get_conll_scores(g1, r))
+'''
 #####################################################################################################

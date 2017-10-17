@@ -4,6 +4,10 @@ import numpy as np
 import tensorflow as tf
 import random
 import keras
+import sys
+import os
+import math
+import operator
 from keras.datasets import mnist
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPooling2D
@@ -12,10 +16,8 @@ from keras import backend as K
 from tensorflow.python.client import device_lib
 from ECBHelper import *
 from ECBParser import *
-import sys
-import os
-import math
-import operator
+from get_coref_metrics import *
+
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
 #sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
 #
@@ -47,35 +49,46 @@ class SiameseCNN:
 
         # stores predictions
         docToDMPredictions = defaultdict(lambda : defaultdict(float))
-        docToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
+        docToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
         for i in range(len(pairs)):
             (dm1,dm2) = pairs[i]
             prediction = predictions[i]
 
             doc_id = dm1[0]
-            docToDMs[doc_id].add(dm1)
-            docToDMs[doc_id].add(dm2)
+            if dm1 not in docToDMs[doc_id]:
+                docToDMs[doc_id].append(dm1)
+            if dm2 not in docToDMs[doc_id]:
+                docToDMs[doc_id].append(dm2)
             docToDMPredictions[doc_id][(dm1,dm2)] = prediction
 
         for doc_id in docToDMPredictions.keys():
             print("current doc:",str(doc_id))
             
-            # construct the golden truth for the current doc
+            # ensures we have all DMs
             if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
                 print("mismatch in DMs!!")
                 exit(1)
 
-            goldenTruth = {}
+            # construct the golden truth for the current doc
+            goldenTruthDirClusters = {}
             for i in range(len(self.corpus.docToREFs[doc_id])):
                 tmp = set()
                 curREF = self.corpus.docToREFs[doc_id][i]
                 for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
                     tmp.add(dm)
-                goldenTruth[i] = tmp
-            print("golden clusters:", str(goldenTruth))
+                goldenTruthDirClusters[i] = tmp
+            print("golden clusters:", str(goldenTruthDirClusters))
+            
+            goldenK = len(self.corpus.docToREFs[doc_id])
 
-
-
+            # constructs our base clusters (singletons)
+            ourDirClusters = {}
+            for i in range(len(docToDMs[doc_id])):
+                dm = docToDMs[doc_id][i]
+                ourDirClusters[i] = set(dm)
+            
+            # performs agglomerative, checking our performance after each merge
+            print(get_conll_f1(goldenTruthDirClusters, ourDirClusters))
         return clusters
 
     # trains and tests the model
