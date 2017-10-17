@@ -181,6 +181,7 @@ class SiameseCNN:
             print("# best clusters:",str(len(bestClustering.keys())))
             for i in bestClustering.keys():
                 ourClusterSuperSet[ourClusterID] = bestClustering[i]
+                ourClusterID += 1
         # end of going through every doc
         print("# golden clusters:",str(len(goldenSuperSet.keys())))
         print("# our clusters:",str(len(ourClusterSuperSet)))
