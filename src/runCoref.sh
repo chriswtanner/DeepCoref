@@ -37,7 +37,7 @@ then
 fi
 
 scriptDir=${baseDir}"src/"
-corpusPath=${baseDir}"data/ECB_FULL/"
+corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 verbose="true"
@@ -46,7 +46,7 @@ stitchMentions="False"
 
 # glove param
 gWindowSize=6
-embeddingSize=$8
+embeddingSize=$9
 numEpochs=50
 gloveOutput=${baseDir}"data/gloveEmbeddings"${embeddingSize}".txt"
 
@@ -54,17 +54,22 @@ gloveOutput=${baseDir}"data/gloveEmbeddings"${embeddingSize}".txt"
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-device=$1
-numLayers=$2
-numEpochs=$3
-windowSize=$4
-numNegPerPos=$5
-batchSize=$6
-shuffleTraining=$7
+device=$2
+numLayers=$3
+numEpochs=$4
+windowSize=$5
+numNegPerPos=$6
+batchSize=$7
+shuffleTraining=$8
 cd $scriptDir
+echo "corpus:" $1
 echo ${device}
 echo "numLayers:" $numLayers
+echo "numEpochs:" $numEpochs
 echo "windowSize:" $windowSize
+echo "numNegPerPos:" $numNegPerPos
+echo "batchSize:" $batchSize
+echo "shuffleTraining:" $shuffleTraining
 
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
 #python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}

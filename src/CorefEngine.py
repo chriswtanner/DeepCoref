@@ -1,5 +1,4 @@
 import sys  
-
 import params
 from ECBParser import *
 from ECBHelper import *
@@ -26,5 +25,8 @@ class CorefEngine:
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
 
+		predictedClusters = corefEngine.clusterPredictions(pairs, predictions)
+		goldenClusters = helper.getGoldenClusters(pairs)
+		
+		helper.evaluateCoNLL(predictedClusters, goldenClusters)
 
-		# clusters

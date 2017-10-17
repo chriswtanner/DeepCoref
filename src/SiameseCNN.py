@@ -41,6 +41,43 @@ class SiameseCNN:
         self.corpus = corpus
         self.helper = helper
 
+    # creates clusters for our predictions
+    def clusterPredictions(self, pairs, predictions):
+        clusters = {}
+
+        # stores predictions
+        docToDMPredictions = defaultdict(lambda : defaultdict(float))
+        docToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
+        for i in range(len(pairs)):
+            (dm1,dm2) = pairs[i]
+            prediction = predictions[i]
+
+            doc_id = dm1[0]
+            docToDMs[doc_id].add(dm1)
+            docToDMs[doc_id].add(dm2)
+            docToDMPredictions[doc_id][(dm1,dm2)] = prediction
+
+        for doc_id in docToDMPredictions.keys():
+            print("current doc:",str(doc_id))
+            
+            # construct the golden truth for the current doc
+            if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
+                print("mismatch in DMs!!")
+                exit(1)
+
+            goldenTruth = {}
+            for i in range(len(self.corpus.docToREFs[doc_id])):
+                tmp = set()
+                curREF = self.corpus.docToREFs[doc_id][i]
+                for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
+                    tmp.add(dm)
+                goldenTruth[i] = tmp
+            print("golden clusters:", str(goldenTruth))
+
+
+
+        return clusters
+
     # trains and tests the model
     def run(self):
 
@@ -85,7 +122,7 @@ class SiameseCNN:
                   validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
 
         # train accuracy
-        print("predicting training")
+        print("-----------\npredicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
         sys.stdout.flush()
         bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
@@ -101,7 +138,7 @@ class SiameseCNN:
         exit(1)
         '''
         # dev accuracy
-        print("predicting dev")
+        print("-----------\npredicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
@@ -115,7 +152,7 @@ class SiameseCNN:
         dev_labels = None
 
         testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
-        print("predicting testing")
+        print("-----------\npredicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
         bestProb = self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb, pred, testing_labels)))
