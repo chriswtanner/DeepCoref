@@ -1,9 +1,9 @@
 import sys  
 import params
-
 from ECBParser import *
 from ECBHelper import *
 from SiameseCNN import *
+from get_coref_metrics import *
 # parses the corpus and runs Coref Resoultion on the mentions
 class CorefEngine:
 	if __name__ == "__main__":
@@ -25,9 +25,9 @@ class CorefEngine:
 		# trains and tests the pairwise-predictions
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
-		
-		predictedClusters = corefEngine.clusterPredictions(pairs, predictions)
-		goldenClusters = helper.getGoldenClusters(pairs)
 
-		helper.evaluateCoNLL(predictedClusters, goldenClusters)
+		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions)
+		#goldenClusters = helper.getGoldenClusters(pairs)
+		get_conll_f1(goldenClusters, predictedClusters)
+		#helper.evaluateCoNLL(predictedClusters, goldenClusters)
 

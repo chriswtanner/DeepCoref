@@ -65,6 +65,12 @@ class SiameseCNN:
                 docToDMs[doc_id].append(dm2)
             docToDMPredictions[doc_id][(dm1,dm2)] = prediction
 
+        ourClusterID = 0
+        ourClusterSuperSet = {}
+
+        goldenClusterID = 0
+        goldenSuperSet = {}
+        
         for doc_id in docToDMPredictions.keys():
             print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
             
@@ -106,6 +112,8 @@ class SiameseCNN:
                 for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
                     tmp.add(dm)
                 goldenTruthDirClusters[i] = tmp
+                goldenSuperSet[goldenClusterID] = tmp
+                goldenClusterID += 1
             #print("golden clusters:", str(goldenTruthDirClusters))
             
             goldenK = len(self.corpus.docToREFs[doc_id])
@@ -171,8 +179,12 @@ class SiameseCNN:
             # end of current doc
             print("best clustering yielded:",str(bestScore),":",str(bestClustering))
             print("# best clusters:",str(len(bestClustering.keys())))
+            for i in bestClustering.keys():
+                ourClusterSuperSet[ourClusterID] = bestClustering[i]
         # end of going through every doc
-        return clusters
+        print("# golden clusters:",str(len(goldenSuperSet.keys())))
+        print("# our clusters:",str(len(ourClusterSuperSet)))
+        return (ourClusterSuperSet, goldenSuperSet)
 
     # trains and tests the model
     def run(self):
