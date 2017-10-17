@@ -73,7 +73,7 @@ class SiameseCNN:
                 print("mismatch in DMs!!")
                 exit(1)
 
-            print("docToDMPredictions:",str(docToDMPredictions[doc_id]))
+            #print("docToDMPredictions:",str(docToDMPredictions[doc_id]))
             # sanity check: ensure lower prediction score is good
 
             sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0))
@@ -109,7 +109,7 @@ class SiameseCNN:
             #print("golden clusters:", str(goldenTruthDirClusters))
             
             goldenK = len(self.corpus.docToREFs[doc_id])
-
+            print("# golden clusters: ",str(goldenK))
             # constructs our base clusters (singletons)
             ourDirClusters = {}
             for i in range(len(docToDMs[doc_id])):
@@ -125,6 +125,7 @@ class SiameseCNN:
             bestClustering = copy.deepcopy(ourDirClusters)
             #print("ourclusters:",str(ourDirClusters))
             print("\tyielded an INITIAL score:",str(bestScore))
+            print("# initial clusters:",str(len(ourDirClusters.keys())))
             # performs agglomerative, checking our performance after each merge
             while len(ourDirClusters.keys()) > 1:
                 # find best merge
@@ -170,6 +171,7 @@ class SiameseCNN:
                     bestClustering = copy.deepcopy(ourDirClusters)
             # end of current doc
             print("best clustering yielded:",str(bestScore),":",str(bestClustering))
+            print("# best clusters:",str(len(bestClustering.keys())))
         # end of going through every doc
         return clusters
 
