@@ -134,6 +134,7 @@ class SiameseCNN:
             #print("ourclusters:",str(ourDirClusters))
             print("# initial clusters:",str(len(ourDirClusters.keys()))," had score:",str(bestScore))
             # performs agglomerative, checking our performance after each merge
+            '''
             while len(ourDirClusters.keys()) > 1:
                 # find best merge
                 closestDist = 999999
@@ -176,6 +177,7 @@ class SiameseCNN:
                     #print("(which is a new best!!")
                     bestScore = curScore
                     bestClustering = copy.deepcopy(ourDirClusters)
+            '''
             # end of current doc
             print("best clustering yielded:",str(bestScore),":",str(bestClustering))
             print("# best clusters:",str(len(bestClustering.keys())))
