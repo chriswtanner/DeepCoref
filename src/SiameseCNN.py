@@ -53,7 +53,7 @@ class SiameseCNN:
         docToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
         for i in range(len(pairs)):
             (dm1,dm2) = pairs[i]
-            prediction = predictions[i]
+            prediction = predictions[i][0]
 
             doc_id = dm1[0]
 
@@ -73,12 +73,12 @@ class SiameseCNN:
 
 
             # sanity check: ensure lower prediction score is good
-            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0))
+            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0),reverse=True)
             print("best:",str(sorted_x[0]))
             (dm1,dm2) = sorted_x[0][0]
             print("\tdm1:",str(self.corpus.dmToMention[dm1]))
             print("\tdm2:",str(self.corpus.dmToMention[dm2]))
-            print("worst:",str(sorted_x[0]))
+            print("worst:",str(sorted_x[-1]))
             (dm1,dm2) = sorted_x[-1][0]
             print("\tdm1:",str(self.corpus.dmToMention[dm1]))
             print("\tdm2:",str(self.corpus.dmToMention[dm2]))

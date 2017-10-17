@@ -25,7 +25,7 @@ class CorefEngine:
 		# trains and tests the pairwise-predictions
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
-
+		
 		predictedClusters = corefEngine.clusterPredictions(pairs, predictions)
 		goldenClusters = helper.getGoldenClusters(pairs)
 
