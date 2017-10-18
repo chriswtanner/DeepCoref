@@ -11,7 +11,7 @@ class CorefEngine:
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
-		hddcrpFile="/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"
+		hddcrpFile="/home/christanner/researchcode/DeepCoref/results/test_hddcrp_wd.response"
 		f = open(hddcrpFile, 'r')
 		hddcrpDMs = set()
 		f.readline()
