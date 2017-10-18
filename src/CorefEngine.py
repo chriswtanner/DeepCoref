@@ -11,6 +11,23 @@ class CorefEngine:
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
+		hddcrpFile="/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"
+		f = open(hddcrpFile, 'r')
+		hddcrpDMs = set()
+		f.readline()
+		hddcrpClusters = defaultdict(set)
+		for line in f:
+			line = line.rstrip()
+			if line == "#end document (t);":
+				break
+			_, tmp, clusterID = line.rstrip().split()
+			(doc_id,m_id) = tmp.split(";")
+			dm = (doc_id,int(m_id))
+			hddcrpDMs.add(dm)
+			c_id = clusterID[1:-1]
+			hddcrpClusters[clusterID].add(dm)
+		f.close()
+		print("# dms in hddcrp's:", str(len(hddcrpDMs)))
 		# parses corpus
 		corpus = ECBParser(args)
 
@@ -26,13 +43,31 @@ class CorefEngine:
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
 
-		stoppingPoints = [0.2, 0.3, 0.4, 0.5, 0.6, 0.68, 0.75]
+		stoppingPoints = [0.68]
 		f1s = []
 		for sp in stoppingPoints:
 			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
 			f1s.append(get_conll_f1(goldenClusters, predictedClusters))
+
+			goldenDMs = set()
+			missingFromHDDCRP = set()
+			for _ in goldenClusters.keys():
+				for i in goldenClusters[_]:
+					goldenDMs.add(i)
+					if i not in hddcrpDMs:
+						missingFromHDDCRP.add(i)
+
+			missingFromGolden = set()
+			for i in hddcrpDMs:
+				if i not in goldenDMs:
+					missingFromGolden.add(i)
+			print("# goldenDMs:",str(len(goldenDMs)))
+			print("# dms in hddcrp's:", str(len(hddcrpDMs)))
+			print("# missing from hddcrp:", str(len(missingFromHDDCRP)))
+			print("# missing from golden:", str(len(missingFromGolden)))
+			print("hddcrp's perf:", str(get_conll_f1(goldenClusters, hddcrpClusters)))
+			exit(1)
 		for i in zip(stoppingPoints,f1s):
 			print(i)
 
-		#helper.evaluateCoNLL(predictedClusters, goldenClusters)
 
