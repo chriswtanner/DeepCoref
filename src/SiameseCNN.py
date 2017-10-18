@@ -71,6 +71,8 @@ class SiameseCNN:
         goldenClusterID = 0
         goldenSuperSet = {}
         
+        stoppingPoints = []
+
         for doc_id in docToDMPredictions.keys():
             print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
             
@@ -131,10 +133,16 @@ class SiameseCNN:
 
             bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
             bestClustering = copy.deepcopy(ourDirClusters)
+
+            mergeDistances = []
+            f1Scores = []
+            mergeDistances.append(-1)
+            f1Scores.append(bestScore)
+
             #print("ourclusters:",str(ourDirClusters))
             print("# initial clusters:",str(len(ourDirClusters.keys()))," had score:",str(bestScore))
             # performs agglomerative, checking our performance after each merge
-            '''
+
             while len(ourDirClusters.keys()) > 1:
                 # find best merge
                 closestDist = 999999
@@ -161,6 +169,8 @@ class SiameseCNN:
                                     closestClusterKeys = (c1,c2)
                                     #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
                 #print("trying to merge:",str(closestClusterKeys))
+                mergeDistances.append(closestDist)
+
                 newCluster = set()
                 (c1,c2) = closestClusterKeys
                 for _ in ourDirClusters[c1]:
@@ -172,21 +182,34 @@ class SiameseCNN:
                 ourDirClusters[c1] = newCluster
                 #print("* our updated clusters",str(ourDirClusters))
                 curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
+                f1Scores.append(curScore)
+
                 #print("\tyielded a score:",str(curScore))
                 if curScore > bestScore:
                     #print("(which is a new best!!")
                     bestScore = curScore
                     bestClustering = copy.deepcopy(ourDirClusters)
-            '''
+            
             # end of current doc
             print("best clustering yielded:",str(bestScore),":",str(bestClustering))
             print("# best clusters:",str(len(bestClustering.keys())))
             for i in bestClustering.keys():
                 ourClusterSuperSet[ourClusterID] = bestClustering[i]
                 ourClusterID += 1
+
+            for i in range(len(f1Scores)):
+                if f1Scores[i] == bestScore:
+                    print("* ", str(mergeDistances[i])," -> ",str(f1Scores[i]))
+                    if i != len(f1Scores) - 1:
+                        stoppingPoints.append(mergeDistances[i+1])
+                else:
+                    print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
+
         # end of going through every doc
         print("# golden clusters:",str(len(goldenSuperSet.keys())))
         print("# our clusters:",str(len(ourClusterSuperSet)))
+        print("stoppingPoints: ",str(stoppingPoints))
+        print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
         return (ourClusterSuperSet, goldenSuperSet)
 
     # trains and tests the model
@@ -253,7 +276,9 @@ class SiameseCNN:
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
+        return (dev_pairs, pred)
 
+        exit(1)
         # clears up ram
         training_pairs = None
         training_data = None
@@ -268,10 +293,8 @@ class SiameseCNN:
         bestProb = self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb, pred, testing_labels)))
         print("testing size:", str(len(testing_data)))
+
         return (testing_pairs, pred)
-        #print("tested on # pairs:",str(len(pred)))
-        #print('* Accuracy on training set: %0.2f%%' % (100 * tr_acc))
-        #print('* Accuracy on test set: %0.2f%%' % (100 * te_acc))
 
     def euclidean_distance(self, vects):
         x, y = vects
