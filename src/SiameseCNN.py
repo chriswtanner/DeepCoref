@@ -278,7 +278,7 @@ class SiameseCNN:
         print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
         return (dev_pairs, pred)
 
-        exit(1)
+        '''
         # clears up ram
         training_pairs = None
         training_data = None
@@ -295,7 +295,7 @@ class SiameseCNN:
         print("testing size:", str(len(testing_data)))
 
         return (testing_pairs, pred)
-
+        '''
     def euclidean_distance(self, vects):
         x, y = vects
         return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
