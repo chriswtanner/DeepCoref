@@ -11,7 +11,9 @@ class CorefEngine:
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
+		'''
 		hddcrpFile="/home/christanner/researchcode/DeepCoref/results/test_hddcrp_wd.response"
+		#hddcrpFile="/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"
 		f = open(hddcrpFile, 'r')
 		hddcrpDMs = set()
 		f.readline()
@@ -28,6 +30,7 @@ class CorefEngine:
 			hddcrpClusters[clusterID].add(dm)
 		f.close()
 		print("# dms in hddcrp's:", str(len(hddcrpDMs)))
+		'''
 		# parses corpus
 		corpus = ECBParser(args)
 
@@ -49,6 +52,7 @@ class CorefEngine:
 			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
 			f1s.append(get_conll_f1(goldenClusters, predictedClusters))
 
+			'''
 			goldenDMs = set()
 			missingFromHDDCRP = set()
 			for _ in goldenClusters.keys():
@@ -69,5 +73,6 @@ class CorefEngine:
 			exit(1)
 		for i in zip(stoppingPoints,f1s):
 			print(i)
+		'''
 
 

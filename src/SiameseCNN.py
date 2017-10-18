@@ -173,7 +173,7 @@ class SiameseCNN:
                 # only merge clusters if it's less than our threshold
                 if closestDist > stoppingPoint:
                     break
-                    
+
                 mergeDistances.append(closestDist)
 
                 newCluster = set()
@@ -216,7 +216,23 @@ class SiameseCNN:
         print("# our clusters:",str(len(ourClusterSuperSet)))
         print("stoppingPoints: ",str(stoppingPoints))
         print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
+
+        self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
+        self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
+
         return (ourClusterSuperSet, goldenSuperSet)
+
+    def writeCoNLLPerlFile(self, fileOut, clusters):
+        # writes WD file
+        f = open(fileOut, 'w')
+        f.write("#begin document (t);\n")
+        for clusterID in clusters.keys():
+            for dm in clusters[clusterID]:
+                (doc_id,m_id) = dm
+                dirNum = doc_id[0:doc_id.find("_")]
+                f.write(str(dirNum) + "\t" + str(doc_id) + ";" + str(m_id) + \
+                    "\t(" + str(clusterID) + ")\n")
+        f.write("#end document (t);\n")
 
     # trains and tests the model
     def run(self):
