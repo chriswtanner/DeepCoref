@@ -171,18 +171,21 @@ class SiameseCNN:
                 #print("trying to merge:",str(closestClusterKeys))
 
                 # only merge clusters if it's less than our threshold
-                if closestDist < stoppingPoint:
-                    mergeDistances.append(closestDist)
+                if closestDist > stoppingPoint:
+                    break
+                    
+                mergeDistances.append(closestDist)
 
-                    newCluster = set()
-                    (c1,c2) = closestClusterKeys
-                    for _ in ourDirClusters[c1]:
-                        newCluster.add(_)
-                    for _ in ourDirClusters[c2]:
-                        newCluster.add(_)
-                    ourDirClusters.pop(c1, None)
-                    ourDirClusters.pop(c2, None)
-                    ourDirClusters[c1] = newCluster
+                newCluster = set()
+                (c1,c2) = closestClusterKeys
+                for _ in ourDirClusters[c1]:
+                    newCluster.add(_)
+                for _ in ourDirClusters[c2]:
+                    newCluster.add(_)
+                ourDirClusters.pop(c1, None)
+                ourDirClusters.pop(c2, None)
+                ourDirClusters[c1] = newCluster
+
                 #print("* our updated clusters",str(ourDirClusters))
                 curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
                 f1Scores.append(curScore)

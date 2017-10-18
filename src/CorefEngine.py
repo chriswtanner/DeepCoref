@@ -26,8 +26,13 @@ class CorefEngine:
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
 
-		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, 0.68)
-		#goldenClusters = helper.getGoldenClusters(pairs)
-		print(get_conll_f1(goldenClusters, predictedClusters))
+		stoppingPoints = [0.2, 0.3, 0.4, 0.5, 0.6, 0.68, 0.75]
+		f1s = []
+		for sp in stoppingPoints:
+			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
+			f1s.append(get_conll_f1(goldenClusters, predictedClusters))
+		for i in zip(stoppingPoints,f1s):
+			print(i)
+
 		#helper.evaluateCoNLL(predictedClusters, goldenClusters)
 
