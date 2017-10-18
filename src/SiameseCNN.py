@@ -47,7 +47,7 @@ class SiameseCNN:
         self.helper = helper
 
     # creates clusters for our predictions
-    def clusterPredictions(self, pairs, predictions):
+    def clusterPredictions(self, pairs, predictions, stoppingPoint):
         clusters = {}
 
         # stores predictions
@@ -169,17 +169,20 @@ class SiameseCNN:
                                     closestClusterKeys = (c1,c2)
                                     #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
                 #print("trying to merge:",str(closestClusterKeys))
-                mergeDistances.append(closestDist)
 
-                newCluster = set()
-                (c1,c2) = closestClusterKeys
-                for _ in ourDirClusters[c1]:
-                    newCluster.add(_)
-                for _ in ourDirClusters[c2]:
-                    newCluster.add(_)
-                ourDirClusters.pop(c1, None)
-                ourDirClusters.pop(c2, None)
-                ourDirClusters[c1] = newCluster
+                # only merge clusters if it's less than our threshold
+                if closestDist < stoppingPoint:
+                    mergeDistances.append(closestDist)
+
+                    newCluster = set()
+                    (c1,c2) = closestClusterKeys
+                    for _ in ourDirClusters[c1]:
+                        newCluster.add(_)
+                    for _ in ourDirClusters[c2]:
+                        newCluster.add(_)
+                    ourDirClusters.pop(c1, None)
+                    ourDirClusters.pop(c2, None)
+                    ourDirClusters[c1] = newCluster
                 #print("* our updated clusters",str(ourDirClusters))
                 curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
                 f1Scores.append(curScore)
@@ -276,9 +279,8 @@ class SiameseCNN:
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
-        return (dev_pairs, pred)
-
-        '''
+        # return (dev_pairs, pred)
+        
         # clears up ram
         training_pairs = None
         training_data = None
@@ -295,7 +297,7 @@ class SiameseCNN:
         print("testing size:", str(len(testing_data)))
 
         return (testing_pairs, pred)
-        '''
+        
     def euclidean_distance(self, vects):
         x, y = vects
         return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
