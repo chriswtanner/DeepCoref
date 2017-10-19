@@ -88,9 +88,10 @@ class SiameseCNN:
                 curREF = self.corpus.docToREFs[doc_id][i]
                 for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
                     # TMP:
-                    if dm not in self.helper.validDMs:
-                        print("skipping:",str(dm))
-                        continue
+                    if self.args.runOnValid:
+                        if dm not in self.helper.validDMs:
+                            print("skipping:",str(dm))
+                            continue
                     
                     tmp.add(dm)
                 goldenTruthDirClusters[i] = tmp
@@ -104,10 +105,10 @@ class SiameseCNN:
             ourDirClusters = {} 
             for i in range(len(docToDMs[doc_id])):
                 dm = docToDMs[doc_id][i]
-                
-                if dm not in self.helper.validDMs:
-                    print("skipping:",str(dm))
-                    continue
+                if self.args.runOnValid:
+                    if dm not in self.helper.validDMs:
+                        print("skipping:",str(dm))
+                        continue
                 
                 a = set()
                 a.add(dm)

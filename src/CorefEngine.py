@@ -188,25 +188,28 @@ class CorefEngine:
 		corefEngine = SiameseCNN(args, corpus, helper)
 		(pairs, predictions) = corefEngine.run()
 
-		stoppingPoints = [0.68]
+		# 0.68
+		stoppingPoints = [0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]
 		#f1s = []
 
-		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, 0.68)
+			#for sp in stoppingPoints:
+				#(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
+				#f1s.append(get_conll_f1(goldenClusters, predictedClusters))
 
-		#for sp in stoppingPoints:
-			#(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
-			#f1s.append(get_conll_f1(goldenClusters, predictedClusters))
-		bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
-		print("bcub - rec:",str(bcub_r))
-		print("bcub - prec:",str(bcub_p))
-		print("bcub - f1:",str(bcub_f1))
-		print("muc - rec:",str(muc_r))
-		print("muc - prec:",str(muc_p))
-		print("muc - f1:",str(muc_f1))
-		print("ceafe - rec:",str(ceafe_r))
-		print("ceafe - prec:",str(ceafe_p))
-		print("ceafe - f1:",str(ceafe_f1))
-		print("conll - f1:",str(conllf1))
+		for sp in stoppingPoints:
+			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
+			print("RESULTS FOR STOPPING POINT: ",str(sp))
+			bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
+			print("bcub - rec:",str(bcub_r))
+			print("bcub - prec:",str(bcub_p))
+			print("bcub - f1:",str(bcub_f1))
+			print("muc - rec:",str(muc_r))
+			print("muc - prec:",str(muc_p))
+			print("muc - f1:",str(muc_f1))
+			print("ceafe - rec:",str(ceafe_r))
+			print("ceafe - prec:",str(ceafe_p))
+			print("ceafe - f1:",str(ceafe_f1))
+			print("conll - f1:",str(conllf1))
 			#print("conll:",str(get_conll_f1(goldenClusters, predictedClusters)))
 		#print(f1s)
 		'''
