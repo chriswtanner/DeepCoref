@@ -25,6 +25,9 @@ class ECBHelper:
 
 		self.embeddingLength = 0 # filled in by loadEmbeddings()
 
+
+	def setValidDMs(self, DMs):
+		self.validDMs = DMs
 ##################################################
 #    creates DM pairs for train/dev/test
 ##################################################
