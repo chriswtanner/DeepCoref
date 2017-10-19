@@ -178,7 +178,7 @@ class CorefEngine:
 
 		# constructs helper class
 		helper = ECBHelper(corpus, args)
-		helper.setValidDMs(hddcrpDMs)
+		#helper.setValidDMs(hddcrpDMs)
 		#response = helper.constructCoNLLClustersFromFile("/Users/christanner/research/DeepCoref/results/test_hddcrp2.response")
 		#print(str(len(response)))
 		#helper.constructCoNLLTestFileCD("/Users/christanner/research/DeepCoref/results/test_cd.keys")
@@ -190,20 +190,23 @@ class CorefEngine:
 
 		stoppingPoints = [0.68]
 		#f1s = []
-		for sp in stoppingPoints:
-			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
+
+		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, 0.0)
+
+		#for sp in stoppingPoints:
+			#(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
 			#f1s.append(get_conll_f1(goldenClusters, predictedClusters))
-			bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
-			print("bcub - rec:",str(bcub_r))
-			print("bcub - prec:",str(bcub_p))
-			print("bcub - f1:",str(bcub_f1))
-			print("muc - rec:",str(muc_r))
-			print("muc - prec:",str(muc_p))
-			print("muc - f1:",str(muc_f1))
-			print("ceafe - rec:",str(ceafe_r))
-			print("ceafe - prec:",str(ceafe_p))
-			print("ceafe - f1:",str(ceafe_f1))
-			print("conll - f1:",str(conllf1))
+		bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
+		print("bcub - rec:",str(bcub_r))
+		print("bcub - prec:",str(bcub_p))
+		print("bcub - f1:",str(bcub_f1))
+		print("muc - rec:",str(muc_r))
+		print("muc - prec:",str(muc_p))
+		print("muc - f1:",str(muc_f1))
+		print("ceafe - rec:",str(ceafe_r))
+		print("ceafe - prec:",str(ceafe_p))
+		print("ceafe - f1:",str(ceafe_f1))
+		print("conll - f1:",str(conllf1))
 			#print("conll:",str(get_conll_f1(goldenClusters, predictedClusters)))
 		#print(f1s)
 		'''
