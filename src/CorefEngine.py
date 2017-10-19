@@ -1,5 +1,6 @@
 import sys  
 import params
+import os.path
 from ECBParser import *
 from ECBHelper import *
 from SiameseCNN import *
@@ -154,8 +155,11 @@ class CorefEngine:
 		'''
 		
 		# gets HDDCRP's DMs
-		hddcrpFile="/home/christanner/researchcode/DeepCoref/results/test_hddcrp_wd.response"
-		#hddcrpFile="/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"
+		hddcrpFile=""
+		if os.path.isfile("/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"):
+			hddcrpFile = "/Users/christanner/research/DeepCoref/results/test_hddcrp_wd.response"
+		else:
+			hddcrpFile="/home/christanner/researchcode/DeepCoref/results/test_hddcrp_wd.response" 
 		f = open(hddcrpFile, 'r')
 		f.readline()
 		hddcrpDMs = set()
@@ -185,12 +189,23 @@ class CorefEngine:
 		(pairs, predictions) = corefEngine.run()
 
 		stoppingPoints = [0.68]
-		f1s = []
+		#f1s = []
 		for sp in stoppingPoints:
 			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
-			f1s.append(get_conll_f1(goldenClusters, predictedClusters))
-			print("conll:",str(get_conll_f1(goldenClusters, predictedClusters)))
-		print(f1s)
+			#f1s.append(get_conll_f1(goldenClusters, predictedClusters))
+			bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
+			print("bcub - rec:",str(bcub_r))
+			print("bcub - prec:",str(bcub_p))
+			print("bcub - f1:",str(bcub_f1))
+			print("muc - rec:",str(muc_r))
+			print("muc - prec:",str(muc_p))
+			print("muc - f1:",str(muc_f1))
+			print("ceafe - rec:",str(ceafe_r))
+			print("ceafe - prec:",str(ceafe_p))
+			print("ceafe - f1:",str(ceafe_f1))
+			print("conll - f1:",str(conllf1))
+			#print("conll:",str(get_conll_f1(goldenClusters, predictedClusters)))
+		#print(f1s)
 		'''
 			goldenDMs = set()
 			missingFromHDDCRP = set()

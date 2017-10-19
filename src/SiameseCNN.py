@@ -49,7 +49,7 @@ class SiameseCNN:
     # creates clusters for our predictions
     def clusterPredictions(self, pairs, predictions, stoppingPoint):
         clusters = {}
-
+        print("in clusterPredictions()")
         # stores predictions
         docToDMPredictions = defaultdict(lambda : defaultdict(float))
         docToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
