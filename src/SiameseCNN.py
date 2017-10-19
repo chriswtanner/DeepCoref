@@ -27,7 +27,7 @@ from get_coref_metrics import *
 
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
-        self.calculateMax = True
+        self.calculateMax = False
         self.args = args
         print("args:", str(args))
         print(tf.__version__)
