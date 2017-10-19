@@ -191,7 +191,7 @@ class CorefEngine:
 		stoppingPoints = [0.68]
 		#f1s = []
 
-		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, 0.0)
+		(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, 0.68)
 
 		#for sp in stoppingPoints:
 			#(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)

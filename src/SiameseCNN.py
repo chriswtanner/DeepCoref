@@ -27,7 +27,7 @@ from get_coref_metrics import *
 
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
-        
+        self.calculateMax = True
         self.args = args
         print("args:", str(args))
         print(tf.__version__)
@@ -81,39 +81,13 @@ class SiameseCNN:
                 print("mismatch in DMs!!")
                 exit(1)
 
-            #print("docToDMPredictions:",str(docToDMPredictions[doc_id]))
-            # sanity check: ensure lower prediction score is good
-            '''
-            bestDM = ""
-            bestPred = 9999
-            worstDM = ""
-            worstPred = -99
-            for dmPair in docToDMPredictions[doc_id]:
-                pred = docToDMPredictions[doc_id][dmPair]
-                if pred < bestPred:
-                    bestPred = pred
-                    bestDM = dmPair
-                if pred > worstPred:
-                    worstPred = pred
-                    worstDM = dmPair
-
-            
-            print("best:",str(bestDM)," had score:",str(bestPred))
-            print("\tdm1:",str(self.corpus.dmToMention[bestDM[0]]))
-            print("\tdm2:",str(self.corpus.dmToMention[bestDM[1]]))
-            print("worst:",str(worstDM)," had score:",str(worstPred))
-            print("\tdm1:",str(self.corpus.dmToMention[worstDM[0]]))
-            print("\tdm2:",str(self.corpus.dmToMention[worstDM[1]]))
-            '''
-
             # construct the golden truth for the current doc
             goldenTruthDirClusters = {}
             for i in range(len(self.corpus.docToREFs[doc_id])):
                 tmp = set()
                 curREF = self.corpus.docToREFs[doc_id][i]
                 for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
-                    # TMP: 
-                    
+                    # TMP:
                     if dm not in self.helper.validDMs:
                         print("skipping:",str(dm))
                         continue
@@ -140,98 +114,140 @@ class SiameseCNN:
                 ourDirClusters[i] = a
 
             #print("golden:",str(goldenTruthDirClusters))
+            # the following keeps merging until our shortest distance > stopping threshold,
+            # or we have 1 cluster, whichever happens first
+            if not self.calculateMax:
+                while len(ourDirClusters.keys()) > 1:
+                    # find best merge
+                    closestDist = 999999
+                    closestClusterKeys = (-1,-1)
 
+                    # looks at all combinations of pairs
+                    for c1 in ourDirClusters.keys():
+                        for c2 in ourDirClusters.keys():
+                            if c1 == c2:
+                                continue
 
-            # THE FOLLOWING ITERATIVELY MERGES, and SAVES THE BEST MERGE
+                            for dm1 in ourDirClusters[c1]:
+                                for dm2 in ourDirClusters[c2]:
+                                    dist = 99999
+                                    if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                        dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                    elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                        dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                    else:
+                                        print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                    if dist < closestDist:
+                                        closestDist = dist
+                                        closestClusterKeys = (c1,c2)
+                                        #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                    #print("trying to merge:",str(closestClusterKeys))
 
-            bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
-            bestClustering = copy.deepcopy(ourDirClusters)
+                    # only merge clusters if it's less than our threshold
+                    if closestDist > stoppingPoint:
+                        break
 
-            mergeDistances = []
-            f1Scores = []
-            mergeDistances.append(-1)
-            f1Scores.append(bestScore)
+                    newCluster = set()
+                    (c1,c2) = closestClusterKeys
+                    for _ in ourDirClusters[c1]:
+                        newCluster.add(_)
+                    for _ in ourDirClusters[c2]:
+                        newCluster.add(_)
+                    ourDirClusters.pop(c1, None)
+                    ourDirClusters.pop(c2, None)
+                    ourDirClusters[c1] = newCluster
+                # end of current doc
+                for i in ourDirClusters.keys():
+                    ourClusterSuperSet[ourClusterID] = ourDirClusters[i]
+                    print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(ourDirClusters[i]))
+                    ourClusterID += 1
+            else: # calculates max performance possible
+                # THE FOLLOWING ITERATIVELY MERGES, and SAVES THE BEST MERGE
+                print("* CALCULATING MAX POSSIBLE PERFORMANCE")
+                bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
+                bestClustering = copy.deepcopy(ourDirClusters)
 
-            #print("ourclusters:",str(ourDirClusters))
-            print("# initial clusters:",str(len(ourDirClusters.keys()))," had score:",str(bestScore))
-            # performs agglomerative, checking our performance after each merge
+                mergeDistances = []
+                f1Scores = []
+                mergeDistances.append(-1)
+                f1Scores.append(bestScore)
 
-            while len(ourDirClusters.keys()) > 1:
-                # find best merge
-                closestDist = 999999
-                closestClusterKeys = (-1,-1)
+                #print("ourclusters:",str(ourDirClusters))
+                print("# initial clusters:",str(len(ourDirClusters.keys()))," had score:",str(bestScore))
+                # performs agglomerative, checking our performance after each merge
 
-                # looks at all combinations of pairs
+                while len(ourDirClusters.keys()) > 1:
+                    # find best merge
+                    closestDist = 999999
+                    closestClusterKeys = (-1,-1)
+
+                    # looks at all combinations of pairs
+                    
+                    for c1 in ourDirClusters.keys():
+                        for c2 in ourDirClusters.keys():
+                            if c1 == c2:
+                                continue
+
+                            for dm1 in ourDirClusters[c1]:
+                                for dm2 in ourDirClusters[c2]:
+                                    dist = 99999
+                                    if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                        dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                    elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                        dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                    else:
+                                        print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                    if dist < closestDist:
+                                        closestDist = dist
+                                        closestClusterKeys = (c1,c2)
+                                        #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                    #print("trying to merge:",str(closestClusterKeys))
+
+                    mergeDistances.append(closestDist)
+
+                    newCluster = set()
+                    (c1,c2) = closestClusterKeys
+                    for _ in ourDirClusters[c1]:
+                        newCluster.add(_)
+                    for _ in ourDirClusters[c2]:
+                        newCluster.add(_)
+                    ourDirClusters.pop(c1, None)
+                    ourDirClusters.pop(c2, None)
+                    ourDirClusters[c1] = newCluster
+
+                    #print("* our updated clusters",str(ourDirClusters))
+                    curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
+                    f1Scores.append(curScore)
+
+                    #print("\tyielded a score:",str(curScore))
+                    if curScore > bestScore:
+                        #print("(which is a new best!!")
+                        bestScore = curScore
+                        bestClustering = copy.deepcopy(ourDirClusters)
                 
-                for c1 in ourDirClusters.keys():
-                    for c2 in ourDirClusters.keys():
-                        if c1 == c2:
-                            continue
+                # end of current doc
+                print("best clustering yielded:",str(bestScore),":",str(bestClustering))
+                print("# best clusters:",str(len(bestClustering.keys())))
+                for i in bestClustering.keys():
+                    ourClusterSuperSet[ourClusterID] = bestClustering[i]
+                    print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(bestClustering[i]))
+                    ourClusterID += 1
 
-                        for dm1 in ourDirClusters[c1]:
-                            for dm2 in ourDirClusters[c2]:
-                                dist = 99999
-                                if (dm1,dm2) in docToDMPredictions[doc_id]:
-                                    dist = docToDMPredictions[doc_id][(dm1,dm2)]
-                                elif (dm2,dm1) in docToDMPredictions[doc_id]:
-                                    dist = docToDMPredictions[doc_id][(dm2,dm1)]
-                                else:
-                                    print("* error, why don't we have either dm1 or dm2 in doc_id")
-                                if dist < closestDist:
-                                    closestDist = dist
-                                    closestClusterKeys = (c1,c2)
-                                    #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
-                #print("trying to merge:",str(closestClusterKeys))
-
-                # only merge clusters if it's less than our threshold
-                if closestDist > stoppingPoint:
-                    break
-
-                mergeDistances.append(closestDist)
-
-                newCluster = set()
-                (c1,c2) = closestClusterKeys
-                for _ in ourDirClusters[c1]:
-                    newCluster.add(_)
-                for _ in ourDirClusters[c2]:
-                    newCluster.add(_)
-                ourDirClusters.pop(c1, None)
-                ourDirClusters.pop(c2, None)
-                ourDirClusters[c1] = newCluster
-
-                #print("* our updated clusters",str(ourDirClusters))
-                curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
-                f1Scores.append(curScore)
-
-                #print("\tyielded a score:",str(curScore))
-                if curScore > bestScore:
-                    #print("(which is a new best!!")
-                    bestScore = curScore
-                    bestClustering = copy.deepcopy(ourDirClusters)
-            
-            # end of current doc
-            print("best clustering yielded:",str(bestScore),":",str(bestClustering))
-            print("# best clusters:",str(len(bestClustering.keys())))
-            for i in bestClustering.keys():
-                ourClusterSuperSet[ourClusterID] = bestClustering[i]
-                print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(bestClustering[i]))
-                ourClusterID += 1
-
-            for i in range(len(f1Scores)):
-                if f1Scores[i] == bestScore:
-                    print("* ", str(mergeDistances[i])," -> ",str(f1Scores[i]))
-                    if i != len(f1Scores) - 1:
-                        stoppingPoints.append(mergeDistances[i+1])
-                else:
-                    print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
+                for i in range(len(f1Scores)):
+                    if f1Scores[i] == bestScore:
+                        print("* ", str(mergeDistances[i])," -> ",str(f1Scores[i]))
+                        if i != len(f1Scores) - 1:
+                            stoppingPoints.append(mergeDistances[i+1])
+                    else:
+                        print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
 
             
 
         # end of going through every doc
         print("# golden clusters:",str(len(goldenSuperSet.keys())))
         print("# our clusters:",str(len(ourClusterSuperSet)))
-        print("stoppingPoints: ",str(stoppingPoints))
-        print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
+        #print("stoppingPoints: ",str(stoppingPoints))
+        #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
 
         #self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
         #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
