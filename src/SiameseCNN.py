@@ -142,6 +142,8 @@ class SiameseCNN:
             #print("golden:",str(goldenTruthDirClusters))
 
 
+            # THE FOLLOWING ITERATIVELY MERGES, and SAVES THE BEST MERGE
+
             bestScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
             bestClustering = copy.deepcopy(ourDirClusters)
 
@@ -182,8 +184,8 @@ class SiameseCNN:
                 #print("trying to merge:",str(closestClusterKeys))
 
                 # only merge clusters if it's less than our threshold
-                #if closestDist > stoppingPoint:
-                #    break
+                if closestDist > stoppingPoint:
+                    break
 
                 mergeDistances.append(closestDist)
 
@@ -222,6 +224,8 @@ class SiameseCNN:
                         stoppingPoints.append(mergeDistances[i+1])
                 else:
                     print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
+
+            
 
         # end of going through every doc
         print("# golden clusters:",str(len(goldenSuperSet.keys())))

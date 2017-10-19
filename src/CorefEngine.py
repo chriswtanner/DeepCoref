@@ -178,7 +178,7 @@ class CorefEngine:
 
 		# constructs helper class
 		helper = ECBHelper(corpus, args)
-		#helper.setValidDMs(hddcrpDMs)
+		helper.setValidDMs(hddcrpDMs)
 		#response = helper.constructCoNLLClustersFromFile("/Users/christanner/research/DeepCoref/results/test_hddcrp2.response")
 		#print(str(len(response)))
 		#helper.constructCoNLLTestFileCD("/Users/christanner/research/DeepCoref/results/test_cd.keys")
