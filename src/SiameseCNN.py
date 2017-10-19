@@ -83,8 +83,7 @@ class SiameseCNN:
 
             #print("docToDMPredictions:",str(docToDMPredictions[doc_id]))
             # sanity check: ensure lower prediction score is good
-
-            sorted_x = sorted(docToDMPredictions[doc_id].items(), key=operator.itemgetter(0))
+            '''
             bestDM = ""
             bestPred = 9999
             worstDM = ""
@@ -105,6 +104,7 @@ class SiameseCNN:
             print("worst:",str(worstDM)," had score:",str(worstPred))
             print("\tdm1:",str(self.corpus.dmToMention[worstDM[0]]))
             print("\tdm2:",str(self.corpus.dmToMention[worstDM[1]]))
+            '''
 
             # construct the golden truth for the current doc
             goldenTruthDirClusters = {}
@@ -125,7 +125,7 @@ class SiameseCNN:
             goldenK = len(self.corpus.docToREFs[doc_id])
             print("# golden clusters: ",str(goldenK))
             # constructs our base clusters (singletons)
-            ourDirClusters = {}
+            ourDirClusters = {} 
             for i in range(len(docToDMs[doc_id])):
                 dm = docToDMs[doc_id][i]
                 if dm not in self.helper.validDMs:
@@ -178,8 +178,8 @@ class SiameseCNN:
                 #print("trying to merge:",str(closestClusterKeys))
 
                 # only merge clusters if it's less than our threshold
-                if closestDist > stoppingPoint:
-                    break
+                #if closestDist > stoppingPoint:
+                #    break
 
                 mergeDistances.append(closestDist)
 
