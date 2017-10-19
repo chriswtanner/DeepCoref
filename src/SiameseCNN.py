@@ -224,9 +224,9 @@ class SiameseCNN:
         print("stoppingPoints: ",str(stoppingPoints))
         print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
 
-        self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
-        self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
-        print("finished writing")
+        #self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
+        #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
+        #print("finished writing")
         return (ourClusterSuperSet, goldenSuperSet)
 
     def writeCoNLLPerlFile(self, fileOut, clusters):

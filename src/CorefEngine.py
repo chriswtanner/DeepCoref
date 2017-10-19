@@ -189,6 +189,7 @@ class CorefEngine:
 		for sp in stoppingPoints:
 			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
 			f1s.append(get_conll_f1(goldenClusters, predictedClusters))
+			print("conll:",str(get_conll_f1(goldenClusters, predictedClusters)))
 		print(f1s)
 			'''
 			goldenDMs = set()
