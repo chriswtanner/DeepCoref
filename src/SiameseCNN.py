@@ -27,7 +27,7 @@ from get_coref_metrics import *
 
 class SiameseCNN:
     def __init__(self, args, corpus, helper):
-        self.calculateMax = False
+        self.calculateMax = True
         self.args = args
         print("args:", str(args))
         print(tf.__version__)
@@ -123,24 +123,43 @@ class SiameseCNN:
                     closestDist = 999999
                     closestClusterKeys = (-1,-1)
 
+                    closestAvgDist = 999999
+                    closestAvgClusterKeys = (-1,-1)
+
+                    print("ourDirClusters:",str(ourDirClusters.keys()))
                     # looks at all combinations of pairs
-                    for c1 in ourDirClusters.keys():
-                        for c2 in ourDirClusters.keys():
-                            if c1 == c2:
+                    for i in range(len(ourDirClusters.keys())):
+                        
+                        c1 = ourDirClusters.keys()[i]
+                        print("c1:",str(c1))
+                        for j in range(len(ourDirClusters.keys())):
+                        #for c2 in ourDirClusters.keys():
+                            c2 = ourDirClusters.keys()[j]
+                            if j <= i:
                                 continue
 
                             for dm1 in ourDirClusters[c1]:
+                                dists = []
                                 for dm2 in ourDirClusters[c2]:
                                     dist = 99999
                                     if (dm1,dm2) in docToDMPredictions[doc_id]:
                                         dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                        dists.append(dist)
                                     elif (dm2,dm1) in docToDMPredictions[doc_id]:
                                         dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                        dists.append(dist)
                                     else:
                                         print("* error, why don't we have either dm1 or dm2 in doc_id")
                                     if dist < closestDist:
                                         closestDist = dist
                                         closestClusterKeys = (c1,c2)
+
+                                avgDist = float(sum(dists)) / float(len(dists))
+                                print("avgDist:",str(avgDist))
+                                if avgDist < closestAvgDist:
+                                    closestAvgDist = avgDist
+                                    closestAvgClusterKeys = (c1,c2)
+
                                         #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
                     #print("trying to merge:",str(closestClusterKeys))
 
@@ -182,32 +201,48 @@ class SiameseCNN:
                     closestDist = 999999
                     closestClusterKeys = (-1,-1)
 
+                    closestAvgDist = 999999
+                    closestAvgClusterKeys = (-1,-1)
+
                     # looks at all combinations of pairs
-                    
+                    i = 0
                     for c1 in ourDirClusters.keys():
+                        #print("c1:",str(c1))
+                        j = 0
                         for c2 in ourDirClusters.keys():
-                            if c1 == c2:
-                                continue
 
-                            for dm1 in ourDirClusters[c1]:
-                                for dm2 in ourDirClusters[c2]:
-                                    dist = 99999
-                                    if (dm1,dm2) in docToDMPredictions[doc_id]:
-                                        dist = docToDMPredictions[doc_id][(dm1,dm2)]
-                                    elif (dm2,dm1) in docToDMPredictions[doc_id]:
-                                        dist = docToDMPredictions[doc_id][(dm2,dm1)]
-                                    else:
-                                        print("* error, why don't we have either dm1 or dm2 in doc_id")
-                                    if dist < closestDist:
-                                        closestDist = dist
-                                        closestClusterKeys = (c1,c2)
-                                        #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
-                    #print("trying to merge:",str(closestClusterKeys))
+                            if j > i:
+                                for dm1 in ourDirClusters[c1]:
 
-                    mergeDistances.append(closestDist)
+                                    dists = []
+                                    for dm2 in ourDirClusters[c2]:
+                                        dist = 99999
+                                        if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                            dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                            dists.append(dist)
+                                        elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                            dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                            dists.append(dist)
+                                        else:
+                                            print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                        if dist < closestDist:
+                                            closestDist = dist
+                                            closestClusterKeys = (c1,c2)
+                                    avgDist = float(sum(dists)) / float(len(dists))
+                                    #print("avgDist:",str(avgDist))
+                                    if avgDist < closestAvgDist:
+                                        closestAvgDist = avgDist
+                                        closestAvgClusterKeys = (c1,c2)
+                            j += 1
+                        i += 1
+                    
+                    # changed
+                    mergeDistances.append(closestAvgDist)
+                    #mergeDistances.append(closestDist)
 
                     newCluster = set()
-                    (c1,c2) = closestClusterKeys
+                    #(c1,c2) = closestClusterKeys
+                    (c1,c2) = closestAvgClusterKeys
                     for _ in ourDirClusters[c1]:
                         newCluster.add(_)
                     for _ in ourDirClusters[c2]:
