@@ -135,8 +135,8 @@ class SiameseCNN:
                         j = 0
                         for c2 in ourDirClusters.keys():
                             if j > i:
+                                dists = []
                                 for dm1 in ourDirClusters[c1]:
-                                    dists = []
                                     for dm2 in ourDirClusters[c2]:
                                         dist = 99999
                                         if (dm1,dm2) in docToDMPredictions[doc_id]:
@@ -151,11 +151,11 @@ class SiameseCNN:
                                             closestDist = dist
                                             closestClusterKeys = (c1,c2)
 
-                                    avgDist = float(sum(dists)) / float(len(dists))
-                                    #print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
-                                    if avgDist < closestAvgDist:
-                                        closestAvgDist = avgDist
-                                        closestAvgClusterKeys = (c1,c2)
+                                avgDist = float(sum(dists)) / float(len(dists))
+                                #print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
+                                if avgDist < closestAvgDist:
+                                    closestAvgDist = avgDist
+                                    closestAvgClusterKeys = (c1,c2)
 
                             j += 1
                         i += 1
@@ -214,9 +214,9 @@ class SiameseCNN:
                         for c2 in ourDirClusters.keys():
 
                             if j > i:
-                                for dm1 in ourDirClusters[c1]:
 
-                                    dists = []
+                                dists = []
+                                for dm1 in ourDirClusters[c1]:
                                     for dm2 in ourDirClusters[c2]:
                                         dist = 99999
                                         if (dm1,dm2) in docToDMPredictions[doc_id]:
@@ -230,11 +230,10 @@ class SiameseCNN:
                                         if dist < closestDist:
                                             closestDist = dist
                                             closestClusterKeys = (c1,c2)
-                                    avgDist = float(sum(dists)) / float(len(dists))
-                                    #print("avgDist:",str(avgDist))
-                                    if avgDist < closestAvgDist:
-                                        closestAvgDist = avgDist
-                                        closestAvgClusterKeys = (c1,c2)
+                                avgDist = float(sum(dists)) / float(len(dists))
+                                if avgDist < closestAvgDist:
+                                    closestAvgDist = avgDist
+                                    closestAvgClusterKeys = (c1,c2)
                             j += 1
                         i += 1
                     
@@ -254,13 +253,10 @@ class SiameseCNN:
                     ourDirClusters.pop(c2, None)
                     ourDirClusters[c1] = newCluster
 
-                    #print("* our updated clusters",str(ourDirClusters))
                     curScore = get_conll_f1(goldenTruthDirClusters, ourDirClusters)
                     f1Scores.append(curScore)
 
-                    #print("\tyielded a score:",str(curScore))
                     if curScore > bestScore:
-                        #print("(which is a new best!!")
                         bestScore = curScore
                         bestClustering = copy.deepcopy(ourDirClusters)
                 
