@@ -1,8 +1,13 @@
 class Token:
-	def __init__(self, tokenID, sentenceNum, globalSentenceNum, tokenNum, text, stitchedTogether=False, tokens=[]):
+	def __init__(self, tokenID, sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, text, stitchedTogether=False, tokens=[]):
 		self.stitchedTogether = stitchedTogether
 		self.tokens = tokens
 		self.tokenNum = tokenNum # NOTE, this is relative to the given sentence <start> = 1  the = 2 (1-based)
+		self.hSentenceNum = hSentenceNum
+		self.hTokenNum = hTokenNum
+		self.doc_id = doc_id
+		self.UID = str(self.doc_id) + ";" + str(self.hSentenceNum) + ";" + str(self.hTokenNum)
+
 		if self.stitchedTogether == True:
 			self.sentenceNum = self.tokens[0].sentenceNum
 			self.globalSentenceNum = self.tokens[0].globalSentenceNum

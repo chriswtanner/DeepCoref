@@ -63,8 +63,9 @@ batchSize=$7
 shuffleTraining=$8
 runOnValid=${10}
 cd $scriptDir
+echo "-------- params --------"
 echo "corpus:" $1
-echo ${device}
+echo "device:" ${device}
 echo "numLayers:" $numLayers
 echo "numEpochs:" $numEpochs
 echo "windowSize:" $windowSize
@@ -72,6 +73,7 @@ echo "numNegPerPos:" $numNegPerPos
 echo "batchSize:" $batchSize
 echo "shuffleTraining:" $shuffleTraining
 echo "runOnValid:" $runOnValid
+echo "------------------------"
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
 #python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
 

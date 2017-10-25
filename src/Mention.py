@@ -11,6 +11,9 @@ class Mention:
 		self.relativeTokenIndices = []
 		self.suffix = doc_id[doc_id.find("ecb"):]
 		self.mentionType = mentionType
+		self.UID = ""
+		for t in self.tokens:
+			self.UID += t.UID + ";"
 
 	def setPrevTokenRelativeIndex(self, prevTokenRelativeIndex, prevToken):
 		self.prevTokenRelativeIndex = prevTokenRelativeIndex

@@ -9,13 +9,10 @@ from Token import Token
 from Mention import Mention
 from StanToken import StanToken
 from StanLink import StanLink
-
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-
-#importlib.reload(sys)
 
 class ECBParser:
 	def __init__(self, args):
@@ -247,6 +244,8 @@ class ECBParser:
 		self.docToREFs = defaultdict(list)
 		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
 		self.docToDMs = defaultdict(list)
+		self.UIDToMentions = {}
+
 		# same tokens as corpusTokens, just made into lists according
 		# to each doc.  (1 doc = 1 list of tokens); used for printing corpus to .txt file
 		self.docTokens = []
@@ -273,12 +272,6 @@ class ECBParser:
 
 			self.dirToDocs[dir_num].append(doc_id)
 
-			'''
-			if self.isVerbose:
-				print("parsing: ", doc_id, " (file ", str(files.index(f) + 1), " of ", str(len(files)), ")")
-				sys.stdout.flush()
-			'''
-
 			tmpDocTokens = [] # we will optionally flip these and optionally stitch Mention tokens together
 			tmpDocTokenIDsToTokens = {}
 			docTokenIDToCorpusIndex = {}
@@ -302,6 +295,7 @@ class ECBParser:
 			for match in it:
 				t_id = match.group(1)
 				sentenceNum = int(match.group(2))
+				hTokenNum = int(match.group(3)) # only used for matching w/ HDDCRP's files
 				tokenText = match.group(4).lower().rstrip()
 				# removes tokens that end in : (e.g., newspaper:) but leaves the atomic ":" alone
 				if len(tokenText) > 1 and tokenText[-1] == ":":
@@ -316,6 +310,10 @@ class ECBParser:
 
 				if sentenceNum > 0 or "plus" not in doc_id:
 
+					hSentenceNum = sentenceNum
+					if "plus" in doc_id:
+						hSentenceNum = sentenceNum - 1
+
 					# we are starting a new sentence
 					if sentenceNum != lastSentenceNum:
 						
@@ -328,19 +326,18 @@ class ECBParser:
 								lastToken.text = "."
 								tmpDocTokenIDsToTokens[lastToken_id] = lastToken
 							elif lastTokenText not in self.endPunctuation:
-								endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, ".")
+								endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, ".")
 								tmpDocTokens.append(endToken)
-							#endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, "<end>")
-							#tmpDocTokens.append(endToken)
+
 							globalSentenceNum = globalSentenceNum + 1
 
 						tokenNum = -1
-						startToken = Token("-1", sentenceNum, globalSentenceNum, tokenNum, "<start>")
+						startToken = Token("-1", sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, "<start>")
 						#tmpDocTokens.append(startToken)
 						tokenNum = tokenNum + 1
 
 					# adds token
-					curToken = Token(t_id, sentenceNum, globalSentenceNum, tokenNum, tokenText)
+					curToken = Token(t_id, sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, tokenText)
 					tmpDocTokenIDsToTokens[t_id] = curToken
 					firstToken = False
 					tmpDocTokens.append(curToken)
@@ -356,7 +353,7 @@ class ECBParser:
 				lastToken.text = "."
 				tmpDocTokenIDsToTokens[lastToken_id] = lastToken
 			elif lastTokenText not in self.endPunctuation:
-				endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, ".")
+				endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, -1, -1, ".")
 				tmpDocTokens.append(endToken)
 			globalSentenceNum = globalSentenceNum + 1
 
@@ -390,20 +387,17 @@ class ECBParser:
 				# for we do not want to have all mentions, so we curtail the sentences of tokens
 				if hasAllTokens and self.stitchMentions and len(tmpCurrentMentionSpanIDs) > 1:
 					tmpCurrentMentionSpanIDs.sort()
-					#print "tmpCurrentMentionSpanIDs: " + str(tmpCurrentMentionSpanIDs)
 					spanRange = 1 + max(tmpCurrentMentionSpanIDs) - min(tmpCurrentMentionSpanIDs)
 					if isVerbose and spanRange != len(tmpCurrentMentionSpanIDs):
 						print("*** WARNING: the mention's token range seems to skip over a token id! ", str(tmpCurrentMentionSpanIDs))
 					else:
-
-						#print "tmpCurrentMentionSpanIDs:" + str(tmpCurrentMentionSpanIDs)
 						# makes a new stitched-together Token
 						tokens_stitched_together = []
 						for token_id in tmpCurrentMentionSpanIDs:
 							cur_token = tmpDocTokenIDsToTokens[str(token_id)]
 							tokens_stitched_together.append(cur_token)
 						
-						stitched_token = Token(-2, -2, -2, -2, "", True, tokens_stitched_together)
+						stitched_token = Token(-2, -2, -2, -2, doc_id, -2, -2, "", True, tokens_stitched_together)
 						stitchedTokens.append(stitched_token)
 
 						# points the constituent Tokens to its new stitched-together Token
@@ -413,11 +407,7 @@ class ECBParser:
 							if cur_token in tokenToStitchedToken.keys():
 								if isVerbose:
 									print("ERROR: OH NO, the same token id (", str(token_id), ") is used in multiple Mentions!")
-								#print tokenToStitchedToken[cur_token]
-								#print tmpCurrentMentionSpanIDs
-								#exit(1)
 							else:
-								# print "pointing token id: " + str(token_id) + " to " + str(stitched_token)
 								tokenToStitchedToken[cur_token] = stitched_token
 
 			if isVerbose and len(stitchedTokens) > 0:
@@ -563,6 +553,8 @@ class ECBParser:
 			# (2)
 			self.globalSentenceNumToTokens[int(t.globalSentenceNum)].append(t)
 
+		for m in self.mentions:
+			self.UIDToMentions[m.UID] = m
 		# ensures we have found all of the valid mentions in our corpus
 		'''
 		if self.ensureAllMentionsPresent: # this should be true when we're actually using the entire corpus
