@@ -29,8 +29,6 @@ class ECBHelper:
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
 
-
-
 ##################################################
 #    creates DM pairs for train/dev/test
 ##################################################

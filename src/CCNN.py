@@ -76,7 +76,7 @@ class CCNN:
                 a = set()
                 a.add(dm)
                 ourDirClusters[i] = a
- 
+
             # the following keeps merging until our shortest distance > stopping threshold,
             # or we have 1 cluster, whichever happens first
             while len(ourDirClusters.keys()) > 1:
@@ -138,7 +138,7 @@ class CCNN:
                 ourClusterSuperSet[ourClusterID] = ourDirClusters[i]
                 ourClusterID += 1
         # end of going through every doc
-        print("# our clusters:",str(len(ourClusterSuperSet)))
+        #print("# our clusters:",str(len(ourClusterSuperSet)))
         return ourClusterSuperSet
 
     # creates clusters for our predictions
@@ -383,6 +383,102 @@ class CCNN:
         #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
         #print("finished writing")
         return (ourClusterSuperSet, goldenSuperSet)
+
+    # writes CoNLL file in the same format as args.hddcrpFile
+    def writeCoNLLFile(self, predictedClusters, stoppingPoint):
+        hm_idToClusterID = {}
+        for c_id in predictedClusters.keys():
+            for hm_id in predictedClusters[c_id]:
+                hm_idToClusterID[hm_id] = c_id
+
+        # constructs output file
+        fileOut = "predict." + \
+            "nl" + str(self.args.numLayers) + "_" + \
+            "ne" + str(self.args.numEpochs) + "_" + \
+            "ws" + str(self.args.windowSize) + "_" + \
+            "neg" + str(self.args.numNegPerPos) + "_" + \
+            "bs" + str(self.args.batchSize) + "_" + \
+            "s" + str(self.args.shuffleTraining) + "_" + \
+            "e" + str(self.args.embeddingsFile) + "_" + \
+            "sp" + str(stoppingPoint) + ".txt"
+
+        print("writing out:",str(fileOut))
+        fout = open(fileOut, 'w')
+
+        # reads the original CoNLL, while writing each line
+        f = open(self.args.hddcrpFile, 'r')
+        for line in f:
+            line = line.rstrip()
+            tokens = line.split("\t")
+            if line.startswith("#") and "document" in line:
+                sentenceNum = 0
+                fout.write(line + "\n")
+            elif line == "":
+                sentenceNum += 1
+                fout.write(line + "\n")
+            elif len(tokens) == 5:
+                doc, _, tokenNum, text, ref_ = tokens   
+                UID = str(doc_id) + ";" + str(sentenceNum) + ";" + str(tokenNum)
+
+                # reconstructs the HMention(s) that exist on this line, for the
+                # sake of being able to now look up what cluster assignent it/they belong to
+                htoken = self.hddcrp_parsed.UIDToToken[UID]
+                hmentions = set()
+                for hm_id in htoken.hm_ids:
+                    hmentions.append(self.hddcrp_parsed.hm_idToHMention[hm_id])
+
+                refs = []
+                if ref_.find("|") == -1:
+                    refs.append(ref_)
+                else: # we at most have 1 "|""
+                    refs.append(ref_[0:ref_.find("|")])
+                    refs.append(ref_[ref_.find("|")+1:])
+                    #print("***** FOUND 2:",str(line))
+
+                if (len(refs) == 1 and refs[0] == "-"):
+                    fout.write(line + "\n") # just output it, since we want to keep the same mention going
+                else:
+                    ref_section = ""
+                    for ref in refs:
+                        if ref[0] == "(" and ref[-1] != ")": # i.e. (ref_id
+                            ref_id = int(ref[1:])
+                            foundMention = False
+                            for hmention in hmentions:
+                                if hmention.ref_id == ref_id: # we found the exact mention
+                                    foundMention = True
+                                    hm_id = hmention.hm_id
+                                    clusterID = hm_idToClusterID[hm_id]
+                                    ref_section += "(" + str(clusterID)
+                                    break
+                            if not foundMention:
+                                print("* ERROR, we never found the mention for this line:",str(line))
+                                exit(1)
+
+                        # represents we are ending a mention
+                        elif ref[-1] == ")": # i.e., ref_id) or (ref_id)
+                            ref_id = -1
+                            # we set ref_if, tokens, UID
+                            if ref[0] != "(": # ref_id)
+                                ref_id = int(ref[:-1])
+
+                            else: # (ref_id)
+                                ref_id = int(ref[1:-1])
+                                ref_section += "("
+
+                            foundMention = False
+                            for hmention in hmentions:
+                                if hmention.ref_id == ref_id: # we found the exact mention
+                                    foundMention = True
+                                    hm_id = hmention.hm_id
+                                    clusterID = hm_idToClusterID[hm_id]
+                                    ref_section += str(clusterID)
+                                    break
+                            if not foundMention:
+                                print("* ERROR, we never found the mention for this line:",str(line))
+                                exit(1)
+
+        f.close()
+        fout.close()
 
     def writeCoNLLPerlFile(self, fileOut, clusters):
         # writes WD file

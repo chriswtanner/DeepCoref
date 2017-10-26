@@ -8,6 +8,7 @@ class HToken:
 		self.tokenNum = tokenNum
 		self.text = text
 		self.UID = str(doc_id) + ";" + str(sentenceNum) + ";" + str(tokenNum)
+		self.hm_ids = set()
 
 	def __str__(self):
 		return("[HTOKEN] doc:" + str(doc_id) + "; sentenceNum:" + str(sentenceNum) + "; tokenNum:" + str(tokenNum) + "; text:" + str(text))
