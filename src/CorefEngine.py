@@ -4,19 +4,12 @@ import os.path
 from ECBParser import *
 from ECBHelper import *
 from HDDCRPParser import *
-from SiameseCNN import *
+from CCNN import *
 from get_coref_metrics import *
 
 # parses the corpus and runs Coref Resoultion on the mentions
 class CorefEngine:
 	if __name__ == "__main__":
-
-		'''
-		TODO:
-			- in the ecbparser, make UIDToToken = {}
-			- ensure this matches with all of HDDCRP's UIDs
-			- at test time, construct DMs from hddcrp_pred.UIDToHMentions.keys() (delimit by ;)
-		'''
 
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -30,6 +23,31 @@ class CorefEngine:
 		hddcrp_pred = HDDCRPParser(predHDDCRPFile)
 		print("# H-UIDs preds:", str(len(hddcrp_pred.UIDToHMentions.keys())))
 
+		corpus = ECBParser(args)
+		helper = ECBHelper(corpus, args)
+
+		# trains and tests the pairwise-predictions
+		corefEngine = CCNN(args, corpus, helper)
+
+		(pairs, predictions) = corefEngine.run(hddcrp_pred)
+
+		stoppingPoints = [0.6] #[0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]
+
+		for sp in stoppingPoints:
+			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
+			print("RESULTS FOR STOPPING POINT: ",str(sp))
+			bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
+			print("bcub - rec:",str(bcub_r))
+			print("bcub - prec:",str(bcub_p))
+			print("bcub - f1:",str(bcub_f1))
+			print("muc - rec:",str(muc_r))
+			print("muc - prec:",str(muc_p))
+			print("muc - f1:",str(muc_f1))
+			print("ceafe - rec:",str(ceafe_r))
+			print("ceafe - prec:",str(ceafe_p))
+			print("ceafe - f1:",str(ceafe_f1))
+			print("conll - f1:",str(conllf1))
+		'''
 		hddcrp = hddcrp_gold
 
 		numInGold = 0
@@ -49,10 +67,10 @@ class CorefEngine:
 		print("numMissingFromPred",numMissingFromPred)
 		print("numInPred",numInPred)
 		print("numMissingFromGold",numMissingFromGold)
-
+		'''
 		# parses corpus
-		corpus = ECBParser(args)
-		helper = ECBHelper(corpus, args)
+
+		'''
 		numRefs = 0
 		numDMs = 0
 		for d in helper.testingDirs:
@@ -61,7 +79,6 @@ class CorefEngine:
 				numDMs += len(corpus.docToDMs[doc_id])
 		print("numRefs",numRefs)
 		print("numDMs:",numDMs)
-		exit(1)
 
 		print("# ECB-UIDs:", str(len(corpus.UIDToMentions.keys())))
 		
@@ -99,31 +116,9 @@ class CorefEngine:
 		print("docsMissingFromH:", str(len(docsMissingFromH)))
 			#	print("\thddcrp has the doc w/", str(len(hddcrp.docToHMentions[doc_id])), "mentions")
 		exit(1)
+		'''
 
-		# constructs helper class
 
-		#helper.setValidDMs(hddcrpDMs)
-
-		# trains and tests the pairwise-predictions
-		corefEngine = SiameseCNN(args, corpus, helper)
-		(pairs, predictions) = corefEngine.run()
-
-		stoppingPoints = [0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]
-
-		for sp in stoppingPoints:
-			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
-			print("RESULTS FOR STOPPING POINT: ",str(sp))
-			bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conllf1 = get_conll_scores(goldenClusters, predictedClusters)
-			print("bcub - rec:",str(bcub_r))
-			print("bcub - prec:",str(bcub_p))
-			print("bcub - f1:",str(bcub_f1))
-			print("muc - rec:",str(muc_r))
-			print("muc - prec:",str(muc_p))
-			print("muc - f1:",str(muc_f1))
-			print("ceafe - rec:",str(ceafe_r))
-			print("ceafe - prec:",str(ceafe_p))
-			print("ceafe - f1:",str(ceafe_f1))
-			print("conll - f1:",str(conllf1))
 
 
 

@@ -12,13 +12,16 @@ class HDDCRPParser:
 		# global vars
 		self.htokens = {}
 		self.UIDToHMentions = {}
+		self.UIDToToken = {}
 		self.hmentions = []
 		self.docToHMentions = defaultdict(list)
+		self.docToUIDs = defaultdict(list)
+		self.hm_idToHMention = {}
 
 		REFToStartIndex = {}
 		tokenIndex = 0
 		sentenceNum = 0
-
+		hm_id = 0
 		f = open(inputFile, "r")
 		for line in f:
 			line = line.rstrip()
@@ -33,14 +36,16 @@ class HDDCRPParser:
 				# the construction sets a member variable "uid" = doc_id, sentence_id, token_num
 				curToken = HToken(doc, sentenceNum, tokenNum, text.lower())
 				self.htokens[tokenIndex] = curToken
-				
+				self.UIDToToken[curToken.UID] = curToken
+				self.docToUIDs[doc].append(curToken.UID)
+
 				refs = []
 				if ref_.find("|") == -1:
 					refs.append(ref_)
 				else: # we at most have 1 |
 					refs.append(ref_[0:ref_.find("|")])
 					refs.append(ref_[ref_.find("|")+1:])
-					print("***** FOUND 2:",str(line))
+					#print("***** FOUND 2:",str(line))
 				for ref in refs:
 					if ref[0] == "(" and ref[-1] != ")": # i.e. (ref_id
 						ref_id = int(ref[1:])
@@ -66,11 +71,13 @@ class HDDCRPParser:
 							tokens.append(curToken)
 							UID = curToken.UID + ";"
 
-						curMention = HMention(doc, ref_id, tokens, UID)
+						curMention = HMention(doc, ref_id, tokens, UID, hm_id)
 						self.docToHMentions[doc].append(curMention)
 						self.hmentions.append(curMention)
 						self.UIDToHMentions[UID] = curMention
-
+						self.hm_idToHMention[hm_id] = curMention
+						hm_id += 1
+						
 				# end of current token line
 				tokenIndex += 1 # this always increases whenever we see a token
 				

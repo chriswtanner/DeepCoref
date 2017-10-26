@@ -21,30 +21,22 @@ from ECBHelper import *
 from ECBParser import *
 from get_coref_metrics import *
 
-#sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/keras/')
-#sys.path.append('/gpfs/main/home/christanner/.local/lib/python3.5/site-packages/tensorflow/')
-#
-
-class SiameseCNN:
+class CCNN:
     def __init__(self, args, corpus, helper):
         self.calculateMax = False
         self.args = args
         print("args:", str(args))
-        print(tf.__version__)
+        print("tf version:",str(tf.__version__))
 
         if args.device == "cpu":
-            print("WE WANT TO USE CPU!!")
             sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
-            print(sess)
             os.environ['CUDA_VISIBLE_DEVICES'] = ''
-            #config = tf.ConfigProto(device_count = {'GPU': 0})
-            #sess = tf.Session(config=config)
-            print(sess)
-     
+            print("session:",str(sess))
         print("devices:",device_lib.list_local_devices())
 
         self.corpus = corpus
         self.helper = helper
+        print("-----------------------")
 
     # creates clusters for our predictions
     def clusterPredictions(self, pairs, predictions, stoppingPoint):
@@ -302,27 +294,23 @@ class SiameseCNN:
         f.write("#end document (t);\n")
 
     # trains and tests the model
-    def run(self):
+    def run(self, hddcrp_pred=None):
 
-        # loads embeddings
+        # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
+        if hddcrp_pred != None:
+            testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP(hddcrp_pred)
+        exit(1)
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
-        print("* training data shape:",str(training_data.shape))
-        print("* inputA's shape:",str(training_data[:, 0].shape))
         dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
-
         input_shape = training_data.shape[2:]
-        '''
-        print("input_shape:",str(input_shape))
-        print('training_pairs shape1:', training_pairs.shape)
-        print('training_labels shape:', training_labels.shape)
-        print('testing pairs shape:', testing_pairs.shape)
-        print('testing_labels shape:', testing_labels.shape)
-        '''
+
+        print("* training data shape:",str(training_data.shape))
+        print("* dev data shape:",str(dev_data.shape))
+
         # network definition
-        print("* input_shape:",str(input_shape))
         base_network = self.create_base_network(input_shape)
 
         input_a = Input(shape=input_shape)
@@ -552,6 +540,86 @@ class SiameseCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
+    # creates the test data from hddcrp's predicted mentions
+    def createDataFromHDDCRP(self, hddcrp_pred):
+        (pairs, labels) = self.helper.constructAllWDHMPairs(hddcrp_pred)
+        print("#  pairs:",str(len(pairs)))
+
+        # determines which mentions we'll construct
+        hmentionsIDsWeCareAbout = set()
+        for (hm1_id,hm2_id) in pairs:
+            hmentionsIDsWeCareAbout.add(hm1_id)
+            hmentionsIDsWeCareAbout.add(hm2_id)
+
+        # constructs the DM matrix for every mention
+        hm_idToMatrix = {}
+
+        numRows = 1 + 2*self.args.windowSize
+        numCols = self.embeddingLength
+        for hm_id in hmentionsIDsWeCareAbout:
+            curMentionMatrix = np.zeros(shape=(numRows,numCols))
+            t_startIndex = 99999999
+            t_endIndex = -1
+
+            # gets token indices and constructs the Mention embedding
+            menEmbedding = [0]*numCols
+            m = hddcrp_pred.hm_idToHMention[hm_id]
+            for t in m.htokens:
+
+                token = self.corpus.UIDToToken[t.UID]
+                curEmbedding = self.wordTypeToEmbedding[token.text]
+                menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
+
+                ind = self.corpus.corpusTokensToCorpusIndex[token]
+                if ind < t_startIndex:
+                    t_startIndex = ind
+                if ind > t_endIndex:
+                    t_endIndex = ind
+
+            # sets the center
+            curMentionMatrix[self.args.windowSize] = [x / float(len(m.htokens)) for x in menEmbedding]
+
+            # the prev tokens
+            for i in range(self.args.windowSize):
+                ind = t_startIndex - self.args.windowSize + i
+
+                emb = [0]*numCols
+                if ind >= 0:
+                    token = self.corpus.corpusTokens[ind]
+                    if token.text in self.wordTypeToEmbedding:
+                        emb = self.wordTypeToEmbedding[token.text]
+                    else:
+                        print("* ERROR, we don't have:",str(token.text))
+
+                curMentionMatrix[i] = emb
+            
+            # gets the 'next' tokens
+            for i in range(self.args.windowSize):
+                ind = t_endIndex + 1 + i
+
+                emb = [0] * numCols
+                if ind < self.corpus.numCorpusTokens - 1:
+                    token = self.corpus.corpusTokens[ind]
+                    #print("next",str(token))
+                    if token.text in self.wordTypeToEmbedding:
+                        emb = self.wordTypeToEmbedding[token.text]
+                    else:
+                        print("* ERROR, we don't have:",str(token.text))
+                curMentionMatrix[self.args.windowSize+1+i] = emb
+            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,numCols,1)
+
+            hm_idToMatrix[hm_id] = curMentionMatrix
+
+        # constructs final 5D matrix
+        X = []
+        for (hm1_id,hm2_id) in pairs:
+            pair = np.asarray([hm_idToMatrix[hm1_id],hm_idToMatrix[hm2_id]])
+            X.append(pair)
+        Y = np.asarray(labels)
+        X = np.asarray(X)
+        return (pairs, X,Y)
+        
+    # creates data from ECBCorpus (train and dev uses this, and optionally test)
     def createData(self, dirs, subSample):
 
         if subSample: # training (we want just some of the negs)
@@ -560,15 +628,20 @@ class SiameseCNN:
             (pairs, labels) = self.helper.constructAllWDDMPairs(dirs)
 
         print("# pairs:",str(len(pairs)))
+
+        # determines which mentions we'll construct
+        mentionsWeCareAbout = set()
+        for (dm1,dm2) in pairs:
+            mentionsWeCareAbout.add(dm1)
+            mentionsWeCareAbout.add(dm2)
+
         # constructs the DM matrix for every mention
         dmToMatrix = {}
 
         numRows = 1 + 2*self.args.windowSize
         numCols = self.embeddingLength
-        for m in self.corpus.mentions:
-            
+        for m in mentionsWeCareAbout:
             curMentionMatrix = np.zeros(shape=(numRows,numCols))
-            #print("mention:",str(m))
             t_startIndex = 99999999
             t_endIndex = -1
 
@@ -602,6 +675,7 @@ class SiameseCNN:
 
                 curMentionMatrix[i] = emb
 
+            # gets the 'next' tokens
             for i in range(self.args.windowSize):
                 ind = t_endIndex + 1 + i
 
