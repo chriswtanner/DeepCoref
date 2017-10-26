@@ -392,14 +392,13 @@ class CCNN:
                 hm_idToClusterID[hm_id] = c_id
 
         # constructs output file
-        fileOut = "predict." + \
+        fileOut = str(self.args.dataDir) + "predict." + \
             "nl" + str(self.args.numLayers) + "_" + \
             "ne" + str(self.args.numEpochs) + "_" + \
             "ws" + str(self.args.windowSize) + "_" + \
             "neg" + str(self.args.numNegPerPos) + "_" + \
             "bs" + str(self.args.batchSize) + "_" + \
             "s" + str(self.args.shuffleTraining) + "_" + \
-            "e" + str(self.args.embeddingsFile) + "_" + \
             "sp" + str(stoppingPoint) + ".txt"
 
         print("writing out:",str(fileOut))
