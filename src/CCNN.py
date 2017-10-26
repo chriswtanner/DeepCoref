@@ -750,6 +750,7 @@ class CCNN:
             hmentionsIDsWeCareAbout.add(hm1_id)
             hmentionsIDsWeCareAbout.add(hm2_id)
 
+        print("size of hmentionsIDsWeCareAbout:",str(len(hmentionsIDsWeCareAbout)))
         # constructs the DM matrix for every mention
         hm_idToMatrix = {}
 

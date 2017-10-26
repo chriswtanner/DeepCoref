@@ -87,3 +87,4 @@ class HDDCRPParser:
 		f.close()
 
 		print("* parsed ",str(len(self.hmentions)), "mentions")
+		print("* created ", str(len(hm_idToHMention.keys())), " hm_ids!")
