@@ -424,7 +424,7 @@ class CCNN:
                 htoken = self.hddcrp_parsed.UIDToToken[UID]
                 hmentions = set()
                 for hm_id in htoken.hm_ids:
-                    hmentions.append(self.hddcrp_parsed.hm_idToHMention[hm_id])
+                    hmentions.add(self.hddcrp_parsed.hm_idToHMention[hm_id])
 
                 refs = []
                 if ref_.find("|") == -1:
