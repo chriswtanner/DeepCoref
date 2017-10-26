@@ -44,7 +44,7 @@ hddcrpFile=${baseDir}"data/"${10}".WD.semeval.txt" # MAKE SURE THIS IS WHAT YOU 
 verbose="true"
 stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-06-09/"
 stitchMentions="False"
-dataDir=${baseDir}"data/"
+resultsDir=${baseDir}"results/"
 
 # glove param
 gWindowSize=6
@@ -85,7 +85,7 @@ echo "------------------------"
 # then
 #	export CUDA_VISIBLE_DEVICES=
 # fi
-python3 -u CorefEngine.py --dataDir=${dataDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile}
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile}
 
 exit 1
 

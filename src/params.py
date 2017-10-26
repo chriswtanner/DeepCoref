@@ -47,7 +47,7 @@ def setCorefEngineParams():
 	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
 	
 	# CCNN
-	parser.add_argument("--dataDir", help="the full path to /data")	
+	parser.add_argument("--resultsDir", help="the full path to /results")	
 	parser.add_argument("--hddcrpFile", help="the filename of hddcrpFile to load in (gold or predict)")
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
 	parser.add_argument("--numLayers", help="1 or 2 conv sections", type=int)
