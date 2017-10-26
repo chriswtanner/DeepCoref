@@ -22,7 +22,7 @@ from ECBParser import *
 from get_coref_metrics import *
 
 class CCNN:
-    def __init__(self, args, corpus, helper):
+    def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
         self.args = args
         print("args:", str(args))
@@ -36,7 +36,110 @@ class CCNN:
 
         self.corpus = corpus
         self.helper = helper
+        self.hddcrp_parsed = hddcrp_parsed
         print("-----------------------")
+
+    # creates clusters for our hddcrp predictions
+    def clusterHPredictions(self, pairs, predictions, stoppingPoint):
+        clusters = {}
+        print("in clusterPredictions()")
+        # stores predictions
+        docToHMPredictions = defaultdict(lambda : defaultdict(float))
+        docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+        for i in range(len(pairs)):
+            (hm1,hm2) = pairs[i]
+
+            prediction = predictions[i][0]
+
+            doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+            doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+            if doc_id != doc_id2:
+                print("ERROR: pairs are from diff docs")
+                exit(1)
+
+            if hm1 not in docToHMs[doc_id]:
+                docToHMs[doc_id].append(hm1)
+            if hm2 not in docToHMs[doc_id]:
+                docToHMs[doc_id].append(hm2)
+            docToHMPredictions[doc_id][(hm1,hm2)] = prediction
+
+        ourClusterID = 0
+        ourClusterSuperSet = {}
+        
+        stoppingPoints = []
+
+        for doc_id in docToHMPredictions.keys():
+            # constructs our base clusters (singletons)
+            ourDirClusters = {} 
+            for i in range(len(docToHMs[doc_id])):
+                dm = docToHMs[doc_id][i]
+                a = set()
+                a.add(dm)
+                ourDirClusters[i] = a
+ 
+            # the following keeps merging until our shortest distance > stopping threshold,
+            # or we have 1 cluster, whichever happens first
+            while len(ourDirClusters.keys()) > 1:
+                # find best merge
+                closestDist = 999999
+                closestClusterKeys = (-1,-1)
+
+                closestAvgDist = 999999
+                closestAvgClusterKeys = (-1,-1)
+
+                #print("ourDirClusters:",str(ourDirClusters.keys()))
+                # looks at all combinations of pairs
+                i = 0
+                for c1 in ourDirClusters.keys():
+                    
+                    #print("c1:",str(c1))
+                    j = 0
+                    for c2 in ourDirClusters.keys():
+                        if j > i:
+                            dists = []
+                            for dm1 in ourDirClusters[c1]:
+                                for dm2 in ourDirClusters[c2]:
+                                    dist = 99999
+                                    if (dm1,dm2) in docToHMPredictions[doc_id]:
+                                        dist = docToHMPredictions[doc_id][(dm1,dm2)]
+                                        dists.append(dist)
+                                    elif (dm2,dm1) in docToHMPredictions[doc_id]:
+                                        dist = docToHMPredictions[doc_id][(dm2,dm1)]
+                                        dists.append(dist)
+                                    else:
+                                        print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                    if dist < closestDist:
+                                        closestDist = dist
+                                        closestClusterKeys = (c1,c2)
+
+                            avgDist = float(sum(dists)) / float(len(dists))
+                            #print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
+                            if avgDist < closestAvgDist:
+                                closestAvgDist = avgDist
+                                closestAvgClusterKeys = (c1,c2)
+
+                        j += 1
+                    i += 1
+
+                if closestAvgDist > stoppingPoint:
+                    break
+
+                newCluster = set()
+                (c1,c2) = closestClusterKeys
+                for _ in ourDirClusters[c1]:
+                    newCluster.add(_)
+                for _ in ourDirClusters[c2]:
+                    newCluster.add(_)
+                ourDirClusters.pop(c1, None)
+                ourDirClusters.pop(c2, None)
+                ourDirClusters[c1] = newCluster
+            # end of current doc
+            for i in ourDirClusters.keys():
+                ourClusterSuperSet[ourClusterID] = ourDirClusters[i]
+                ourClusterID += 1
+        # end of going through every doc
+        print("# our clusters:",str(len(ourClusterSuperSet)))
+        return ourClusterSuperSet
 
     # creates clusters for our predictions
     def clusterPredictions(self, pairs, predictions, stoppingPoint):
@@ -294,14 +397,12 @@ class CCNN:
         f.write("#end document (t);\n")
 
     # trains and tests the model
-    def run(self, hddcrp_pred=None):
+    def run(self):
 
         # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
-        if hddcrp_pred != None:
-            testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP(hddcrp_pred)
-        exit(1)
+
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
         dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
@@ -336,8 +437,8 @@ class CCNN:
         print("-----------\npredicting training")
         pred = model.predict([training_data[:, 0], training_data[:, 1]])
         sys.stdout.flush()
-        bestProb = self.compute_optimal_f1("training",0.5, pred, training_labels)
-        print("training acc:", str(self.compute_accuracy(bestProb, pred, training_labels)))
+        bestProb_train = self.compute_optimal_f1("training",0.5, pred, training_labels)
+        print("training acc:", str(self.compute_accuracy(bestProb_train, pred, training_labels)))
 
         '''
         for i in range(len(pairs)):
@@ -351,8 +452,8 @@ class CCNN:
         # dev accuracy
         print("-----------\npredicting dev")
         pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        bestProb = self.compute_optimal_f1("dev", bestProb, pred, dev_labels)
-        print("dev acc:", str(self.compute_accuracy(bestProb, pred, dev_labels)))
+        bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, pred, dev_labels)
+        print("dev acc:", str(self.compute_accuracy(bestProb_dev, pred, dev_labels)))
         # return (dev_pairs, pred)
         
         # clears up ram
@@ -363,13 +464,16 @@ class CCNN:
         dev_data = None
         dev_labels = None
 
-        testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
+        #testing_pairs, testing_data, testing_labels = None, None, None
+        testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP()
+
+        #testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
+
         print("-----------\npredicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        bestProb = self.compute_optimal_f1("testing", bestProb, pred, testing_labels)
-        print("test acc:", str(self.compute_accuracy(bestProb, pred, testing_labels)))
+        bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, pred, testing_labels)
+        print("test acc:", str(self.compute_accuracy(bestProb_test, pred, testing_labels)))
         print("testing size:", str(len(testing_data)))
-
         return (testing_pairs, pred)
         
     def euclidean_distance(self, vects):
@@ -541,9 +645,9 @@ class CCNN:
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
     # creates the test data from hddcrp's predicted mentions
-    def createDataFromHDDCRP(self, hddcrp_pred):
-        (pairs, labels) = self.helper.constructAllWDHMPairs(hddcrp_pred)
-        print("#  pairs:",str(len(pairs)))
+    def createDataFromHDDCRP(self):
+        (pairs, labels) = self.helper.constructAllWDHMPairs(self.hddcrp_parsed)
+        print("# pairs (createDataFromHDDCRP()):",str(len(pairs)))
 
         # determines which mentions we'll construct
         hmentionsIDsWeCareAbout = set()
@@ -563,8 +667,8 @@ class CCNN:
 
             # gets token indices and constructs the Mention embedding
             menEmbedding = [0]*numCols
-            m = hddcrp_pred.hm_idToHMention[hm_id]
-            for t in m.htokens:
+            m = self.hddcrp_parsed.hm_idToHMention[hm_id]
+            for t in m.tokens:
 
                 token = self.corpus.UIDToToken[t.UID]
                 curEmbedding = self.wordTypeToEmbedding[token.text]
@@ -577,7 +681,7 @@ class CCNN:
                     t_endIndex = ind
 
             # sets the center
-            curMentionMatrix[self.args.windowSize] = [x / float(len(m.htokens)) for x in menEmbedding]
+            curMentionMatrix[self.args.windowSize] = [x / float(len(m.tokens)) for x in menEmbedding]
 
             # the prev tokens
             for i in range(self.args.windowSize):
@@ -618,7 +722,7 @@ class CCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
         return (pairs, X,Y)
-        
+
     # creates data from ECBCorpus (train and dev uses this, and optionally test)
     def createData(self, dirs, subSample):
 
@@ -627,20 +731,21 @@ class CCNN:
         else: # for dev and test (we want all negative examples)
             (pairs, labels) = self.helper.constructAllWDDMPairs(dirs)
 
-        print("# pairs:",str(len(pairs)))
+        print("# pairs (createData()):",str(len(pairs)))
 
         # determines which mentions we'll construct
-        mentionsWeCareAbout = set()
+        DMsWeCareAbout = set()
         for (dm1,dm2) in pairs:
-            mentionsWeCareAbout.add(dm1)
-            mentionsWeCareAbout.add(dm2)
+            DMsWeCareAbout.add(dm1)
+            DMsWeCareAbout.add(dm2)
 
         # constructs the DM matrix for every mention
         dmToMatrix = {}
 
         numRows = 1 + 2*self.args.windowSize
         numCols = self.embeddingLength
-        for m in mentionsWeCareAbout:
+        for dm in DMsWeCareAbout:
+            m = self.corpus.dmToMention[dm]
             curMentionMatrix = np.zeros(shape=(numRows,numCols))
             t_startIndex = 99999999
             t_endIndex = -1

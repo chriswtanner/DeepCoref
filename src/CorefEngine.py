@@ -14,25 +14,21 @@ class CorefEngine:
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 		
-		goldHDDCRPFile = "/Users/christanner/research/DeepCoref/data/gold.WD.semeval.txt"
-		predHDDCRPFile = "/Users/christanner/research/DeepCoref/data/predict.WD.semeval.txt"
-		
-		hddcrp_gold = HDDCRPParser(goldHDDCRPFile)
-		print("# H-UIDs golds:", str(len(hddcrp_gold.UIDToHMentions.keys())))
-
-		hddcrp_pred = HDDCRPParser(predHDDCRPFile)
-		print("# H-UIDs preds:", str(len(hddcrp_pred.UIDToHMentions.keys())))
+		hddcrp_parsed = HDDCRPParser(args.hddcrpFile)
+		print("# H-UIDs golds:", str(len(hddcrp_parsed.UIDToHMentions.keys())))
 
 		corpus = ECBParser(args)
 		helper = ECBHelper(corpus, args)
 
 		# trains and tests the pairwise-predictions
-		corefEngine = CCNN(args, corpus, helper)
+		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
 
-		(pairs, predictions) = corefEngine.run(hddcrp_pred)
+		(pairs, predictions) = corefEngine.run()
 
 		stoppingPoints = [0.6] #[0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]
-
+		for sp in stoppingPoints:
+			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
+		exit(1)
 		for sp in stoppingPoints:
 			(predictedClusters, goldenClusters) = corefEngine.clusterPredictions(pairs, predictions, sp)
 			print("RESULTS FOR STOPPING POINT: ",str(sp))
@@ -48,6 +44,11 @@ class CorefEngine:
 			print("ceafe - f1:",str(ceafe_f1))
 			print("conll - f1:",str(conllf1))
 		'''
+		hddcrp_gold = HDDCRPParser(goldHDDCRPFile)
+		print("# H-UIDs golds:", str(len(hddcrp_gold.UIDToHMentions.keys())))
+
+		hddcrp_pred = HDDCRPParser(predHDDCRPFile)
+		print("# H-UIDs preds:", str(len(hddcrp_pred.UIDToHMentions.keys())))
 		hddcrp = hddcrp_gold
 
 		numInGold = 0

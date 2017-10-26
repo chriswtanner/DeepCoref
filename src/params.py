@@ -47,8 +47,7 @@ def setCorefEngineParams():
 	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
 	
 	# CCNN
-	# parser.add_argument("--testMentions", help="'ecb' to use the gold corpus', or 'pred' to use hddcrp's predicted mentions")
-	parser.add_argument("--runOnValid", help="exclude the DMs that weren't found by HDDCRP", type=str2bool, nargs='?')
+	parser.add_argument("--hddcrpFile", help="the filename of hddcrpFile to load in (gold or predict)")
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
 	parser.add_argument("--numLayers", help="1 or 2 conv sections", type=int)
 	parser.add_argument("--embeddingsFile", help="the file that contains the embeddings")
