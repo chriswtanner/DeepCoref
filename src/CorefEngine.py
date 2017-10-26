@@ -30,6 +30,7 @@ class CorefEngine:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
 			print("we returned # clusters:",str(len(predictedClusters.keys())))
 			corefEngine.writeCoNLLFile(predictedClusters, sp)
+			print("done")
 		exit(1)
 
 		for sp in stoppingPoints:

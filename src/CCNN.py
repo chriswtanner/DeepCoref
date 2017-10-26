@@ -417,7 +417,7 @@ class CCNN:
                 fout.write(line + "\n")
             elif len(tokens) == 5:
                 doc, _, tokenNum, text, ref_ = tokens   
-                UID = str(doc_id) + ";" + str(sentenceNum) + ";" + str(tokenNum)
+                UID = str(doc) + ";" + str(sentenceNum) + ";" + str(tokenNum)
 
                 # reconstructs the HMention(s) that exist on this line, for the
                 # sake of being able to now look up what cluster assignent it/they belong to
