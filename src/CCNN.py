@@ -387,11 +387,11 @@ class CCNN:
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):
         hm_idToClusterID = {}
+        print("hm_idToClusterID:")
         for c_id in predictedClusters.keys():
             for hm_id in predictedClusters[c_id]:
                 hm_idToClusterID[hm_id] = c_id
-
-        print("hm_idToClusterID:",str(hm_idToClusterID))
+                print("hm_id:",str(hm_id)," -> ",str(c_id))
         # sanity check
         for hm_id in self.hddcrp_parsed.hm_idToHMention.keys():
             print("hm_id:",str(hm_id))
