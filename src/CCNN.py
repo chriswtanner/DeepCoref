@@ -391,6 +391,15 @@ class CCNN:
             for hm_id in predictedClusters[c_id]:
                 hm_idToClusterID[hm_id] = c_id
 
+        print("hm_idToClusterID:",str(hm_idToClusterID))
+        # sanity check
+        for hm_id in self.hddcrp_parsed.hm_idToHMention.keys():
+            print("hm_id:",str(hm_id))
+            if hm_id not in hm_idToClusterID.keys():
+                print("NOT FOUND!")
+                exit(1)
+
+
         # constructs output file
         fileOut = str(self.args.resultsDir) + "predict." + \
             "nl" + str(self.args.numLayers) + "_" + \
