@@ -25,7 +25,13 @@ class CorefEngine:
 
 		(pairs, predictions) = corefEngine.run()
 
-		
+		# sanity chk
+		hm_ids = set()
+		for p in pairs:
+			(hm1,hm2) = p
+			hm_ids.add(hm1)
+			hm_ids.add(hm2)
+		print("sanity chk: # of hm_ids from testing pairs:", str(len(hm_ids)))
 
 		stoppingPoints = [0.6] #[0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.8]
 		for sp in stoppingPoints:

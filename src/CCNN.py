@@ -61,6 +61,9 @@ class CCNN:
                 docToHMs[doc_id].append(hm1)
             if hm2 not in docToHMs[doc_id]:
                 docToHMs[doc_id].append(hm2)
+
+            if hm1 == "122" or hm2 == "122":
+                print("**** we found 122!!!")
             docToHMPredictions[doc_id][(hm1,hm2)] = prediction
 
         ourClusterID = 0
@@ -75,6 +78,8 @@ class CCNN:
                 dm = docToHMs[doc_id][i]
                 a = set()
                 a.add(dm)
+                if dm == "122" or dm == 122:
+                    print("we found DM 122 in singleton clusters")
                 ourDirClusters[i] = a
 
             # the following keeps merging until our shortest distance > stopping threshold,
