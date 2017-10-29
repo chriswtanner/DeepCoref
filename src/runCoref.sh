@@ -6,6 +6,11 @@ me=`whoami`
 hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
+
+refDir="/Users/christanner/research/libraries/reference-coreference-scorers-8.01/"
+refDirBrown="/home/christanner/researchcode/libraries/reference-coreference-scorers"
+
+stoppingPoints=(0.3 0.5) # (0.35 0.4 0.43 0.46 0.49 0.52 0.55 0.58 0.61 0.64 0.68)
 # ./home/jrasley/set_cuda8_cudnn6.sh
 # export CUDA_HOME=/contrib/projects/cuda8.0
 # export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
@@ -16,6 +21,7 @@ if [ ${me} = "ctanner" ]
 then
 	echo "[ ON BROWN NETWORK ]"
 	baseDir=${brownDir}
+	refDir=${refDirBrown}
 	echo $CUDA_HOME
 	if [ ${hn} = "titanx" ]
 	then
@@ -89,6 +95,21 @@ echo "------------------------"
 # fi
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --clusterMethod=${clusterMethod}
 
+cd ${refDir}
+goldFile=${baseDir}"gold.WD.semeval.txt"
+shopt -s nullglob
+
+for sp in "${stoppingPoints[@]}"
+do
+	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_s"${shuffleTraining}"_sp"${sp}
+
+	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+	ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+	sum=`echo ${muc}+${bcub}+${ceafe} | bc`
+	avg=`echo "scale=2;$sum/3.0" | bc`
+	echo ${f} ${avg}
+done
 # fileOut = str(self.args.resultsDir) + "predict." + \
 #            "nl" + str(self.args.numLayers) + "_" + \
 #            "ne" + str(self.args.numEpochs) + "_" + \
