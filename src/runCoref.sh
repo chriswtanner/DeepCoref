@@ -108,7 +108,7 @@ do
 	ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 	avg=`echo "scale=2;$sum/3.0" | bc`
-	echo ${f} ${avg}
+	echo "CoNLLF1:" ${f} ${avg}
 done
 # fileOut = str(self.args.resultsDir) + "predict." + \
 #            "nl" + str(self.args.numLayers) + "_" + \
