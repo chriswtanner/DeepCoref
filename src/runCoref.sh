@@ -93,7 +93,7 @@ echo "------------------------"
 # then
 #	export CUDA_VISIBLE_DEVICES=
 # fi
-# python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --clusterMethod=${clusterMethod}
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --clusterMethod=${clusterMethod}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -101,7 +101,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_sp"${sp}".txt"
+	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_cm"${clusterMethod}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
