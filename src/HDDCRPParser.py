@@ -85,6 +85,10 @@ class HDDCRPParser:
 				print("ERROR: curLine:",str(line))
 				exit(1)
 		f.close()
-
+		hms = set()
+		for doc_id in self.docToHMentions.keys():
+			for hm in self.docToHMentions[doc_id]:
+				hms.add(hm)
 		print("* parsed ",str(len(self.hmentions)), "mentions")
 		print("* created ", str(len(self.hm_idToHMention.keys())), " hm_ids!")
+		print("# hms by end of parsing, based on a per doc basis:", str(len(hms)))

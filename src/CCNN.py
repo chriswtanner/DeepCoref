@@ -46,6 +46,8 @@ class CCNN:
         # stores predictions
         docToHMPredictions = defaultdict(lambda : defaultdict(float))
         docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+        
+        uniqueHMs = set()
         for i in range(len(pairs)):
             (hm1,hm2) = pairs[i]
 
@@ -62,10 +64,9 @@ class CCNN:
             if hm2 not in docToHMs[doc_id]:
                 docToHMs[doc_id].append(hm2)
 
-            if hm1 == "122" or hm2 == "122":
-                print("**** we found 122!!!")
             docToHMPredictions[doc_id][(hm1,hm2)] = prediction
-
+            uniqueHMs.add(hm1)
+            uniqueHMs.add(hm2)
         ourClusterID = 0
         ourClusterSuperSet = {}
         
@@ -75,11 +76,9 @@ class CCNN:
             # constructs our base clusters (singletons)
             ourDirClusters = {} 
             for i in range(len(docToHMs[doc_id])):
-                dm = docToHMs[doc_id][i]
+                hm = docToHMs[doc_id][i]
                 a = set()
-                a.add(dm)
-                if dm == "122" or dm == 122:
-                    print("we found DM 122 in singleton clusters")
+                a.add(hm)
                 ourDirClusters[i] = a
 
             # the following keeps merging until our shortest distance > stopping threshold,
@@ -392,18 +391,14 @@ class CCNN:
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):
         hm_idToClusterID = {}
-        print("hm_idToClusterID:")
         for c_id in predictedClusters.keys():
             for hm_id in predictedClusters[c_id]:
                 hm_idToClusterID[hm_id] = c_id
-                print("hm_id:",str(hm_id)," -> ",str(c_id))
         # sanity check
         for hm_id in self.hddcrp_parsed.hm_idToHMention.keys():
-            print("hm_id:",str(hm_id))
             if hm_id not in hm_idToClusterID.keys():
                 print("NOT FOUND!")
                 exit(1)
-
 
         # constructs output file
         fileOut = str(self.args.resultsDir) + "predict." + \
@@ -484,12 +479,15 @@ class CCNN:
                                     foundMention = True
                                     hm_id = hmention.hm_id
                                     clusterID = hm_idToClusterID[hm_id]
-                                    ref_section += str(clusterID)
+                                    ref_section += str(clusterID) + ")"
                                     break
                             if not foundMention:
                                 print("* ERROR, we never found the mention for this line:",str(line))
                                 exit(1)
-
+                        if len(refs) == 2:
+                            ref_section += "|"
+                    fout.write(str(doc) + "\t" + str(_) + "\t" + str(tokenNum) + \
+                        "\t" + str(text) + "\t" + str(ref_section) + "\n")
         f.close()
         fout.close()
 
@@ -515,6 +513,9 @@ class CCNN:
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
         dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
+
+        testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP()
+
         input_shape = training_data.shape[2:]
 
         print("* training data shape:",str(training_data.shape))
@@ -574,7 +575,7 @@ class CCNN:
         dev_labels = None
 
         #testing_pairs, testing_data, testing_labels = None, None, None
-        testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP()
+
 
         #testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
 
@@ -764,7 +765,7 @@ class CCNN:
             hmentionsIDsWeCareAbout.add(hm1_id)
             hmentionsIDsWeCareAbout.add(hm2_id)
 
-        print("size of hmentionsIDsWeCareAbout:",str(len(hmentionsIDsWeCareAbout)))
+        print("# of hmentionsIDsWeCareAbout:",str(len(hmentionsIDsWeCareAbout)))
         # constructs the DM matrix for every mention
         hm_idToMatrix = {}
 

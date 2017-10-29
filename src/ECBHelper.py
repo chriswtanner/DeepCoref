@@ -38,22 +38,31 @@ class ECBHelper:
 	def constructAllWDHMPairs(self, hddcrp_pred):
 		pairs = []
 		labels = []
+		numSingletons = 0
 		for doc_id in hddcrp_pred.docToHMentions.keys():
 			added = set()
-			for hm1 in hddcrp_pred.docToHMentions[doc_id]:
-				hm1_id = hm1.hm_id
-				for hm2 in hddcrp_pred.docToHMentions[doc_id]:
-					hm2_id = hm2.hm_id
-					if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
-						continue
-					pairs.append((hm1_id,hm2_id))
-					if hm1.ref_id == hm2.ref_id:
-						labels.append(1)
-					else:
-						labels.append(0)
-
-					added.add((hm1_id,hm2_id))
-					added.add((hm2_id,hm1_id))
+			if len(hddcrp_pred.docToHMentions[doc_id]) == 1:
+				print("*** :",str(doc_id)," has exactly 1 hmention")
+				numSingletons += 1
+				hm1_id = hddcrp_pred.docToHMentions[doc_id][0].hm_id
+				pairs.append((hm1_id,hm1_id))
+				labels.append(1)
+			else:
+				for hm1 in hddcrp_pred.docToHMentions[doc_id]:
+					hm1_id = hm1.hm_id
+					if hm1_id == 122:
+						print("we found 122")
+					for hm2 in hddcrp_pred.docToHMentions[doc_id]:
+						hm2_id = hm2.hm_id
+						if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
+							continue
+						pairs.append((hm1_id,hm2_id))
+						if hm1.ref_id == hm2.ref_id:
+							labels.append(1)
+						else:
+							labels.append(0)
+						added.add((hm1_id,hm2_id))
+						added.add((hm2_id,hm1_id))
 		return (pairs, labels)
 
 ## WITHIN-DOC
