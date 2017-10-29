@@ -40,28 +40,27 @@ done
 # GPU
 for nl in "${numLayers[@]}"
 do
-    for ne in "${numEpochs[@]}"
-    do
+	for ne in "${numEpochs[@]}"
+	do
 		for ws in "${windowSize[@]}"
 		do
-	    	for neg in "${numNeg[@]}"
-	    	do
+			for neg in "${numNeg[@]}"
+			do
 				for bs in "${batchSize[@]}"
 				do
-		    		for s in "${shuffle[@]}"
-		    		do
+					for s in "${shuffle[@]}"
+					do
 						for emb in "${embSize[@]}"
 						do
 							for cm in "${clusterMethod[@]}"
 							do
-			    # qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_cm${cm}.out runCoref.sh gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${cm}
 								qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_cm${cm}.out runCoref.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${cm}
 							done
 						done
-		    		done
+					done
 				done
-	    	done
-	    done
+			done
+		done
 	done
 done
 
