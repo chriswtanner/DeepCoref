@@ -63,6 +63,7 @@ windowSize=$5
 numNegPerPos=$6
 batchSize=$7
 shuffleTraining=$8
+clusterMethod=${11}
 cd $scriptDir
 echo "-------- params --------"
 echo "corpus:" $1
@@ -74,6 +75,7 @@ echo "numNegPerPos:" $numNegPerPos
 echo "batchSize:" $batchSize
 echo "shuffleTraining:" $shuffleTraining
 echo "hddcrpFile:" $hddcrpFile
+echo "clusterMethod:" $clusterMethod
 echo "------------------------"
 # parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
 #python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
@@ -85,7 +87,17 @@ echo "------------------------"
 # then
 #	export CUDA_VISIBLE_DEVICES=
 # fi
-python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile}
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --clusterMethod=${clusterMethod}
+
+# fileOut = str(self.args.resultsDir) + "predict." + \
+#            "nl" + str(self.args.numLayers) + "_" + \
+#            "ne" + str(self.args.numEpochs) + "_" + \
+#            "ws" + str(self.args.windowSize) + "_" + \
+#            "neg" + str(self.args.numNegPerPos) + "_" + \
+#            "bs" + str(self.args.batchSize) + "_" + \
+#            "s" + str(self.args.shuffleTraining) + "_" + \
+#            "sp" + str(stoppingPoint) + ".txt"
+
 
 exit 1
 

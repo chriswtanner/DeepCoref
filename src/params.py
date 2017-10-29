@@ -57,6 +57,7 @@ def setCorefEngineParams():
 	parser.add_argument("--numEpochs", help="type or token", type=int)
 	parser.add_argument("--batchSize", help="batchSize", type=int)
 	parser.add_argument("--windowSize", help="# of tokens before/after the Mention to use", type=int)
+	parser.add_argument("--clusterMethod", help="min, avg, or avgavg")	
 	parser.add_argument("--device", help="gpu or cpu")
 	#parser.add_argument("--verbose",
 	return parser.parse_args()	

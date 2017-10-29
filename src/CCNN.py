@@ -225,6 +225,9 @@ class CCNN:
                     closestAvgDist = 999999
                     closestAvgClusterKeys = (-1,-1)
 
+                    closestAvgAvgDist = 999999
+                    closestAvgAvgClusterKeys = (-1,-1)
+
                     #print("ourDirClusters:",str(ourDirClusters.keys()))
                     # looks at all combinations of pairs
                     i = 0
@@ -234,28 +237,32 @@ class CCNN:
                         j = 0
                         for c2 in ourDirClusters.keys():
                             if j > i:
-                                dists = []
+                                avgavgdists = []
                                 for dm1 in ourDirClusters[c1]:
+                                    avgdists = []
                                     for dm2 in ourDirClusters[c2]:
                                         dist = 99999
                                         if (dm1,dm2) in docToDMPredictions[doc_id]:
                                             dist = docToDMPredictions[doc_id][(dm1,dm2)]
-                                            dists.append(dist)
+                                            avgavgdists.append(dist)
+                                            avgdists.append(dist)
                                         elif (dm2,dm1) in docToDMPredictions[doc_id]:
                                             dist = docToDMPredictions[doc_id][(dm2,dm1)]
-                                            dists.append(dist)
+                                            avgavgdists.append(dist)
+                                            avgdists.append(dist)
                                         else:
                                             print("* error, why don't we have either dm1 or dm2 in doc_id")
                                         if dist < closestDist:
                                             closestDist = dist
-                                            closestClusterKeys = (c1,c2)
-
-                                avgDist = float(sum(dists)) / float(len(dists))
-                                #print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
-                                if avgDist < closestAvgDist:
-                                    closestAvgDist = avgDist
-                                    closestAvgClusterKeys = (c1,c2)
-
+                                            closestClusterKeys = (c1,c2)  
+                                    avgDist = float(sum(avgdists)) / float(len(avgdists))
+                                    if avgDist < closestAvgDist:
+                                        closestAvgDist = avgDist
+                                        closestAvgClusterKeys = (c1,c2)
+                                avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+                                if avgavgDist < closestAvgAvgDist:
+                                    closestAvgDist = avgavgDist
+                                    closestAvgAvgClusterKeys = (c1,c2)
                             j += 1
                         i += 1
 
@@ -265,11 +272,20 @@ class CCNN:
                     # only merge clusters if it's less than our threshold
                     #if closestDist > stoppingPoint:
                     # changed
-                    if closestAvgDist > stoppingPoint:
+                    if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+                        break
+                    elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+                        break
+                    elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
                         break
 
                     newCluster = set()
                     (c1,c2) = closestClusterKeys
+                    if self.args.clusterMethod == "avg":
+                        (c1,c2) = closestAvgClusterKeys
+                    elif self.args.clusterMethod == "avgavg":
+                        (c1,c2) = closestAvgAvgClusterKeys
+
                     for _ in ourDirClusters[c1]:
                         newCluster.add(_)
                     for _ in ourDirClusters[c2]:
@@ -408,6 +424,7 @@ class CCNN:
             "neg" + str(self.args.numNegPerPos) + "_" + \
             "bs" + str(self.args.batchSize) + "_" + \
             "s" + str(self.args.shuffleTraining) + "_" + \
+            "cm" + str(self.args.clusterMethod) + "_" + \
             "sp" + str(stoppingPoint) + ".txt"
 
         print("writing out:",str(fileOut))
