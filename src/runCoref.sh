@@ -96,7 +96,7 @@ echo "------------------------"
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --clusterMethod=${clusterMethod}
 
 cd ${refDir}
-goldFile=${baseDir}"gold.WD.semeval.txt"
+goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
