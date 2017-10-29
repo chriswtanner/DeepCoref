@@ -7,7 +7,7 @@ numNeg=(1) # 5 10)
 batchSize=(1024) # 128)
 shuffle=(f) # t)
 embSize=(400) # 50
-hddcrp="gold"
+hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg")
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
