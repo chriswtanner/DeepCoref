@@ -432,6 +432,8 @@ class CCNN:
 
         # reads the original CoNLL, while writing each line
         f = open(self.args.hddcrpFile, 'r')
+        tokenIndex = 0
+        REFToStartTuple = defaultdict(list)
         for line in f:
             line = line.rstrip()
             tokens = line.split("\t")
@@ -464,12 +466,15 @@ class CCNN:
                     fout.write(line + "\n") # just output it, since we want to keep the same mention going
                 else:
                     ref_section = ""
+                    isFirst = True
                     for ref in refs:
                         if ref[0] == "(" and ref[-1] != ")": # i.e. (ref_id
                             ref_id = int(ref[1:])
+
+                            startTuple=(tokenIndex,isFirst)
                             foundMention = False
                             for hmention in hmentions:
-                                if hmention.ref_id == ref_id: # we found the exact mention
+                                if hmention.ref_id == ref_id and hmention.startTuple == startTuple: # we found the exact mention
                                     foundMention = True
                                     hm_id = hmention.hm_id
                                     clusterID = hm_idToClusterID[hm_id]
@@ -482,17 +487,21 @@ class CCNN:
                         # represents we are ending a mention
                         elif ref[-1] == ")": # i.e., ref_id) or (ref_id)
                             ref_id = -1
+
+                            endTuple=(tokenIndex,isFirst)
+                            startTuple = ()
                             # we set ref_if, tokens, UID
                             if ref[0] != "(": # ref_id)
                                 ref_id = int(ref[:-1])
-
+                                startTuple = REFToStartTuple[ref_id].pop()
                             else: # (ref_id)
                                 ref_id = int(ref[1:-1])
+                                startTuple = (tokenIndex,isFirst)
                                 ref_section += "("
 
                             foundMention = False
                             for hmention in hmentions:
-                                if hmention.ref_id == ref_id: # we found the exact mention
+                                if hmention.ref_id == ref_id and hmention.startTuple == startTuple and hmention.endTuple == endTuple: # we found the exact mention
                                     foundMention = True
                                     hm_id = hmention.hm_id
                                     clusterID = hm_idToClusterID[hm_id]
@@ -501,8 +510,13 @@ class CCNN:
                             if not foundMention:
                                 print("* ERROR, we never found the mention for this line:",str(line))
                                 exit(1)
-                        if len(refs) == 2:
+
+                        if len(refs) == 2 and isFirst:
                             ref_section += "|"
+                        isFirst = False
+                    # end of current token line
+                    tokenIndex += 1 # this always increases whenever we see a token
+                    
                     fout.write(str(doc) + "\t" + str(_) + "\t" + str(tokenNum) + \
                         "\t" + str(text) + "\t" + str(ref_section) + "\n")
         f.close()

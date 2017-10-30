@@ -2,12 +2,14 @@
 # e.g., a collection of HTokens
 class HMention:
 
-	def __init__(self, doc_id, ref_id, tokens, UID, hm_id):
+	def __init__(self, doc_id, ref_id, tokens, UID, hm_id, startTuple, endTuple):
 		self.doc_id = doc_id
 		self.ref_id = ref_id
 		self.tokens = tokens
 		self.UID = UID
 		self.hm_id = hm_id # used for easily, readably handling/iterating over all HMentions
+		self.startTuple = startTuple
+		self.endTuple = endTuple
 
 		# now that we've completed the creation of the HMention, it's safe
 		# to go through all of its HTokens and tell them to point to this HMention,
