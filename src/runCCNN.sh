@@ -1,15 +1,15 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
 numLayers=(1 2 3) 
-numEpochs=(2 3 10 20)
-windowSize=(1 3 5)
-numNeg=(1 3 5 10)
-batchSize=(64 128 256)
+numEpochs=(2) # 3 10 20)
+windowSize=(1) # 3 5)
+numNeg=(1) # 3 5 10)
+batchSize=(64) # 128 256)
 shuffle=(f) # t)
 embSize=(400) # 50
-dropout=(0.0 0.2 0.3 0.4)
+dropout=(0.0 0.2) # 0.3 0.4)
 hddcrp="predict"
-clusterMethod=("min" "avg" "avgavg")
+clusterMethod=("min") # "avg" "avgavg")
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
