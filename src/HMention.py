@@ -23,4 +23,4 @@ class HMention:
 		text = ""
 		for t in self.tokens:
 			text += "[" + str(t.text) + "] "
-		return("[HMENTION]: " + str(self.doc_id) + "; REF:" + str(self.ref_id) + "; TEXT:" + str(text.rstrip()) + "; UID:" + str(self.UID))
+		return("[HMENTION]: " + str(self.doc_id) + "; REF:" + str(self.ref_id) + "; TEXT:" + str(text.rstrip()) + "; UID:" + str(self.UID) + ";start:" + str(self.startTuple) + "; end:" + str(self.endTuple))

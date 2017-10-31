@@ -42,7 +42,7 @@ class ECBHelper:
 		for doc_id in hddcrp_pred.docToHMentions.keys():
 			added = set()
 			if len(hddcrp_pred.docToHMentions[doc_id]) == 1:
-				print("*** :",str(doc_id)," has exactly 1 hmention")
+				print("*** :",str(doc_id),"has exactly 1 hmention")
 				numSingletons += 1
 				hm1_id = hddcrp_pred.docToHMentions[doc_id][0].hm_id
 				pairs.append((hm1_id,hm1_id))
@@ -50,8 +50,6 @@ class ECBHelper:
 			else:
 				for hm1 in hddcrp_pred.docToHMentions[doc_id]:
 					hm1_id = hm1.hm_id
-					if hm1_id == 122:
-						print("we found 122")
 					for hm2 in hddcrp_pred.docToHMentions[doc_id]:
 						hm2_id = hm2.hm_id
 						if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:

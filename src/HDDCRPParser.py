@@ -69,7 +69,7 @@ class HDDCRPParser:
 							ref_id = int(ref[:-1])
 							startTuple = REFToStartTuple[ref_id].pop()
 
-							for i in range(startIndex,tokenIndex+1): # add all tokens, including current one
+							for i in range(startTuple[0],tokenIndex+1): # add all tokens, including current one
 								tokens.append(self.htokens[i])
 								MUID += self.htokens[i].UID + ";"
 

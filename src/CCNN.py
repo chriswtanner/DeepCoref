@@ -470,7 +470,7 @@ class CCNN:
                     for ref in refs:
                         if ref[0] == "(" and ref[-1] != ")": # i.e. (ref_id
                             ref_id = int(ref[1:])
-
+                            REFToStartTuple[ref_id].append((tokenIndex,isFirst))
                             startTuple=(tokenIndex,isFirst)
                             foundMention = False
                             for hmention in hmentions:
@@ -481,7 +481,7 @@ class CCNN:
                                     ref_section += "(" + str(clusterID)
                                     break
                             if not foundMention:
-                                print("* ERROR, we never found the mention for this line:",str(line))
+                                print("* ERROR #1, we never found the mention for this line:",str(line))
                                 exit(1)
 
                         # represents we are ending a mention
@@ -499,8 +499,12 @@ class CCNN:
                                 startTuple = (tokenIndex,isFirst)
                                 ref_section += "("
 
+                            #print("starttuple:",str(startTuple))
+                            #print("endTuple:",str(endTuple))
+
                             foundMention = False
                             for hmention in hmentions:
+                                # print("looking at hmention:",str(hmention))
                                 if hmention.ref_id == ref_id and hmention.startTuple == startTuple and hmention.endTuple == endTuple: # we found the exact mention
                                     foundMention = True
                                     hm_id = hmention.hm_id
@@ -508,17 +512,17 @@ class CCNN:
                                     ref_section += str(clusterID) + ")"
                                     break
                             if not foundMention:
-                                print("* ERROR, we never found the mention for this line:",str(line))
+                                print("* ERROR #2, we never found the mention for this line:",str(line))
                                 exit(1)
 
                         if len(refs) == 2 and isFirst:
                             ref_section += "|"
                         isFirst = False
-                    # end of current token line
-                    tokenIndex += 1 # this always increases whenever we see a token
-                    
                     fout.write(str(doc) + "\t" + str(_) + "\t" + str(tokenNum) + \
                         "\t" + str(text) + "\t" + str(ref_section) + "\n")
+                    # end of current token line
+                tokenIndex += 1 # this always increases whenever we see a token
+                    
         f.close()
         fout.close()
 

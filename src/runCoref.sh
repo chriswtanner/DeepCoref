@@ -10,7 +10,7 @@ brownDir="/home/ctanner/researchcode/DeepCoref/"
 refDir="/Users/christanner/research/libraries/reference-coreference-scorers-8.01/"
 refDirBrown="/home/christanner/researchcode/libraries/reference-coreference-scorers"
 
-stoppingPoints=(0.35 0.4 0.43 0.46 0.49 0.52 0.55 0.58 0.61 0.64 0.68)
+stoppingPoints=(0.25 0.28 0.31 0.34 0.37 0.4 0.43 0.46 0.49 0.52 0.55 0.58 0.61 0.64 0.68)
 # ./home/jrasley/set_cuda8_cudnn6.sh
 # export CUDA_HOME=/contrib/projects/cuda8.0
 # export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH

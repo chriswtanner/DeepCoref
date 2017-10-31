@@ -25,13 +25,13 @@ class CorefEngine:
 
 		(pairs, predictions) = corefEngine.run()
 
-		stoppingPoints =[0.35,0.4,0.43,0.46,0.49,0.52,0.55,0.58,0.61,0.64,0.68]
+		stoppingPoints =[0.25,0.28,0.31,0.34,0.37,0.4,0.43,0.46,0.49,0.52,0.55,0.58,0.61,0.64,0.68]
 
 		for sp in stoppingPoints:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
 			print("we returned # clusters:",str(len(predictedClusters.keys())))
 			corefEngine.writeCoNLLFile(predictedClusters, sp)
-			print("done")
+			#print("done writing CoNLL file")
 		exit(1)
 
 		for sp in stoppingPoints:
