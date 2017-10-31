@@ -1,12 +1,13 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
-numLayers=(1) 
-numEpochs=(1) # 5 25 50)
-windowSize=(1) # 5)
-numNeg=(1) # 5 10)
-batchSize=(1024) # 128)
+numLayers=(1 2 3) 
+numEpochs=(2 3 10 20)
+windowSize=(1 3 5)
+numNeg=(1 3 5 10)
+batchSize=(64 128 256)
 shuffle=(f) # t)
 embSize=(400) # 50
+dropout=(0.0 0.2 0.3 0.4)
 hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg")
 source ~/researchcode/DeepCoref/venv/bin/activate
@@ -52,9 +53,12 @@ do
 					do
 						for emb in "${embSize[@]}"
 						do
-							for cm in "${clusterMethod[@]}"
+							for dr in "${dropout[@]}"
 							do
-								qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_cm${cm}.out runCoref.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${cm}
+								for cm in "${clusterMethod[@]}"
+								do
+									qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCoref.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm}
+								done
 							done
 						done
 					done
