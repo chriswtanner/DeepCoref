@@ -25,7 +25,7 @@ class CorefEngine:
 
 		(pairs, predictions) = corefEngine.run()
 
-		stoppingPoints =[0.49,0.50,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.60]
+		stoppingPoints =[0.49,0.501,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.601]
 
 		for sp in stoppingPoints:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)

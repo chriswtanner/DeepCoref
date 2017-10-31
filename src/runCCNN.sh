@@ -1,12 +1,12 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
 numLayers=(2 3)
-numEpochs=(5 10 15 30)
-windowSize=(1)
-numNeg=(5 7 10 13 16)
+numEpochs=(5 10 15 25)
+windowSize=(0)
+numNeg=(7 10 13)
 batchSize=(64 128 256)
-shuffle=(f) # t)                                                                                              
-embSize=(400) # 50                                                                                            
+shuffle=(f) # t                                                                                            
+embSize=(400) # 50                                                                                    
 dropout=(0.3 0.35 0.4 0.45 0.5)
 hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg")

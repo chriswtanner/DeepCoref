@@ -25,6 +25,9 @@ class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
         self.args = args
+        self.numRows = 2
+        if self.args.windowSize == 0:
+            self.numRows = 1
         print("args:", str(args))
         print("tf version:",str(tf.__version__))
 
@@ -639,32 +642,39 @@ class CCNN:
     # Base network to be shared (eq. to feature extraction).
     def create_base_network(self, input_shape):
         seq = Sequential()
-        seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
-        seq.add(Dropout(float(self.args.dropout)))
-        seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding="same", data_format="channels_first"))
-        seq.add(MaxPooling2D(pool_size=(2, 2), padding="same"))
+
+        if self.numRows == 2:
+            seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+            seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding="same", data_format="channels_first"))
+        else:
+            seq.add(Conv2D(32, kernel_size=(self.numRows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+            seq.add(Conv2D(64, kernel_size=(self.numRows, 3), activation='relu', padding="same", data_format="channels_first"))
+        
+        seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same"))
         
         # added following
         if self.args.numLayers == 2:
             print("doing deep!! 2 sections of convolution")
-            seq.add(Conv2D(96, (2, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(96, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(128, (2, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_first"))
+            seq.add(Conv2D(128, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/2.0))
             # end of added
         elif self.args.numLayers == 3:
             print("doing deeper!! 3 sections of convolution")
-            seq.add(Conv2D(96, (2, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(96, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(128, (2, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_first"))
+            seq.add(Conv2D(128, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/2.0))
         
-            seq.add(Conv2D(196, (2, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(196, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/2.5))
-            seq.add(Conv2D(256, (2, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(2, 2), padding="same", data_format="channels_first"))
+            seq.add(Conv2D(256, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/3))
         seq.add(Flatten())
         if self.args.numLayers == 1:
