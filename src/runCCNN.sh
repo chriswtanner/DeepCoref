@@ -2,7 +2,7 @@
 cd /home/christanner/researchcode/DeepCoref/src/
 numLayers=(2 3)
 numEpochs=(5 10 15 30)
-windowSize=(1) # 2 3 5)                                                                                       
+windowSize=(1)
 numNeg=(5 7 10 13 16)
 batchSize=(64 128 256)
 shuffle=(f) # t)                                                                                              
