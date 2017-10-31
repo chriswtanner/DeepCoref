@@ -424,6 +424,7 @@ class CCNN:
             "neg" + str(self.args.numNegPerPos) + "_" + \
             "bs" + str(self.args.batchSize) + "_" + \
             "s" + str(self.args.shuffleTraining) + "_" + \
+            "dr" + str(self.args.dropout) + "_" + \
             "cm" + str(self.args.clusterMethod) + "_" + \
             "sp" + str(stoppingPoint) + ".txt"
 
