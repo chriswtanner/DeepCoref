@@ -1,10 +1,10 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
 numLayers=(1) # 2 3) 
-numEpochs=(2) # 3 10 20)
+numEpochs=(1) # 3 10 20)
 windowSize=(1) # 2 3 5)
 numNeg=(1) # 3 5 10)
-batchSize=(64) # 128 256)
+batchSize=(40) # 128 256)
 shuffle=(f) # t)
 embSize=(400) # 50
 dropout=(0.0) # 0.2 0.3 0.4)
@@ -33,7 +33,7 @@ do
 							do
 								for cm in "${clusterMethod[@]}"
 								do
-									qsub -pe smp 8 -l vlong -o cpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCoref.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm}
+									qsub -pe smp 8 -l vlong -o cpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCoref.sh FULL cpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm}
 								done
 							done
 						done
@@ -43,7 +43,7 @@ do
 		done
 	done
 done
-# exit 1
+exit 1
 # GPU
 for nl in "${numLayers[@]}"
 do
