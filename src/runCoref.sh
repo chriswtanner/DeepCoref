@@ -112,6 +112,7 @@ do
 	sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 	avg=`echo "scale=2;$sum/3.0" | bc`
 	echo "CoNLLF1:" ${f} ${avg}
+	rm -rf ${f}
 done
 # fileOut = str(self.args.resultsDir) + "predict." + \
 #            "nl" + str(self.args.numLayers) + "_" + \
