@@ -31,7 +31,7 @@ def setCorefEngineParams():
 	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
 
 	# StanParser
-	parser.add_argument("--stanOutputDir", help="the file that stanfordCoreNLP output'ed")
+	# parser.add_argument("--stanOutputDir", help="the file that stanfordCoreNLP output'ed")
 
 	# CCNN
 	parser.add_argument("--resultsDir", help="the full path to /results")	

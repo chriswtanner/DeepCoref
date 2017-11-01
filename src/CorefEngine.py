@@ -15,7 +15,7 @@ class CorefEngine:
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
-		stan = StanParser(args) # loads stanford's parsed output
+		# stan = StanParser(args) # loads stanford's parsed output
 
 		hddcrp_parsed = HDDCRPParser(args.hddcrpFile) # loads HDDCRP's pred or gold mentions file
 		print("# H-UIDs in",str(args.hddcrpFile),":", str(len(hddcrp_parsed.MUIDToHMentions.keys())))
@@ -23,8 +23,8 @@ class CorefEngine:
 		corpus = ECBParser(args)
 		helper = ECBHelper(corpus, args)
 
-		helper.addStanfordAnnotations(stan)
-		exit(1)
+		#helper.addStanfordAnnotations(stan)
+		#exit(1)
 
 		# trains and tests the pairwise-predictions
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
