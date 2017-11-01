@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="CoreNLP-to-HTML.xsl" type="text/xsl"?>
+<root>
+  <document>
+    <sentences>
+      <sentence id="1">
+        <tokens>
+          <token id="1">
+            <word>philadelphia</word>
+            <lemma>philadelphia</lemma>
+            <CharacterOffsetBegin>0</CharacterOffsetBegin>
+            <CharacterOffsetEnd>12</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="2">
+            <word>76ers</word>
+            <lemma>76er</lemma>
+            <CharacterOffsetBegin>13</CharacterOffsetBegin>
+            <CharacterOffsetEnd>18</CharacterOffsetEnd>
+            <POS>NNS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="3">
+            <word>fired</word>
+            <lemma>fire</lemma>
+            <CharacterOffsetBegin>19</CharacterOffsetBegin>
+            <CharacterOffsetEnd>24</CharacterOffsetEnd>
+            <POS>VBD</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="4">
+            <word>jim</word>
+            <lemma>jim</lemma>
+            <CharacterOffsetBegin>25</CharacterOffsetBegin>
+            <CharacterOffsetEnd>28</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="5">
+            <word>o'brien</word>
+            <lemma>o'brien</lemma>
+            <CharacterOffsetBegin>29</CharacterOffsetBegin>
+            <CharacterOffsetEnd>36</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="6">
+            <word>,</word>
+            <lemma>,</lemma>
+            <CharacterOffsetBegin>37</CharacterOffsetBegin>
+            <CharacterOffsetEnd>38</CharacterOffsetEnd>
+            <POS>,</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="7">
+            <word>coach</word>
+            <lemma>coach</lemma>
+            <CharacterOffsetBegin>39</CharacterOffsetBegin>
+            <CharacterOffsetEnd>44</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="8">
+            <word>.</word>
+            <lemma>.</lemma>
+            <CharacterOffsetBegin>45</CharacterOffsetBegin>
+            <CharacterOffsetEnd>46</CharacterOffsetEnd>
+            <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+        </tokens>
+        <parse>(ROOT (S (NP (NN philadelphia) (NNS 76ers)) (VP (VBD fired) (NP (NP (NN jim) (NN o'brien)) (, ,) (NP (NN coach)))) (. .))) </parse>
+        <dependencies type="basic-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">fired</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="2">76ers</governor>
+            <dependent idx="1">philadelphia</dependent>
+          </dep>
+          <dep type="nsubj">
+            <governor idx="3">fired</governor>
+            <dependent idx="2">76ers</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="4">jim</dependent>
+          </dep>
+          <dep type="dobj">
+            <governor idx="3">fired</governor>
+            <dependent idx="5">o'brien</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="6">,</dependent>
+          </dep>
+          <dep type="appos">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="7">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">fired</governor>
+            <dependent idx="8">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="collapsed-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">fired</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="2">76ers</governor>
+            <dependent idx="1">philadelphia</dependent>
+          </dep>
+          <dep type="nsubj">
+            <governor idx="3">fired</governor>
+            <dependent idx="2">76ers</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="4">jim</dependent>
+          </dep>
+          <dep type="dobj">
+            <governor idx="3">fired</governor>
+            <dependent idx="5">o'brien</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="6">,</dependent>
+          </dep>
+          <dep type="appos">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="7">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">fired</governor>
+            <dependent idx="8">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="collapsed-ccprocessed-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">fired</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="2">76ers</governor>
+            <dependent idx="1">philadelphia</dependent>
+          </dep>
+          <dep type="nsubj">
+            <governor idx="3">fired</governor>
+            <dependent idx="2">76ers</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="4">jim</dependent>
+          </dep>
+          <dep type="dobj">
+            <governor idx="3">fired</governor>
+            <dependent idx="5">o'brien</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="6">,</dependent>
+          </dep>
+          <dep type="appos">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="7">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">fired</governor>
+            <dependent idx="8">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="enhanced-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">fired</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="2">76ers</governor>
+            <dependent idx="1">philadelphia</dependent>
+          </dep>
+          <dep type="nsubj">
+            <governor idx="3">fired</governor>
+            <dependent idx="2">76ers</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="4">jim</dependent>
+          </dep>
+          <dep type="dobj">
+            <governor idx="3">fired</governor>
+            <dependent idx="5">o'brien</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="6">,</dependent>
+          </dep>
+          <dep type="appos">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="7">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">fired</governor>
+            <dependent idx="8">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="enhanced-plus-plus-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">fired</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="2">76ers</governor>
+            <dependent idx="1">philadelphia</dependent>
+          </dep>
+          <dep type="nsubj">
+            <governor idx="3">fired</governor>
+            <dependent idx="2">76ers</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="4">jim</dependent>
+          </dep>
+          <dep type="dobj">
+            <governor idx="3">fired</governor>
+            <dependent idx="5">o'brien</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="6">,</dependent>
+          </dep>
+          <dep type="appos">
+            <governor idx="5">o'brien</governor>
+            <dependent idx="7">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">fired</governor>
+            <dependent idx="8">.</dependent>
+          </dep>
+        </dependencies>
+      </sentence>
+      <sentence id="2">
+        <tokens>
+          <token id="1">
+            <word>named</word>
+            <lemma>name</lemma>
+            <CharacterOffsetBegin>47</CharacterOffsetBegin>
+            <CharacterOffsetEnd>52</CharacterOffsetEnd>
+            <POS>VBN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="2">
+            <word>maurice</word>
+            <lemma>maurice</lemma>
+            <CharacterOffsetBegin>53</CharacterOffsetBegin>
+            <CharacterOffsetEnd>60</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="3">
+            <word>cheeks</word>
+            <lemma>cheek</lemma>
+            <CharacterOffsetBegin>61</CharacterOffsetBegin>
+            <CharacterOffsetEnd>67</CharacterOffsetEnd>
+            <POS>NNS</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="4">
+            <word>coach</word>
+            <lemma>coach</lemma>
+            <CharacterOffsetBegin>68</CharacterOffsetBegin>
+            <CharacterOffsetEnd>73</CharacterOffsetEnd>
+            <POS>NN</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+          <token id="5">
+            <word>.</word>
+            <lemma>.</lemma>
+            <CharacterOffsetBegin>74</CharacterOffsetBegin>
+            <CharacterOffsetEnd>75</CharacterOffsetEnd>
+            <POS>.</POS>
+            <NER>O</NER>
+            <Speaker>PER0</Speaker>
+          </token>
+        </tokens>
+        <parse>(ROOT (NP (NP (VBN named) (NN maurice) (NNS cheeks)) (NP (NN coach)) (. .))) </parse>
+        <dependencies type="basic-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">cheeks</dependent>
+          </dep>
+          <dep type="amod">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="1">named</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="2">maurice</dependent>
+          </dep>
+          <dep type="dep">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="4">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="5">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="collapsed-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">cheeks</dependent>
+          </dep>
+          <dep type="amod">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="1">named</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="2">maurice</dependent>
+          </dep>
+          <dep type="dep">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="4">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="5">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="collapsed-ccprocessed-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">cheeks</dependent>
+          </dep>
+          <dep type="amod">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="1">named</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="2">maurice</dependent>
+          </dep>
+          <dep type="dep">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="4">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="5">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="enhanced-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">cheeks</dependent>
+          </dep>
+          <dep type="amod">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="1">named</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="2">maurice</dependent>
+          </dep>
+          <dep type="dep">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="4">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="5">.</dependent>
+          </dep>
+        </dependencies>
+        <dependencies type="enhanced-plus-plus-dependencies">
+          <dep type="root">
+            <governor idx="0">ROOT</governor>
+            <dependent idx="3">cheeks</dependent>
+          </dep>
+          <dep type="amod">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="1">named</dependent>
+          </dep>
+          <dep type="compound">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="2">maurice</dependent>
+          </dep>
+          <dep type="dep">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="4">coach</dependent>
+          </dep>
+          <dep type="punct">
+            <governor idx="3">cheeks</governor>
+            <dependent idx="5">.</dependent>
+          </dep>
+        </dependencies>
+      </sentence>
+    </sentences>
+    <coreference/>
+  </document>
+</root>
