@@ -71,7 +71,7 @@ batchSize=$7
 shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
-
+stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 echo "-------- params --------"
 echo "corpus:" $1
@@ -91,8 +91,8 @@ echo "------------------------"
 # cd "/Users/christanner/research/libraries/GloVe-master"
 # ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
 
-python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod}
-
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
+exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
@@ -119,10 +119,3 @@ done
 #            "sp" + str(stoppingPoint) + ".txt"
 
 exit 1
-
-# runs stanfordCoreNLP, which annotates our corpus
-cd ${stanfordPath}
-java -cp "*" -Xmx2g edu.stanford.nlp.pipeline.StanfordCoreNLP -annotators tokenize,ssplit,pos,lemma,ner,parse,dcoref -file ${allTokens} -tokenize.options untokenizable=noneKeep -parse.debug
-
-cd ${scriptDir}
-python3 AlignWithStanford.py --corpusPath=${corpusPath} --stanfordFile=${stanfordPath}allTokens1.txt.xml --replacementsFile=${replacementsFile} --verbose=t --mentionsFile=${mentionsFile}

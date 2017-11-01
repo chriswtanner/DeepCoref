@@ -365,6 +365,67 @@ class ECBHelper:
 				fout.write(outLine + "\n")
 			fout.close()
 
+	def addStanfordAnnotations(self, stanfordParser):
+		for doc_id in stanfordParser.docToSentenceTokens.keys():
+			print("doc_id:",str(doc_id))
+			print("# stan sent:",str(len(stanfordParser.docToSentenceTokens[doc_id].keys())))
+			print("# ecb sent:", str(len(sorted(self.corpus.docToGlobalSentenceNums[doc_id]))))
+			stanTokens = []
+			ourTokens = []
+			for sent_num in sorted(stanfordParser.docToSentenceTokens[doc_id].keys()):
+				for token_num in stanfordParser.docToSentenceTokens[doc_id][sent_num]:
+					sToken = stanfordParser.docToSentenceTokens[doc_id][sent_num][token_num]
+					if sToken.isRoot == False:
+						stanTokens.append(sToken.word)
+
+			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
+				for token in self.corpus.globalSentenceNumToTokens[sent_num]:
+					ourTokens.append(token.text)
+
+			j = 0
+			i = 0
+			while i < len(ourTokens):
+				if j >= len(stanTokens):
+					print("ran out of stan tokens")
+					exit(1)
+
+				# get the words to equal lengths first
+				stan = stanTokens[j]
+				ours = ourTokens[i]
+				while len(ours) > len(stan):
+					print("\tstan length is shorter:", str(ours), " vs ", str(stan))
+					if j+1 < len(stanTokens):
+						stan += stanTokens[j+1]
+						j += 1
+						print("\tstan is now:", str(stan))
+					else:
+						print("\tran out of stanTokens")
+						exit(1)
+
+				while len(ours) < len(stan):
+					print("\tour length is less")
+					if i+1 < len(ourTokens):
+						ours += ourTokens[i+1]
+						i += 1
+						print("\tours is now:", str(ours))
+					else:
+						print("\tran out of ourTokens")
+						exit(1)	
+
+				if ours != stan:
+					print("\tMISMATCH: [", str(ours), "] [", str(stan), "]")
+					exit(1)
+				else:
+					print("\t[", str(ours), "] == [", str(stan), "]")
+
+				j += 1
+				i += 1
+
+			'''
+			if len(stanTokens) != len(ourTokens):
+				print("** ERROR, not same length!!",str(len(stanTokens)), " vs ecb's:", str(len(ourTokens)))
+				exit(1)
+			'''
 	# sentences
 	#	sentence #1 of 17
 	#		tokens

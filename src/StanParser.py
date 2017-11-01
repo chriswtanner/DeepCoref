@@ -1,23 +1,61 @@
 # DEFUNCT:
 # copied and pasted here from ECBParser, as a better design choice, but
 # i haven't worked out the dependencies yet; it needs ECBParser and/or ECBHelper stuff
+import os
+import fnmatch
+from collections import defaultdict
+from StanToken import StanToken
+from StanLink import StanLink
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 class StanParser:
+
+	def __init__(self, args):
+		
+		# sets global vars
+		self.args = args
+		self.replacements = {}
+		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
+		self.docToSentenceTokens = {}
+
+		# invokes functions
+		self.loadReplacements(args.replacementsFile)
+		self.parseDir(args.stanOutputDir)
+
+	def loadReplacements(self, replacementsFile):
+		f = open(replacementsFile, 'r', encoding="utf-8")
+		for line in f:
+			tokens = line.rstrip().split(" ")
+			# print("tokens", tokens)
+			self.replacements[tokens[0]] = tokens[1]
+			self.replacementsSet.add(tokens[0])
+		f.close()
+
+	def parseDir(self, stanOutputDir):
+		files = []
+		for root, dirnames, filenames in os.walk(stanOutputDir):
+			for filename in fnmatch.filter(filenames, '*.xml'):
+				files.append(os.path.join(root, filename))
+		for f in files:
+			print("parsing file:",str(f))
+			doc_id = str(f[f.rfind("/")+1:])
+			self.docToSentenceTokens[doc_id] = self.parseFile(f) # format: [sentenceNum] -> {[tokenNum] -> StanToken}
+
 
 	# (1) reads stanford's output, saves it
 	# (2) aligns it w/ our sentence tokens
-	def parseStanfordOutput(self, stanFile):
+	def parseFile(self, inputFile):
 
 		# creates global vars
-		self.sentenceTokens = defaultdict(lambda : defaultdict(int))
+		sentenceTokens = defaultdict(lambda : defaultdict(int))
 
-		tree = ET.ElementTree(file=stanFile)
+		tree = ET.ElementTree(file=inputFile)
 		root = tree.getroot()
 
 		document = root[0]
-		print("doc:", document)
 		sentences, corefs = document
-		print("sentences:", sentences)
-		print("corefs:", corefs)
 
 		for elem in sentences: #tree.iter(tag='sentence'):
 
@@ -29,8 +67,8 @@ class StanParser:
 				if section.tag == "tokens":
 
 					# constructs a ROOT StanToken, which represents the NULL ROOT of the DependencyParse
-					rootToken = StanToken(sentenceNum, 0, "ROOT", "ROOT", -1, -1, "-", "-")
-					self.sentenceTokens[sentenceNum][0] = rootToken
+					rootToken = StanToken(True, sentenceNum, 0, "ROOT", "ROOT", -1, -1, "-", "-")
+					sentenceTokens[sentenceNum][0] = rootToken
 
 					for token in section:
 
@@ -62,10 +100,10 @@ class StanParser:
 								word = word.replace(badToken, self.replacements[badToken])
 								print("** CHANGED: [", str(oldWord), "] to [", str(word), "]")
 
-						print("word; ", str(word))
+						#print("word; ", str(word))
 						# constructs and saves the StanToken
-						stanToken = StanToken(sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
-						self.sentenceTokens[sentenceNum][tokenNum] = stanToken
+						stanToken = StanToken(False, sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner)
+						sentenceTokens[sentenceNum][tokenNum] = stanToken
 
 				elif section.tag == "dependencies" and section.attrib["type"] == "basic-dependencies":
 					
@@ -75,8 +113,8 @@ class StanParser:
 						parent, child = dep
 						relationship = dep.attrib["type"]
 
-						parentToken = self.sentenceTokens[sentenceNum][int(parent.attrib["idx"])]
-						childToken = self.sentenceTokens[sentenceNum][int(child.attrib["idx"])]
+						parentToken = sentenceTokens[sentenceNum][int(parent.attrib["idx"])]
+						childToken = sentenceTokens[sentenceNum][int(child.attrib["idx"])]
 
 						# ensures correctness from Stanford
 						if parentToken.word != parent.text:
@@ -103,7 +141,9 @@ class StanParser:
 						
 						parentToken.addChild(curLink)
 						childToken.addParent(curLink)
+		return sentenceTokens
 
+		'''
 		# iterates through our corpus, trying to align Stanford's tokens
 		ourTokens = []
 		for sent_num in sorted(self.globalSentenceNumToTokens.keys()):
@@ -113,11 +153,11 @@ class StanParser:
 		
 		stanTokens = []
 
-		for sent_num in sorted(self.sentenceTokens.keys()):
+		for sent_num in sorted(sentenceTokens.keys()):
 			print("stan: ", str(sent_num))
-			for t in sorted(self.sentenceTokens[sent_num]):
+			for t in sorted(sentenceTokens[sent_num]):
 				if t != 0:
-					curStan = self.sentenceTokens[sent_num][t].word
+					curStan = sentenceTokens[sent_num][t].word
 					stanTokens.append(curStan)
 
 		#offset = 0
@@ -158,7 +198,8 @@ class StanParser:
 
 			j += 1
 			i += 1
-		'''
+		
+		## below was commented out
 		numMismatched = 0
 		for i in range(len(stanTokens) + 15):
 			ours = ""

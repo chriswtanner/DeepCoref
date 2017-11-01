@@ -1,5 +1,6 @@
 class StanToken:
-	def __init__(self, sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner):
+	def __init__(self, isRoot, sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner):
+		self.isRoot = isRoot
 		self.sentenceNum = sentenceNum
 		self.tokenNum = tokenNum
 		self.word = word

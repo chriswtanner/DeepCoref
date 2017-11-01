@@ -1,0 +1,22 @@
+hackers exploit critical ie bug ; microsoft promises patch .
+ie6 through ie11 harbor vulnerability , but in - the - wild attacks limited to ie8 and ie9 .
+september 17 , 2013 03 : 16 pm et .
+computerworld - microsoft today said that hackers are exploiting a critical , but unpatched , vulnerability in internet explorer 8 ( ie8 ) and internet explorer 9 ( ie9 ) , and that its engineers are working on an update to plug the hole .
+as it often does , the company downplayed the threat .
+"there are only reports of a limited number of targeted attacks specifically directed at internet explorer 8 and 9 , although the issue could potentially affect all supported versions , " dustin childs , a manager in the trustworthy computing group and its usual spokesman , said in a blog post tuesday morning .
+"we are actively working to develop a security update to address this issue , " childs added .
+according to childs and the security advisory microsoft also published today , the vulnerability affects all supported versions of ie , from the 12 - year - old ie6 to the not - yet - officially - released ie11 , the browser that will accompany windows 8 . 1 when it ships oct . 18 .
+"there is no escaping this one , " said andrew storms , director of devops at cloud security vendor cloudpassage , referring to the bug affecting all versions of microsoft's browser .
+"ie zero - days are never a good thing , especially when they affect every version , " storms added .
+although microsoft's advisory did not put it in these terms , the vulnerability can be exploited using classic "drive - by" attack tactics .
+that means hackers need only lure victims running ie to malicious sites - - or legitimate websites that have previously been compromised and loaded with attack code - - to hijack their browser and plant malware on their windows pcs .
+until microsoft produces a patch , the company offered customers several options to protect themselves , including advice on configuring emet 4 . 0 and running one of its "fixit" automated tools to "shim" the dll that contains the ie rendering engine .
+emet ( enhanced mitigation experience toolkit ) is a tool designed for advanced users , primarily enterprise it professionals , that manually enables anti - exploit technologies such as aslr ( address space layout randomization ) and dep ( data execution prevention ) for specific applications .
+but the fixit route will be easiest for individual users : microsoft's posted a link to the fixit tool on its support site , and customers need only click the icon marked "enable . " .
+microsoft has used the shim approach before when faced with unexpected attacks against ie .
+based on past practice , microsoft's fixit workaround probably uses the application compatibility toolkit to modify the core library of ie - - a dll ( dynamic link library ) named "mshtml . dll" that contains the browser's rendering engine - - in memory each time ie runs .
+the shim does not quash the bug , but instead makes the browser immune to the attacks microsoft's seen in the wild thus far .
+users can also temporarily ditch ie for an alternate browser , such as google's chrome or mozilla's firefox , to stay safe until microsoft comes up with a permanent fix .
+microsoft today declined say when it plans to patch the ie vulnerability .
+but because the next regularly - scheduled patch tuesday is three weeks away , it's possible the redmond , wash . company's security team will deliver a so - called "out - of - band" update before oct . 9 .
+out - of - band updates from microsoft are rare : the last one it shipped was ms13 - 008 , an the emergency patch issued jan . 14 that plugged a hole in ie6 , ie7 and ie8 that had been exploited since early december 2012 .

@@ -4,6 +4,7 @@ import os.path
 from ECBParser import *
 from ECBHelper import *
 from HDDCRPParser import *
+from StanParser import *
 from CCNN import *
 from get_coref_metrics import *
 
@@ -13,12 +14,17 @@ class CorefEngine:
 
 		# handles passed-in args
 		args = params.setCorefEngineParams()
-		
-		hddcrp_parsed = HDDCRPParser(args.hddcrpFile)
-		print("# H-UIDs golds:", str(len(hddcrp_parsed.MUIDToHMentions.keys())))
+
+		stan = StanParser(args) # loads stanford's parsed output
+
+		hddcrp_parsed = HDDCRPParser(args.hddcrpFile) # loads HDDCRP's pred or gold mentions file
+		print("# H-UIDs in",str(args.hddcrpFile),":", str(len(hddcrp_parsed.MUIDToHMentions.keys())))
 
 		corpus = ECBParser(args)
 		helper = ECBHelper(corpus, args)
+
+		helper.addStanfordAnnotations(stan)
+		exit(1)
 
 		# trains and tests the pairwise-predictions
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)

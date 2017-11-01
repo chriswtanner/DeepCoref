@@ -13,10 +13,11 @@ class WriteSentencesToFile:
 
 		for doc in corpus.docToGlobalSentenceNums.keys():
 			print("doc:",str(doc),":",str(sorted(corpus.docToGlobalSentenceNums[doc])))
+			'''
 			for sent_num in sorted(corpus.docToGlobalSentenceNums[doc]):
 				for t in corpus.globalSentenceNumToTokens[sent_num]:
 					print("\t",str(sent_num),": ",str(t))
-		
+			'''
 		# constructs helper
 		helper = ECBHelper(corpus, args)
 

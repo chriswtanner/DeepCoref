@@ -7,8 +7,6 @@ import codecs
 from collections import defaultdict
 from Token import Token
 from Mention import Mention
-from StanToken import StanToken
-from StanLink import StanLink
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
