@@ -350,29 +350,20 @@ class ECBHelper:
 ##################################################
 ##################################################
 
-	# outputs our ECB corpus in plain-text format;
-	# iterates through the corpus, printing 1 sentence per line
-	def writeAllSentencesToFile(self, outputFile):
-		fout = open(outputFile, 'w')
-		lasts = set()
-		for sent_num in sorted(self.corpus.globalSentenceNumToTokens.keys()):
-			outLine = ""
-			print("(writing) sent_num:", str(sent_num))
-			#if sent_num > 5000:
-			#	break
-
-			lastToken = ""
-			for t in self.corpus.globalSentenceNumToTokens[sent_num]:
-				outLine += t.text + " "
-				lastToken = t.text
-
-			lasts.add(lastToken)
-			outLine = outLine.rstrip()
-			fout.write(outLine + "\n")
-		fout.close()
-
-		for i in lasts:
-			print(str(i))
+	# outputs our ECB corpus in plain-text format; 1 doc per doc, and 1 sentence per line
+	def writeAllSentencesToFile(self, outputDir):
+		
+		for doc_id in self.corpus.docToGlobalSentenceNums.keys():
+			fileOut = str(outputDir) + str(doc_id)
+			fout = open(fileOut, 'w')
+			print("(writing) :", str(fileOut))
+			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
+				outLine = ""
+				for t in self.corpus.globalSentenceNumToTokens[sent_num]:
+					outLine += t.text + " "
+				outLine = outLine.rstrip()
+				fout.write(outLine + "\n")
+			fout.close()
 
 	# sentences
 	#	sentence #1 of 17

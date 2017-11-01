@@ -18,7 +18,8 @@ class ECBParser:
 	def __init__(self, args):
 		print("args:", str(args))
 		self.ensureAllMentionsPresent = False # this should be true when we're actually using the entire corpus
-		
+		self.padCorpus = False
+
 		# sets global vars
 		self.replacements = {}
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
@@ -68,6 +69,7 @@ class ECBParser:
 		self.dirToREFs = defaultdict(list)
 
 		self.dirToDocs = defaultdict(list)
+		self.docToGlobalSentenceNums = defaultdict(set)
 		self.docToREFs = defaultdict(list)
 		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
 		self.docToDMs = defaultdict(list)
@@ -118,6 +120,8 @@ class ECBParser:
 			lastSentenceNum = -1
 
 			tokenNum = -1 # numbers every token in each given sentence, starting at 1 (each sentence starts at 1)
+			if self.padCorpus == False:
+				tokenNum = 0
 			firstToken = True
 			lastTokenText = "" # often times, the last token doesn't end in legit punctuation (. ? ! etc)
 							   # this causes stanfordCoreNLP to have trouble knowing where to end sentences, so we simply add a terminal '.' when needed now		
@@ -158,12 +162,22 @@ class ECBParser:
 								endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, ".")
 								tmpDocTokens.append(endToken)
 
+							if self.padCorpus:
+								endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, "<end>")
+								tmpDocTokens.append(endToken)
+
+
 							globalSentenceNum = globalSentenceNum + 1
 
 						tokenNum = -1
-						startToken = Token("-1", sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, "<start>")
-						#tmpDocTokens.append(startToken)
-						tokenNum = tokenNum + 1
+						if self.padCorpus:
+							startToken = Token("-1", sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, "<start>")
+							tmpDocTokens.append(startToken)
+							tokenNum = tokenNum + 1
+						else:
+							tokenNum = 0
+
+
 
 					# adds token
 					curToken = Token(t_id, sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, tokenText)
@@ -173,7 +187,7 @@ class ECBParser:
 					firstToken = False
 					tmpDocTokens.append(curToken)
 					tokenNum = tokenNum + 1
-				
+					self.docToGlobalSentenceNums[doc_id].add(globalSentenceNum)
 				lastSentenceNum = sentenceNum
 				lastTokenText = tokenText
 				lastToken_id = t_id
@@ -186,6 +200,10 @@ class ECBParser:
 			elif lastTokenText not in self.endPunctuation:
 				endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, -1, -1, ".")
 				tmpDocTokens.append(endToken)
+			if self.padCorpus:
+				endToken = Token("-1", lastSentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, "<end>")
+				tmpDocTokens.append(endToken)
+
 			globalSentenceNum = globalSentenceNum + 1
 
 			'''

@@ -526,7 +526,7 @@ class CCNN:
                         "\t" + str(text) + "\t" + str(ref_section) + "\n")
                     # end of current token line
                 tokenIndex += 1 # this always increases whenever we see a token
-                    
+
         f.close()
         fout.close()
 
@@ -547,7 +547,6 @@ class CCNN:
 
         # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
-
 
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
@@ -827,7 +826,7 @@ class CCNN:
             m = self.hddcrp_parsed.hm_idToHMention[hm_id]
             for t in m.tokens:
 
-                token = self.corpus.UIDToToken[t.UID]
+                token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus parse
                 curEmbedding = self.wordTypeToEmbedding[token.text]
                 menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
 

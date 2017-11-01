@@ -86,16 +86,11 @@ echo "hddcrpFile:" $hddcrpFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "------------------------"
-# parses corpus and outputs a txt file, with 1 sentence per line, which is used for (1) creating embeddings; (2) stanfordCoreNLP to annotate
-#python3 WriteSentencesToFile.py --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --outputFile=${allTokens} --verbose=${verbose} --mentionsFile=${mentionsFile}
 
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
 # ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
-# if [ ${device} = "cpu" ]
-# then
-#	export CUDA_VISIBLE_DEVICES=
-# fi
+
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod}
 
 cd ${refDir}
@@ -122,7 +117,6 @@ done
 #            "bs" + str(self.args.batchSize) + "_" + \
 #            "s" + str(self.args.shuffleTraining) + "_" + \
 #            "sp" + str(stoppingPoint) + ".txt"
-
 
 exit 1
 
