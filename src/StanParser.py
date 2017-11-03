@@ -12,10 +12,11 @@ except ImportError:
     import xml.etree.ElementTree as ET
 class StanParser:
 
-	def __init__(self, args):
+	def __init__(self, args, corpus):
 		
 		# sets global vars
 		self.args = args
+		self.corpus = corpus
 		self.replacements = {}
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.docToSentenceTokens = {}
@@ -39,10 +40,11 @@ class StanParser:
 			for filename in fnmatch.filter(filenames, '*.xml'):
 				files.append(os.path.join(root, filename))
 		for f in files:
-			print("parsing file:",str(f))
 			doc_id = str(f[f.rfind("/")+1:])
-			self.docToSentenceTokens[doc_id] = self.parseFile(f) # format: [sentenceNum] -> {[tokenNum] -> StanToken}
-
+			if doc_id in self.corpus.docToGlobalSentenceNums.keys():
+				self.docToSentenceTokens[doc_id] = self.parseFile(f) # format: [sentenceNum] -> {[tokenNum] -> StanToken}
+			else:
+				print("ignoring:",str(doc_id))
 
 	# (1) reads stanford's output, saves it
 	# (2) aligns it w/ our sentence tokens
@@ -60,7 +62,7 @@ class StanParser:
 		for elem in sentences: #tree.iter(tag='sentence'):
 
 			sentenceNum = int(elem.attrib["id"])
-			print("FOUND SENT NUM:  ", str(sentenceNum))
+			#print("FOUND SENT NUM:  ", str(sentenceNum))
 			for section in elem:
 
 				# process every token for the given sentence
@@ -98,7 +100,9 @@ class StanParser:
 							oldWord = word
 							if badToken in word:
 								word = word.replace(badToken, self.replacements[badToken])
-								print("** CHANGED: [", str(oldWord), "] to [", str(word), "]")
+							if badToken == word:
+								word = self.replacements[badToken]
+								#print("** CHANGED: [", str(oldWord), "] to [", str(word), "]")
 
 						#print("word; ", str(word))
 						# constructs and saves the StanToken

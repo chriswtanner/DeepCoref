@@ -71,6 +71,7 @@ batchSize=$7
 shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
+tmpDir=${13}
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 echo "-------- params --------"
@@ -91,7 +92,7 @@ echo "------------------------"
 # cd "/Users/christanner/research/libraries/GloVe-master"
 # ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
 
-python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
+python3 -u CorefEngine.py --tmpDir=${tmpDir} --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
 exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"

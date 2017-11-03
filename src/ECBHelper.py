@@ -8,7 +8,7 @@ from get_coref_metrics import *
 from random import randint
 class ECBHelper:
 
-	def __init__(self, corpus, args): # goldTruthFile, goldLegendFile, isVerbose):
+	def __init__(self, args, corpus): # goldTruthFile, goldLegendFile, isVerbose):
 		self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 		self.devDirs = [23,24,25]
 		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
@@ -372,51 +372,96 @@ class ECBHelper:
 			print("# ecb sent:", str(len(sorted(self.corpus.docToGlobalSentenceNums[doc_id]))))
 			stanTokens = []
 			ourTokens = []
+			print("STAN:")
 			for sent_num in sorted(stanfordParser.docToSentenceTokens[doc_id].keys()):
 				for token_num in stanfordParser.docToSentenceTokens[doc_id][sent_num]:
 					sToken = stanfordParser.docToSentenceTokens[doc_id][sent_num][token_num]
 					if sToken.isRoot == False:
 						stanTokens.append(sToken.word)
-
+						print("\t",str(sToken.word))
+			print("OURS:")
 			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
 				for token in self.corpus.globalSentenceNumToTokens[sent_num]:
 					ourTokens.append(token.text)
-
+					print("\t",str(token.text))
 			j = 0
 			i = 0
 			while i < len(ourTokens):
 				if j >= len(stanTokens):
-					print("ran out of stan tokens")
-					exit(1)
+					if i == len(ourTokens) - 1 and stanTokens[-1] == "...":
+						print("ran out, but it's okay, bc stan ended with ...")
+						break
+					else:
+						print("ran out of stan tokens")
+						exit(1)
 
 				# get the words to equal lengths first
 				stan = stanTokens[j]
 				ours = ourTokens[i]
-				while len(ours) > len(stan):
-					print("\tstan length is shorter:", str(ours), " vs ", str(stan))
-					if j+1 < len(stanTokens):
-						stan += stanTokens[j+1]
-						j += 1
-						print("\tstan is now:", str(stan))
-					else:
-						print("\tran out of stanTokens")
-						exit(1)
+				if stan == "''":
+					stan = "\""
+					#print("**ERROR, stan was ''")
+				elif stan == "2 1/2":
+					#print("**CORRECTING, stan had tab")
+					stan = "2 1/2"
+				elif stan == "3 1/2":
+					#print("**CORRECTING, stan had tab")
+					stan = "3 1/2"
+				elif stan == "877 268 9324":
+					stan = "8772689324"
+				elif stan == "0845 125 2222":
+					stan = "08451252222"
+				elif stan == "0800 555 111":
+					stan = "0800555111"
+				elif stan == "0800 555111":
+					stan = "0800555111"
+				elif stan == "0845 125 222":
+					stan = "0845125222"
 
-				while len(ours) < len(stan):
-					print("\tour length is less")
-					if i+1 < len(ourTokens):
-						ours += ourTokens[i+1]
-						i += 1
-						print("\tours is now:", str(ours))
-					else:
-						print("\tran out of ourTokens")
-						exit(1)	
+
+				while len(ours) != len(stan):
+					while len(ours) > len(stan):
+						#print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
+						if j+1 < len(stanTokens):
+							stan += stanTokens[j+1]
+							if stan == "71/2":
+								stan = "7 ½"
+							elif stan == "31/2":
+								stan = "3½"
+							j += 1
+							print("\tstan is now:", str(stan))
+						else:
+							print("\tran out of stanTokens")
+							exit(1)
+
+					while len(ours) < len(stan):
+						print("\tour length is shorter:",str(ours),"vs:",str(stan),"stanlength:",str(len(stan)))
+						if i+1 < len(ourTokens):
+							ours += ourTokens[i+1]
+							if ours == "31/2":
+								ours = "3 1/2"
+							elif ours == "21/2":
+								print("converted to: 2 1/2")
+								ours = "2 1/2"
+							elif ours == "31/2-inch":
+								ours = "3 1/2-inch"
+							elif ours == "3 1/2":
+								ours = "3 1/2"
+							i += 1
+							print("\tours is now:", str(ours))
+						else:
+							print("\tran out of ourTokens")
+							exit(1)	
 
 				if ours != stan:
-					print("\tMISMATCH: [", str(ours), "] [", str(stan), "]")
+					print("\tMISMATCH: [",str(ours),"] [",str(stan),"]")
+					for i in range(len(ours)):
+						print(ours[i],stan[i])
+						if ours[i] != stan[i]:
+							print("those last ones didnt match!")
 					exit(1)
-				else:
-					print("\t[", str(ours), "] == [", str(stan), "]")
+				#else:
+				#	print("\t[", str(ours), "] == [", str(stan), "]")
 
 				j += 1
 				i += 1

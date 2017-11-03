@@ -15,6 +15,7 @@ except ImportError:
 class ECBParser:
 	def __init__(self, args):
 		print("args:", str(args))
+		self.args = args
 		self.ensureAllMentionsPresent = False # this should be true when we're actually using the entire corpus
 		self.padCorpus = False
 
@@ -98,7 +99,8 @@ class ECBParser:
 		for f in files:
 			doc_id = f[f.rfind("/") + 1:]
 			dir_num = int(doc_id.split("_")[0])
-
+			if dir_num != self.args.tmpDir:
+				continue
 			self.dirToDocs[dir_num].append(doc_id)
 
 			tmpDocTokens = [] # we will optionally flip these and optionally stitch Mention tokens together
@@ -174,8 +176,6 @@ class ECBParser:
 							tokenNum = tokenNum + 1
 						else:
 							tokenNum = 0
-
-
 
 					# adds token
 					curToken = Token(t_id, sentenceNum, globalSentenceNum, tokenNum, doc_id, hSentenceNum, hTokenNum, tokenText)
@@ -311,7 +311,7 @@ class ECBParser:
 				if "ACTION" in entityType:
 					isPred = True
 				m_id = int(match.group(2))
-				
+
 				# gets the token IDs
 				regex2 = r"<token_anchor t_id=\"(\d+)\".*?/>"
 				it2 = tuple(re.finditer(regex2, match.group(3)))
@@ -342,7 +342,6 @@ class ECBParser:
 					tmpMentionCorpusIndices.sort() # regardless of if we reverse the corpus or not, these indices should be in ascending order
 
 					curMention = Mention(dir_num, doc_id, m_id, tmpTokens, tmpMentionCorpusIndices, text, isPred, entityType)
-					
 					# we only save the Mentions that are in self.validMentions,
 					# that way, we can always iterate over self.mentions (since we care about them all)
 					if isPred:
