@@ -1,6 +1,7 @@
 #!/bin/bash
 echo $CUDA_HOME
 export PYTHONIOENCODING=UTF-8
+
 # manually set these base params
 me=`whoami`
 hn=`hostname`
@@ -10,11 +11,7 @@ brownDir="/home/ctanner/researchcode/DeepCoref/"
 refDir="/Users/christanner/research/libraries/reference-coreference-scorers-8.01/"
 refDirBrown="/home/christanner/researchcode/libraries/reference-coreference-scorers"
 
-stoppingPoints=(0.49 0.501 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.601)
-# ./home/jrasley/set_cuda8_cudnn6.sh
-# export CUDA_HOME=/contrib/projects/cuda8.0
-# export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
-# export PATH=${CUDA_HOME}/bin:${PATH}
+stoppingPoints=(0.49) # 0.501 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.601)
 source ~/researchcode/DeepCoref/venv/bin/activate
 
 if [ ${me} = "ctanner" ]
@@ -52,7 +49,7 @@ stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-0
 stitchMentions="False"
 resultsDir=${baseDir}"results/"
 
-# glove param
+# glove params
 gWindowSize=6
 embeddingSize=$9
 numEpochs=50
@@ -71,9 +68,9 @@ batchSize=$7
 shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
-tmpDir=${13}
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
+
 echo "-------- params --------"
 echo "corpus:" $1
 echo "device:" ${device}
@@ -88,11 +85,7 @@ echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "------------------------"
 
-# writes GloVe embeddings from the parsed corpus' output ($allTokens)
-# cd "/Users/christanner/research/libraries/GloVe-master"
-# ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
-
-python3 -u CorefEngine.py --tmpDir=${tmpDir} --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
 exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -110,13 +103,11 @@ do
 	echo "CoNLLF1:" ${f} ${avg}
 	rm -rf ${f}
 done
-# fileOut = str(self.args.resultsDir) + "predict." + \
-#            "nl" + str(self.args.numLayers) + "_" + \
-#            "ne" + str(self.args.numEpochs) + "_" + \
-#            "ws" + str(self.args.windowSize) + "_" + \
-#            "neg" + str(self.args.numNegPerPos) + "_" + \
-#            "bs" + str(self.args.batchSize) + "_" + \
-#            "s" + str(self.args.shuffleTraining) + "_" + \
-#            "sp" + str(stoppingPoint) + ".txt"
 
-exit 1
+# writes GloVe embeddings from the parsed corpus' output ($allTokens)
+# cd "/Users/christanner/research/libraries/GloVe-master"
+# ./demo.sh ${allTokens} ${gWindowSize} ${embeddingSize} ${numEpochs} ${gloveOutput}
+# ./home/jrasley/set_cuda8_cudnn6.sh
+# export CUDA_HOME=/contrib/projects/cuda8.0
+# export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
+# export PATH=${CUDA_HOME}/bin:${PATH}

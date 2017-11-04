@@ -3,8 +3,12 @@ from HMention import *
 from collections import defaultdict
 class HDDCRPParser:
 	def __init__(self, inputFile):
+		print("* loading HDDCRP's mention boundaries file:")
+
 		self.inputFile = inputFile
 		self.parse(inputFile)
+		print("\t* parsed ",str(len(self.hmentions)), "mentions")
+		print("\t* created ", str(len(self.hm_idToHMention.keys())), " hm_ids!")
 
 	# parses the hddcrp *semeval.txt file (which is in CoNLL-ready format)
 	def parse(self, inputFile):
@@ -98,6 +102,4 @@ class HDDCRPParser:
 		for doc_id in self.docToHMentions.keys():
 			for hm in self.docToHMentions[doc_id]:
 				hms.add(hm)
-		print("* parsed ",str(len(self.hmentions)), "mentions")
-		print("* created ", str(len(self.hm_idToHMention.keys())), " hm_ids!")
-		print("# hms by end of parsing, based on a per doc basis:", str(len(hms)))
+		print("\t# hms by end of parsing, based on a per doc basis:", str(len(hms)))

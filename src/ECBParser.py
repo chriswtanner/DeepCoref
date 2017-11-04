@@ -49,7 +49,7 @@ class ECBParser:
 			return newID
 
 	def parseCorpus(self, corpusDir, stitchMentions=False, isVerbose=False):
-		print("* parseCorpus()")
+		print("* parsing ECB corpus...",end='')
 
 		# globally sets params
 		self.corpusDir = corpusDir
@@ -69,6 +69,7 @@ class ECBParser:
 
 		self.dirToDocs = defaultdict(list)
 		self.docToGlobalSentenceNums = defaultdict(set)
+		self.docToTokens = defaultdict(list) # currently ignores the <start> <end> tokens
 		self.docToREFs = defaultdict(list)
 		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
 		self.docToDMs = defaultdict(list)
@@ -99,8 +100,7 @@ class ECBParser:
 		for f in files:
 			doc_id = f[f.rfind("/") + 1:]
 			dir_num = int(doc_id.split("_")[0])
-			if dir_num != self.args.tmpDir:
-				continue
+
 			self.dirToDocs[dir_num].append(doc_id)
 
 			tmpDocTokens = [] # we will optionally flip these and optionally stitch Mention tokens together
@@ -182,6 +182,7 @@ class ECBParser:
 					self.UIDToToken[curToken.UID] = curToken
 					self.docToUIDs[doc_id].append(curToken.UID)
 					tmpDocTokenIDsToTokens[t_id] = curToken
+
 					firstToken = False
 					tmpDocTokens.append(curToken)
 					tokenNum = tokenNum + 1
@@ -297,6 +298,7 @@ class ECBParser:
 					self.corpusTokens.append(t)
 					curDocTokens.append(t)
 					self.corpusTokensToCorpusIndex[t] = self.numCorpusTokens
+					self.docToTokens[doc_id].append(t) # all non-padded tokens
 					self.numCorpusTokens = self.numCorpusTokens + 1
 
 			self.docTokens.append(curDocTokens)
@@ -402,6 +404,8 @@ class ECBParser:
 
 		for m in self.mentions:
 			self.UIDToMentions[m.UID] = m
+
+		print("done")
 		# ensures we have found all of the valid mentions in our corpus
 		'''
 		if self.ensureAllMentionsPresent: # this should be true when we're actually using the entire corpus

@@ -32,8 +32,7 @@ def setCorefEngineParams():
 
 	# StanParser
 	parser.add_argument("--stanOutputDir", help="the file that stanfordCoreNLP output'ed")
-	parser.add_argument("--tmpDir", help="just to ensure correct stan linking, remove this!", type=int)
-	
+
 	# CCNN
 	parser.add_argument("--resultsDir", help="the full path to /results")	
 	parser.add_argument("--hddcrpFile", help="the filename of hddcrpFile to load in (gold or predict)")

@@ -1,9 +1,9 @@
 class StanToken:
-	def __init__(self, isRoot, sentenceNum, tokenNum, word, lemma, startIndex, endIndex, pos, ner):
+	def __init__(self, isRoot, sentenceNum, tokenNum, text, lemma, startIndex, endIndex, pos, ner):
 		self.isRoot = isRoot
 		self.sentenceNum = sentenceNum
 		self.tokenNum = tokenNum
-		self.word = word
+		self.text = text
 		self.lemma = lemma
 		self.startIndex = startIndex
 		self.endIndex = endIndex
@@ -21,4 +21,4 @@ class StanToken:
 		self.childLinks.append(childLink)
 
 	def __str__(self):
-		return("[" + str(self.word) + "]")
+		return("STAN TEXT: [" + str(self.text) + "]" + "; LEMMA:" + str(self.lemma) + "; POS:" + str(self.pos) + "; NER:" + str(self.ner))

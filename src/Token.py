@@ -8,6 +8,7 @@ class Token:
 		self.doc_id = doc_id
 		self.UID = str(self.doc_id) + ";" + str(self.hSentenceNum) + ";" + str(self.hTokenNum)
 
+		self.stanTokens = [] # list of the stan tokens that map to this (USUALLY this is just 1 stan token, though)
 		if self.stitchedTogether == True:
 			self.sentenceNum = self.tokens[0].sentenceNum
 			self.globalSentenceNum = self.tokens[0].globalSentenceNum
@@ -25,6 +26,9 @@ class Token:
 			self.sentenceNum = sentenceNum
 			self.globalSentenceNum = globalSentenceNum
 			self.text = text
+
+	def addStanTokens(self, stanTokens):
+		self.stanTokens = stanTokens
 
 	def __str__(self):
 		return("TOKEN: ID:" + str(self.tokenID) + "; TOKEN#: " + str(self.tokenNum) + "; SENTENCE#:" + str(self.sentenceNum) + " globalSentenceNum: " + str(self.globalSentenceNum) + "; TEXT:" + str(self.text))

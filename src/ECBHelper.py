@@ -13,8 +13,6 @@ class ECBHelper:
 		self.devDirs = [23,24,25]
 		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 
-		self.trainingCutoff = 25 # anything higher than this will be testing
-
 		# sets passed-in params
 		self.corpus = corpus
 		self.isVerbose = args.verbose
@@ -22,8 +20,10 @@ class ECBHelper:
 	
 		# filled in by loadEmbeddings(), if called, and if embeddingsType='type'
 		self.wordTypeToEmbedding = {}
-
 		self.embeddingLength = 0 # filled in by loadEmbeddings()
+
+		# filled in by addStanfordAnnotations(), if called
+		self.posToIndex = {} # maps each of the 45 POS' to a unique index (alphabetical ordering), used for creating a feature
 
 
 	def setValidDMs(self, DMs):
@@ -365,47 +365,115 @@ class ECBHelper:
 				fout.write(outLine + "\n")
 			fout.close()
 
+	'''
+	def X():
+		pos = set()
+		posTotal = set()
+		longest = -1
+		lengths = []
+		for d in ourDocSet:
+			for t in self.corpus.docToTokens[d]:
+				tmp = ""
+				for s in t.stanTokens:
+					pos.add(s.pos)
+					tmp += s.pos + "||"
+
+					l = len(s.lemma)
+					lengths.append(l)
+					if l > longest:
+						longest = l
+				posTotal.add(tmp)
+		for p in sorted(pos):
+			print(p)
+		print("we have pos:",str(len(pos)))
+		print("# unique total:",str(len(posTotal)))
+		print("longest lemma:",str(longest))
+		print("avg:",str(sum(lengths)/float(len(lengths))))
+
+		print("most sents:",str(mostNumSents))
+		print("avg sent lengths:",str(sum(sentLengths)/float(len(sentLengths))))
+	'''
+
 	def addStanfordAnnotations(self, stanfordParser):
+
+		# SANITY CHECK: ensures we're using the same, complete doc sets
+		stanDocSet = set()
+		ourDocSet = set()
+		mostNumSents = 0
+		sentLengths = []
 		for doc_id in stanfordParser.docToSentenceTokens.keys():
-			print("doc_id:",str(doc_id))
-			print("# stan sent:",str(len(stanfordParser.docToSentenceTokens[doc_id].keys())))
-			print("# ecb sent:", str(len(sorted(self.corpus.docToGlobalSentenceNums[doc_id]))))
+			stanDocSet.add(doc_id)
+		for doc_id in self.corpus.docToGlobalSentenceNums.keys():
+			ourDocSet.add(doc_id)
+			if doc_id not in stanDocSet:
+				print("* ERROR: ecb has a doc:",str(doc_id)," which stan didn't parse")
+				exit(1)
+		for doc_id in stanDocSet:
+			if doc_id not in ourDocSet:
+				print("* ERROR: stan has a doc:",str(doc_id)," which ecb didn't parse")
+				exit(1)
+		# END OF SANITY CHECK
+
+		# adds stan links on a per doc basis
+		for doc_id in stanDocSet:
+			#print("doc_id:",str(doc_id))
+
+			# builds list of stanford tokens
 			stanTokens = []
-			ourTokens = []
-			print("STAN:")
+			if len(sorted(stanfordParser.docToSentenceTokens[doc_id].keys())) > mostNumSents:
+				mostNumSents = len(sorted(stanfordParser.docToSentenceTokens[doc_id].keys()))
+			sentLengths.append(len(sorted(stanfordParser.docToSentenceTokens[doc_id].keys())))
+
 			for sent_num in sorted(stanfordParser.docToSentenceTokens[doc_id].keys()):
 				for token_num in stanfordParser.docToSentenceTokens[doc_id][sent_num]:
 					sToken = stanfordParser.docToSentenceTokens[doc_id][sent_num][token_num]
 					if sToken.isRoot == False:
-						stanTokens.append(sToken.word)
-						print("\t",str(sToken.word))
-			print("OURS:")
+						stanTokens.append(sToken)
+			
+			ourTokens = [] # for readability,
 			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
 				for token in self.corpus.globalSentenceNumToTokens[sent_num]:
-					ourTokens.append(token.text)
-					print("\t",str(token.text))
+					ourTokens.append(token)
+			#print("len(ourTokens):",str(len(ourTokens)))
+			#print("len(self.corpus.docToTokens[doc_id]):",str(len(self.corpus.docToTokens[doc_id])))
+			if len(ourTokens) != len(self.corpus.docToTokens[doc_id]):
+				print("* ERROR: oddly, ourTokens (based on sentences) don't agree w/ our doc's tokens")
+				'''
+				for i in ourTokens:
+					print(i)
+				print("corpus docToTokens:")
+				for i in self.corpus.docToTokens[doc_id]:
+					print(i)
+				'''	
+				exit(1)
+
 			j = 0
 			i = 0
 			while i < len(ourTokens):
 				if j >= len(stanTokens):
-					if i == len(ourTokens) - 1 and stanTokens[-1] == "...":
-						print("ran out, but it's okay, bc stan ended with ...")
+					if i == len(ourTokens) - 1 and stanTokens[-1].text == "...":
+						tmp = [stanTokens[-1]]
+						ourTokens[i].addStanTokens(tmp)
 						break
 					else:
 						print("ran out of stan tokens")
 						exit(1)
 
-				# get the words to equal lengths first
-				stan = stanTokens[j]
-				ours = ourTokens[i]
+				stanToken = stanTokens[j]
+				ourToken = ourTokens[i]
+
+				curStanTokens = [stanToken]
+				curOurTokens = [ourToken]
+
+				stan = stanToken.text
+				ours = ourToken.text
+
+				# pre-processing fixes since the replacements file can't handle spaces
 				if stan == "''":
 					stan = "\""
-					#print("**ERROR, stan was ''")
 				elif stan == "2 1/2":
-					#print("**CORRECTING, stan had tab")
 					stan = "2 1/2"
 				elif stan == "3 1/2":
-					#print("**CORRECTING, stan had tab")
 					stan = "3 1/2"
 				elif stan == "877 268 9324":
 					stan = "8772689324"
@@ -418,59 +486,98 @@ class ECBHelper:
 				elif stan == "0845 125 222":
 					stan = "0845125222"
 
-
+				# get the words to equal lengths first
 				while len(ours) != len(stan):
 					while len(ours) > len(stan):
 						#print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
 						if j+1 < len(stanTokens):
-							stan += stanTokens[j+1]
+							stan += stanTokens[j+1].text
+							curStanTokens.append(stanTokens[j+1])
 							if stan == "71/2":
 								stan = "7 ½"
 							elif stan == "31/2":
 								stan = "3½"
 							j += 1
-							print("\tstan is now:", str(stan))
+							#print("\tstan is now:", str(stan))
 						else:
 							print("\tran out of stanTokens")
 							exit(1)
 
 					while len(ours) < len(stan):
-						print("\tour length is shorter:",str(ours),"vs:",str(stan),"stanlength:",str(len(stan)))
+						#print("\tour length is shorter:",str(ours),"vs:",str(stan),"stanlength:",str(len(stan)))
 						if i+1 < len(ourTokens):
-							ours += ourTokens[i+1]
+							ours += ourTokens[i+1].text
+							curOurTokens.append(ourTokens[i+1])
 							if ours == "31/2":
 								ours = "3 1/2"
 							elif ours == "21/2":
-								print("converted to: 2 1/2")
+								#print("converted to: 2 1/2")
 								ours = "2 1/2"
 							elif ours == "31/2-inch":
 								ours = "3 1/2-inch"
 							elif ours == "3 1/2":
 								ours = "3 1/2"
 							i += 1
-							print("\tours is now:", str(ours))
+							#print("\tours is now:", str(ours))
 						else:
 							print("\tran out of ourTokens")
 							exit(1)	
 
 				if ours != stan:
 					print("\tMISMATCH: [",str(ours),"] [",str(stan),"]")
+					'''
 					for i in range(len(ours)):
 						print(ours[i],stan[i])
 						if ours[i] != stan[i]:
 							print("those last ones didnt match!")
+					'''
 					exit(1)
-				#else:
-				#	print("\t[", str(ours), "] == [", str(stan), "]")
+				else: # texts are identical, so let's set the stanTokens
+					for t in curOurTokens:
+						t.addStanTokens(curStanTokens)
+
+				'''
+				if len(curStanTokens) > len(curOurTokens):
+					numStanGreater += 1
+
+					if len(curOurTokens) > 1:
+						#print("**** more than 1 of our tokens map to more than 1 stan token")
+						print("**** # stan tokens:",len(curStanTokens)," # our tokens:",len(curOurTokens))
+						for s in curStanTokens:
+							print("\t",str(s))
+						for c in curOurTokens:
+							print("\t",str(c))
+					
+				elif len(curStanTokens) < len(curOurTokens):
+					
+					
+					print("# stan tokens:",len(curStanTokens)," # our tokens:",len(curOurTokens))
+					for s in curStanTokens:
+						print("\t",str(s))
+					for c in curOurTokens:
+						print("\t",str(c))
+					numOursGreater += len(curOurTokens)
+				else:
+					numEqual += 1
+				'''
 
 				j += 1
 				i += 1
+			
+			# ensures every Token in the doc has been assigned at least 1 StanToken
+			for t in self.corpus.docToTokens[doc_id]:
+				if len(t.stanTokens) == 0:
+					print("Token:",str(t)," never linked w/ a stanToken!")
+					exit(1)
+		print("we've successfully added stanford links to every single token within our",str(len(ourDocSet)),"docs")
+		
 
-			'''
-			if len(stanTokens) != len(ourTokens):
-				print("** ERROR, not same length!!",str(len(stanTokens)), " vs ecb's:", str(len(ourTokens)))
-				exit(1)
-			'''
+		#exit(1)
+		'''
+		if len(stanTokens) != len(ourTokens):
+			print("** ERROR, not same length!!",str(len(stanTokens)), " vs ecb's:", str(len(ourTokens)))
+			exit(1)
+		'''
 	# sentences
 	#	sentence #1 of 17
 	#		tokens

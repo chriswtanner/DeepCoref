@@ -13,7 +13,8 @@ except ImportError:
 class StanParser:
 
 	def __init__(self, args, corpus):
-		
+		print("* loading Stanford's Parsing data... ",end='')
+
 		# sets global vars
 		self.args = args
 		self.corpus = corpus
@@ -24,6 +25,7 @@ class StanParser:
 		# invokes functions
 		self.loadReplacements(args.replacementsFile)
 		self.parseDir(args.stanOutputDir)
+		print("done")
 
 	def loadReplacements(self, replacementsFile):
 		f = open(replacementsFile, 'r', encoding="utf-8")
@@ -43,13 +45,14 @@ class StanParser:
 			doc_id = str(f[f.rfind("/")+1:])
 			if doc_id in self.corpus.docToGlobalSentenceNums.keys():
 				self.docToSentenceTokens[doc_id] = self.parseFile(f) # format: [sentenceNum] -> {[tokenNum] -> StanToken}
-			else:
-				print("ignoring:",str(doc_id))
+			
+			#else:
+			#	print("ignoring:",str(doc_id))
 
 	# (1) reads stanford's output, saves it
 	# (2) aligns it w/ our sentence tokens
 	def parseFile(self, inputFile):
-
+		#print("parsing: ",inputFile)
 		# creates global vars
 		sentenceTokens = defaultdict(lambda : defaultdict(int))
 
@@ -121,22 +124,22 @@ class StanParser:
 						childToken = sentenceTokens[sentenceNum][int(child.attrib["idx"])]
 
 						# ensures correctness from Stanford
-						if parentToken.word != parent.text:
+						if parentToken.text != parent.text:
 							for badToken in self.replacementsSet:
 								if badToken in parent.text:
 									parent.text = parent.text.replace(badToken, self.replacements[badToken])
 
-						if childToken.word != child.text:
+						if childToken.text != child.text:
 							for badToken in self.replacementsSet:
 								if badToken in child.text:
 									child.text = child.text.replace(badToken, self.replacements[badToken])
 
 											
-						if parentToken.word != parent.text or childToken.word != child.text:
+						if parentToken.text != parent.text or childToken.text != child.text:
 							print("STAN's DEPENDENCY TEXT MISMATCHES WITH STAN'S TOKENS")
-							print("1", str(parentToken.word))
+							print("1", str(parentToken.text))
 							print("2", str(parent.text))
-							print("3", str(childToken.word))
+							print("3", str(childToken.text))
 							print("4", str(child.text))
 							exit(1)
 
@@ -161,7 +164,7 @@ class StanParser:
 			print("stan: ", str(sent_num))
 			for t in sorted(sentenceTokens[sent_num]):
 				if t != 0:
-					curStan = sentenceTokens[sent_num][t].word
+					curStan = sentenceTokens[sent_num][t].text
 					stanTokens.append(curStan)
 
 		#offset = 0

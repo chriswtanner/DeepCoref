@@ -46,6 +46,7 @@ class CCNN:
     def clusterHPredictions(self, pairs, predictions, stoppingPoint):
         clusters = {}
         print("in clusterPredictions()")
+        
         # stores predictions
         docToHMPredictions = defaultdict(lambda : defaultdict(float))
         docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
@@ -802,6 +803,7 @@ class CCNN:
     # creates the test data from hddcrp's predicted mentions
     def createDataFromHDDCRP(self):
         (pairs, labels) = self.helper.constructAllWDHMPairs(self.hddcrp_parsed)
+        print("pairs0:",str(pairs[0]))
         print("# pairs (createDataFromHDDCRP()):",str(len(pairs)))
 
         # determines which mentions we'll construct
@@ -826,7 +828,7 @@ class CCNN:
             m = self.hddcrp_parsed.hm_idToHMention[hm_id]
             for t in m.tokens:
 
-                token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus parse
+                token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
                 curEmbedding = self.wordTypeToEmbedding[token.text]
                 menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
 
