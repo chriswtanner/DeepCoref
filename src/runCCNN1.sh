@@ -1,20 +1,20 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
-numLayers=(2 3)
-numEpochs=(5 10 15 25)
-windowSize=(0)
-numNeg=(7 10 13)
-batchSize=(64 128 256)
+numLayers=(2) # 1 3
+numEpochs=(15) # 5 10 20
+windowSize=(0) # 1 2 3
+numNeg=(7) # 5 10 15
+batchSize=(256) # 64 128
 shuffle=(f) # t                                                                                            
 embSize=(400) # 50                                                                                    
-dropout=(0.3 0.35 0.4 0.45 0.5)
+dropout=(0.4) # 0.0 0.1 .2 .3 .5
 hddcrp="predict"
-clusterMethod=("min" "avg" "avgavg")
+clusterMethod=("avgavg") # "min" "avg" 
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
 
-			    # qsub -pe smp 32 -l vlong -o cpu32b_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}.out runCoref.sh cpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb}
+# CPU runs	 
 for nl in "${numLayers[@]}"
 do
 	for ne in "${numEpochs[@]}"
@@ -45,7 +45,7 @@ do
 	done
 done
 
-# GPU
+# GPU runs
 for nl in "${numLayers[@]}"
 do
 	for ne in "${numEpochs[@]}"
