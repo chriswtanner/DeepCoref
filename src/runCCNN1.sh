@@ -9,7 +9,9 @@ shuffle=(f) # t
 embSize=(400) # 50                                                                                    
 dropout=(0.4) # 0.0 0.1 .2 .3 .5
 hddcrp="predict"
-clusterMethod=("avgavg") # "min" "avg" 
+clusterMethod=("avgavg") # "min" "avg"
+featurePOS=("onehot") # none   onehot   emb_random   emb_glove
+posType=("sum") # none  sum  avg
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -64,7 +66,13 @@ do
 							do
 								for cm in "${clusterMethod[@]}"
 								do
-									qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm}
+									for fpos in "${featurePOS[@]}"
+									do
+										for pt in "${posType[@]}"
+										do
+											qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${fpos} ${pt}
+										done
+									done	
 								done
 							done
 						done

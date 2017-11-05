@@ -25,6 +25,7 @@ class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
         self.args = args
+
         self.numRows = 2
         if self.args.windowSize == 0:
             self.numRows = 1
@@ -794,6 +795,59 @@ class CCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
+    def getPOSEmbedding(self, featurePOS, posType, tokenList):
+        posEmb = []
+        if featurePOS == "none":
+            return posEmb
+        elif featurePOS == "onehot":
+            posLength = 50
+
+            # sum over all tokens first, optionally avg
+            if posType == "sum" or posType == "avg":
+                sumEmb = [0]*posLength
+
+                #tmpTokenTexts = []
+                for t in tokenList:
+                    # our current 1 ECB Token possibly maps to multiple StanTokens, so let's
+                    # ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
+                    pos = ""
+                    posOfLongestToken = ""
+                    longestToken = ""
+                    for stanToken in t.stanTokens:
+                        if stanToken.pos in self.helper.badPOS:
+                            # only use the badPOS if no others have been set
+                            if pos == "":
+                                pos = stanToken.pos
+                        else: # save the longest, nonBad POS tag
+                            if len(stanToken.text) > len(longestToken):
+                                longestToken = stanToken.text
+                                posOfLongestToken = stanToken.pos 
+
+                    if posOfLongestToken != "":
+                        pos = posOfLongestToken
+                    if pos == "":
+                        print("* ERROR: our POS empty!")
+                        exit(1)
+                    #print(str(t.text),"->",str(pos))
+                    curEmb = [0]*posLength
+                    curEmb[self.helper.posToIndex[pos]] += 1
+                    sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
+                    posEmb = sumEmb
+                #print("sumEmb:",str(sumEmb))
+                if posType == "avg":
+                    avgEmb = [x / float(len(tokenList)) for x in sumEmb]
+                    posEmb = avgEmb
+
+                #print("posEmb:",str(posEmb))
+            else: # can't be none, since we've specified featurePOS
+                print("* ERROR: posType is illegal")
+        elif featurePOS == "emb_random":
+            a = 1
+        elif featurePOS == "emb_glove":
+            a = 1
+        return posEmb
+
+
     # creates data from ECBCorpus (train and dev uses this, and optionally test)
     def createData(self, subset, dirs=None):
 
@@ -827,56 +881,72 @@ class CCNN:
 
         numRows = 1 + 2*self.args.windowSize
         numCols = self.embeddingLength
+
         for mentionID in mentionIDsWeCareAbout:
 
             tokenList = mentionIDToTokenList[mentionID]
 
-            curMentionMatrix = np.zeros(shape=(numRows,numCols))
             t_startIndex = 99999999
             t_endIndex = -1
 
             # gets token indices and constructs the Mention embedding
-            menEmbedding = [0]*numCols
+            sumGloveEmbedding = [0]*self.embeddingLength
             for token in tokenList:
                 curEmbedding = self.wordTypeToEmbedding[token.text]
-                menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
-
+                sumGloveEmbedding = [x + y for x,y in zip(sumGloveEmbedding, curEmbedding)]
+                #print("curEmbedding:",str(curEmbedding))
                 ind = self.corpus.corpusTokensToCorpusIndex[token]
                 if ind < t_startIndex:
                     t_startIndex = ind
                 if ind > t_endIndex:
                     t_endIndex = ind
 
+            posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
+
+            avgGloveEmbedding = [x / float(len(tokenList)) for x in sumGloveEmbedding]
+            fullMenEmbedding = avgGloveEmbedding + posEmb
+            #print("fullMenEmbedding:",str(fullMenEmbedding))
+
             # sets the center
-            curMentionMatrix[self.args.windowSize] = [x / float(len(tokenList)) for x in menEmbedding]
+            curMentionMatrix = np.zeros(shape=(numRows,len(fullMenEmbedding)))
+            curMentionMatrix[self.args.windowSize] = fullMenEmbedding
 
             # the prev tokens
             for i in range(self.args.windowSize):
                 ind = t_startIndex - self.args.windowSize + i
 
-                emb = [0]*numCols
+                pGloveEmb = [0]*self.embeddingLength
+                tmpTokenList = []
                 if ind >= 0:
                     token = self.corpus.corpusTokens[ind]
+                    tmpTokenList.append(token)
                     if token.text in self.wordTypeToEmbedding:
-                        emb = self.wordTypeToEmbedding[token.text]
+                        pGloveEmb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
 
-                curMentionMatrix[i] = emb
+                prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+                fullTokenEmbedding = pGloveEmb + prevPosEmb
+                curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
             for i in range(self.args.windowSize):
                 ind = t_endIndex + 1 + i
 
-                emb = [0] * numCols
+                nGloveEmb = [0]*self.embeddingLength
+                tmpTokenList = []
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
+                    tmpTokenList.append(token)
                     if token.text in self.wordTypeToEmbedding:
                         emb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
-                curMentionMatrix[self.args.windowSize+1+i] = emb
-            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,numCols,1)
+
+                nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+                fullTokenEmbedding = nGloveEmb + nextPosEmb
+                curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
+            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 
             mentionIDToMatrix[mentionID] = curMentionMatrix
 

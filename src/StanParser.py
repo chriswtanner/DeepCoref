@@ -24,6 +24,8 @@ class StanParser:
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.docToSentenceTokens = {}
 
+		self.posTags = set() # saves all POS tags
+
 		# invokes functions
 		self.loadReplacements(args.replacementsFile)
 		self.parseDir(args.stanOutputDir)
@@ -35,11 +37,8 @@ class StanParser:
 		f = open(replacementsFile, 'r', encoding="utf-8")
 		for line in f:
 			tokens = line.rstrip().split(" ")
-			# print("tokens", tokens)
 			self.replacements[tokens[0]] = tokens[1]
 			self.replacementsSet.add(tokens[0])
-
-			print(str(tokens[0]),"will become",str(tokens[1]))
 		f.close()
 
 	def parseDir(self, stanOutputDir):
@@ -104,11 +103,12 @@ class StanParser:
 								startIndex = item.text
 							elif item.tag == "POS":
 								pos = item.text
+								self.posTags.add(pos)
 							elif item.tag == "NER":
 								ner = item.text
 
 						for badToken in self.replacementsSet:
-							oldWord = word
+							#oldWord = word
 							if badToken == word:
 								word = self.replacements[badToken]
 							if badToken in word:

@@ -68,6 +68,8 @@ batchSize=$7
 shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
+featurePOS=${13}
+posType=${14}
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 
@@ -85,7 +87,14 @@ echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "------------------------"
 
-python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} --stanOutputDir=${stanOutputDir}
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
+--numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} \
+--stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} \
+--embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
+--windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
+--batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
+ --stanOutputDir=${stanOutputDir} \
+ --featurePOS=${featurePOS} --posType=${posType}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"

@@ -20,11 +20,11 @@ class ECBHelper:
 	
 		# filled in by loadEmbeddings(), if called, and if embeddingsType='type'
 		self.wordTypeToEmbedding = {}
-		self.embeddingLength = 0 # filled in by loadEmbeddings()
+		#self.embeddingLength = 0 # filled in by loadEmbeddings()
 
 		# filled in by addStanfordAnnotations(), if called
 		self.posToIndex = {} # maps each of the 45 POS' to a unique index (alphabetical ordering), used for creating a feature
-
+		self.badPOS = ["‘’", "``", "POS", "$", "''"]
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
@@ -742,6 +742,8 @@ class ECBHelper:
 						if j+1 < len(stanTokens):
 
 							stan += stanTokens[j+1].text
+							#if stan == "estimates''":
+							#	print("HOW DID THIS HAPPEN!")
 							curStanTokens.append(stanTokens[j+1])
 							if stan == "71/2":
 								stan = "7 ½"
@@ -821,7 +823,12 @@ class ECBHelper:
 					exit(1)
 		print("we've successfully added stanford links to every single token within our",str(len(ourDocSet)),"docs")
 		
-
+		# makes a mapping from POS -> index
+		i = 0
+		for pos in sorted(stanfordParser.posTags):
+			self.posToIndex[pos] = i
+			print("pos:",str(pos),"=>",str(i))
+			i += 1
 		#exit(1)
 		'''
 		if len(stanTokens) != len(ourTokens):
