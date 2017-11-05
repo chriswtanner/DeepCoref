@@ -738,7 +738,7 @@ class ECBHelper:
 				# get the words to equal lengths first
 				while len(ours) != len(stan):
 					while len(ours) > len(stan):
-						print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
+						#print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
 						if j+1 < len(stanTokens):
 
 							if stanTokens[j+1].text == "''":
@@ -752,13 +752,13 @@ class ECBHelper:
 							elif stan == "31/2":
 								stan = "3½"
 							j += 1
-							print("\tstan is now:", str(stan))
+							#print("\tstan is now:", str(stan))
 						else:
 							print("\tran out of stanTokens")
 							exit(1)
 
 					while len(ours) < len(stan):
-						print("\tour length is shorter:",str(ours),"vs:",str(stan),"stanlength:",str(len(stan)))
+						#print("\tour length is shorter:",str(ours),"vs:",str(stan),"stanlength:",str(len(stan)))
 						if i+1 < len(ourTokens):
 							ours += ourTokens[i+1].text
 							curOurTokens.append(ourTokens[i+1])
@@ -772,7 +772,7 @@ class ECBHelper:
 							elif ours == "3 1/2":
 								ours = "3 1/2"
 							i += 1
-							print("\tours is now:", str(ours))
+							#print("\tours is now:", str(ours))
 						else:
 							print("\tran out of ourTokens")
 							exit(1)	

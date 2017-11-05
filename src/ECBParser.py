@@ -138,6 +138,12 @@ class ECBParser:
 
 				if tokenText == "''":
 					tokenText = "\""
+				elif tokenText == "''bagman\"":
+					tokenText = "\"bagman\""
+					print("* replaced bagman1")
+				elif tokenText == "''bagman":
+					tokenText = "\"bagman"
+					print("* replaced bagman2")
 
 				# TMP
 				if sentenceNum > self.docToHighestSentenceNum[doc_id]:
