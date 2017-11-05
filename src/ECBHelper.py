@@ -829,7 +829,6 @@ class ECBHelper:
 		i = 0
 		for pos in sorted(stanfordParser.posTags):
 			self.posToIndex[pos] = i
-			print("pos:",str(pos),"=>",str(i))
 			i += 1
 		#exit(1)
 		'''
