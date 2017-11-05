@@ -49,7 +49,7 @@ def setCorefEngineParams():
 	parser.add_argument("--dropout", help="initial dropout rate", type=float)
 
 	# optionally added features to the CCNN
-	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
+	# parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
 
 	return parser.parse_args()	
 
