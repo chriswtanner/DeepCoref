@@ -646,18 +646,23 @@ class CCNN:
             seq.add(Dropout(float(self.args.dropout)))
             seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding="same", data_format="channels_first"))
         else:
+            '''
             seq.add(Conv2D(32, kernel_size=(self.numRows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)))
             seq.add(Conv2D(64, kernel_size=(self.numRows, 3), activation='relu', padding="same", data_format="channels_first"))
+            '''
+            seq.add(Conv2D(100, kernel_size=(self.numRows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+            seq.add(Conv2D(200, kernel_size=(self.numRows, 3), activation='relu', padding="same", data_format="channels_first"))
         
         seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same"))
         
         # added following
         if self.args.numLayers == 2:
             print("doing deep!! 2 sections of convolution")
-            seq.add(Conv2D(96, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(300, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(128, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(400, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/2.0))
             # end of added
