@@ -431,7 +431,10 @@ class CCNN:
             "s" + str(self.args.shuffleTraining) + "_" + \
             "dr" + str(self.args.dropout) + "_" + \
             "cm" + str(self.args.clusterMethod) + "_" + \
-            "sp" + str(stoppingPoint) + ".txt"
+            "fpos" + str(self.args.featurePOS) + "_" + \
+            "pt" + str(self.args.posType) + "_" + \
+            "sp" + str(stoppingPoint) + \
+            ".txt"
 
         print("writing out:",str(fileOut))
         fout = open(fileOut, 'w')

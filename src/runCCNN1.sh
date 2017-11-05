@@ -1,17 +1,17 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
-numLayers=(2) # 1 3
-numEpochs=(15) # 5 10 20
+numLayers=(2 3) # 1 3
+numEpochs=(15 30) # 5 10 20
 windowSize=(0) # 1 2 3
-numNeg=(7) # 5 10 15
+numNeg=(7 10) # 5 10 15
 batchSize=(256) # 64 128
 shuffle=(f) # t                                                                                            
 embSize=(400) # 50                                                                                    
-dropout=(0.4) # 0.0 0.1 .2 .3 .5
+dropout=(0.3 0.4) # 0.0 0.1 .2 .3 .5
 hddcrp="predict"
-clusterMethod=("avgavg") # "min" "avg"
+clusterMethod=("min" "avg" "avgavg") # "min" "avg"
 featurePOS=("onehot") # none   onehot   emb_random   emb_glove
-posType=("sum") # none  sum  avg
+posType=("sum" "avg") # none  sum  avg
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -70,7 +70,7 @@ do
 									do
 										for pt in "${posType[@]}"
 										do
-											qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${fpos} ${pt}
+											qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_${fpos}_${pt}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${fpos} ${pt}
 										done
 									done	
 								done
