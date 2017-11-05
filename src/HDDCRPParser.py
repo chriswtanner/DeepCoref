@@ -1,18 +1,21 @@
+import sys
 from HToken import *
 from HMention import *
 from collections import defaultdict
 class HDDCRPParser:
 	def __init__(self, inputFile):
 		print("* loading HDDCRP's mention boundaries file:")
-
 		self.inputFile = inputFile
 		self.parse(inputFile)
 		print("\t* parsed ",str(len(self.hmentions)), "mentions")
 		print("\t* created ", str(len(self.hm_idToHMention.keys())), " hm_ids!")
 
+		sys.stdout.flush()
+
 	# parses the hddcrp *semeval.txt file (which is in CoNLL-ready format)
 	def parse(self, inputFile):
-
+		sys.stdout.flush()
+		
 		# global vars
 		self.htokens = {}
 		self.MUIDToHMentions = {} # only used for comparing against HDDCRP's gold mention boundaries

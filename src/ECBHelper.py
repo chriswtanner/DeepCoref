@@ -740,6 +740,7 @@ class ECBHelper:
 					while len(ours) > len(stan):
 						#print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
 						if j+1 < len(stanTokens):
+
 							stan += stanTokens[j+1].text
 							curStanTokens.append(stanTokens[j+1])
 							if stan == "71/2":

@@ -2,6 +2,7 @@
 # copied and pasted here from ECBParser, as a better design choice, but
 # i haven't worked out the dependencies yet; it needs ECBParser and/or ECBHelper stuff
 import os
+import sys
 import fnmatch
 from collections import defaultdict
 from StanToken import StanToken
@@ -13,6 +14,7 @@ except ImportError:
 class StanParser:
 
 	def __init__(self, args, corpus):
+		sys.stdout.flush()
 		print("* loading Stanford's Parsing data... ",end='')
 
 		# sets global vars
@@ -25,7 +27,9 @@ class StanParser:
 		# invokes functions
 		self.loadReplacements(args.replacementsFile)
 		self.parseDir(args.stanOutputDir)
+
 		print("done")
+		sys.stdout.flush()
 
 	def loadReplacements(self, replacementsFile):
 		f = open(replacementsFile, 'r', encoding="utf-8")
@@ -34,6 +38,8 @@ class StanParser:
 			# print("tokens", tokens)
 			self.replacements[tokens[0]] = tokens[1]
 			self.replacementsSet.add(tokens[0])
+
+			print(str(tokens[0]),"will become",str(tokens[1]))
 		f.close()
 
 	def parseDir(self, stanOutputDir):
@@ -88,6 +94,8 @@ class StanParser:
 						for item in token:
 							if item.tag == "word":
 								word = item.text
+								if word == "''":
+									word = "\""
 							elif item.tag == "lemma":
 								lemma = item.text
 							elif item.tag == "CharacterOffsetBegin":
@@ -101,11 +109,10 @@ class StanParser:
 
 						for badToken in self.replacementsSet:
 							oldWord = word
-							if badToken in word:
-								word = word.replace(badToken, self.replacements[badToken])
 							if badToken == word:
 								word = self.replacements[badToken]
-								#print("** CHANGED: [", str(oldWord), "] to [", str(word), "]")
+							if badToken in word:
+								word = word.replace(badToken, self.replacements[badToken])
 
 						#print("word; ", str(word))
 						# constructs and saves the StanToken
