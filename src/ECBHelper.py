@@ -741,9 +741,11 @@ class ECBHelper:
 						#print("\tstan length is shorter:", str(ours)," vs:",str(stan)," stanlength:",str(len(stan)))
 						if j+1 < len(stanTokens):
 
+							if stanTokens[j+1].text == "''":
+								stanTokens[j+1].text = "\""
+								print("TRYING TO FIX THE UPCOMING STAN TOKEN!")
 							stan += stanTokens[j+1].text
-							#if stan == "estimates''":
-							#	print("HOW DID THIS HAPPEN!")
+								
 							curStanTokens.append(stanTokens[j+1])
 							if stan == "71/2":
 								stan = "7 ½"
