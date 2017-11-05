@@ -21,6 +21,7 @@ class ECBParser:
 
 		# sets global vars
 		self.replacements = {}
+		self.replacementsList = []
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.endPunctuation = set()
 		self.endPunctuation.update(".", "!", "?")
@@ -36,6 +37,7 @@ class ECBParser:
 			tokens = line.rstrip().split(" ")
 			# print("tokens", tokens)
 			self.replacements[tokens[0]] = tokens[1]
+			self.replacementsList.append(tokens[0])
 			self.replacementsSet.add(tokens[0])
 		f.close()
 
@@ -112,7 +114,7 @@ class ECBParser:
 			with open (f, 'r', encoding="utf-8") as myfile:
 				fileContents=myfile.read().replace('\n',' ')
 
-				for badToken in self.replacementsSet:
+				for badToken in self.replacementsList: #self.replacementsSet:
 					fileContents = fileContents.replace(badToken, self.replacements[badToken])
 
 	        # reads <tokens>

@@ -21,6 +21,7 @@ class StanParser:
 		self.args = args
 		self.corpus = corpus
 		self.replacements = {}
+		self.replacementsList = []
 		self.replacementsSet = set() # for quicker indexing, since we'll do it over every token
 		self.docToSentenceTokens = {}
 
@@ -38,6 +39,7 @@ class StanParser:
 		for line in f:
 			tokens = line.rstrip().split(" ")
 			self.replacements[tokens[0]] = tokens[1]
+			self.replacementsList.append(tokens[0])
 			self.replacementsSet.add(tokens[0])
 		f.close()
 
@@ -107,7 +109,7 @@ class StanParser:
 							elif item.tag == "NER":
 								ner = item.text
 
-						for badToken in self.replacementsSet:
+						for badToken in self.replacementsList: #self.replacementsSet:
 							#oldWord = word
 							if badToken == word:
 								word = self.replacements[badToken]
@@ -132,12 +134,12 @@ class StanParser:
 
 						# ensures correctness from Stanford
 						if parentToken.text != parent.text:
-							for badToken in self.replacementsSet:
+							for badToken in self.replacementsList: #self.replacementsSet:
 								if badToken in parent.text:
 									parent.text = parent.text.replace(badToken, self.replacements[badToken])
 
 						if childToken.text != child.text:
-							for badToken in self.replacementsSet:
+							for badToken in self.replacementsList: #self.replacementsSet:
 								if badToken in child.text:
 									child.text = child.text.replace(badToken, self.replacements[badToken])
 
