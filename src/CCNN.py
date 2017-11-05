@@ -550,16 +550,15 @@ class CCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
 
         # constructs the training and dev files
-        training_pairs, training_data, training_labels = self.createData(self.helper.trainingDirs, True)
-        dev_pairs, dev_data, dev_labels = self.createData(self.helper.devDirs, False)
-
-        testing_pairs, testing_data, testing_labels = self.createDataFromHDDCRP()
+        training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs) #self.createData(self.helper.trainingDirs, True)
+        dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs) #self.createData(self.helper.devDirs, False)
+        testing_pairs, testing_data, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
 
         input_shape = training_data.shape[2:]
 
         print("* training data shape:",str(training_data.shape))
         print("* dev data shape:",str(dev_data.shape))
-
+        print("* test data shape:",str(testing_data.shape))
         # network definition
         base_network = self.create_base_network(input_shape)
 
@@ -612,11 +611,6 @@ class CCNN:
         dev_pairs = None
         dev_data = None
         dev_labels = None
-
-        #testing_pairs, testing_data, testing_labels = None, None, None
-
-
-        #testing_pairs, testing_data, testing_labels = self.createData(self.helper.testingDirs, False)
 
         print("-----------\npredicting testing")
         pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
@@ -800,118 +794,50 @@ class CCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
-    # creates the test data from hddcrp's predicted mentions
-    def createDataFromHDDCRP(self):
-        (pairs, labels) = self.helper.constructAllWDHMPairs(self.hddcrp_parsed)
-        print("pairs0:",str(pairs[0]))
-        print("# pairs (createDataFromHDDCRP()):",str(len(pairs)))
-
-        # determines which mentions we'll construct
-        hmentionsIDsWeCareAbout = set()
-        for (hm1_id,hm2_id) in pairs:
-            hmentionsIDsWeCareAbout.add(hm1_id)
-            hmentionsIDsWeCareAbout.add(hm2_id)
-
-        print("# of hmentionsIDsWeCareAbout:",str(len(hmentionsIDsWeCareAbout)))
-        # constructs the DM matrix for every mention
-        hm_idToMatrix = {}
-
-        numRows = 1 + 2*self.args.windowSize
-        numCols = self.embeddingLength
-        for hm_id in hmentionsIDsWeCareAbout:
-            curMentionMatrix = np.zeros(shape=(numRows,numCols))
-            t_startIndex = 99999999
-            t_endIndex = -1
-
-            # gets token indices and constructs the Mention embedding
-            menEmbedding = [0]*numCols
-            m = self.hddcrp_parsed.hm_idToHMention[hm_id]
-            for t in m.tokens:
-
-                token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
-                curEmbedding = self.wordTypeToEmbedding[token.text]
-                menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
-
-                ind = self.corpus.corpusTokensToCorpusIndex[token]
-                if ind < t_startIndex:
-                    t_startIndex = ind
-                if ind > t_endIndex:
-                    t_endIndex = ind
-
-            # sets the center
-            curMentionMatrix[self.args.windowSize] = [x / float(len(m.tokens)) for x in menEmbedding]
-
-            # the prev tokens
-            for i in range(self.args.windowSize):
-                ind = t_startIndex - self.args.windowSize + i
-
-                emb = [0]*numCols
-                if ind >= 0:
-                    token = self.corpus.corpusTokens[ind]
-                    if token.text in self.wordTypeToEmbedding:
-                        emb = self.wordTypeToEmbedding[token.text]
-                    else:
-                        print("* ERROR, we don't have:",str(token.text))
-
-                curMentionMatrix[i] = emb
-            
-            # gets the 'next' tokens
-            for i in range(self.args.windowSize):
-                ind = t_endIndex + 1 + i
-
-                emb = [0] * numCols
-                if ind < self.corpus.numCorpusTokens - 1:
-                    token = self.corpus.corpusTokens[ind]
-                    #print("next",str(token))
-                    if token.text in self.wordTypeToEmbedding:
-                        emb = self.wordTypeToEmbedding[token.text]
-                    else:
-                        print("* ERROR, we don't have:",str(token.text))
-                curMentionMatrix[self.args.windowSize+1+i] = emb
-            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,numCols,1)
-
-            hm_idToMatrix[hm_id] = curMentionMatrix
-
-        # constructs final 5D matrix
-        X = []
-        for (hm1_id,hm2_id) in pairs:
-            pair = np.asarray([hm_idToMatrix[hm1_id],hm_idToMatrix[hm2_id]])
-            X.append(pair)
-        Y = np.asarray(labels)
-        X = np.asarray(X)
-        return (pairs, X,Y)
-
     # creates data from ECBCorpus (train and dev uses this, and optionally test)
-    def createData(self, dirs, subSample):
+    def createData(self, subset, dirs=None):
 
-        if subSample: # training (we want just some of the negs)
-            (pairs, labels) = self.helper.constructSubsampledWDDMPairs(dirs)
-        else: # for dev and test (we want all negative examples)
-            (pairs, labels) = self.helper.constructAllWDDMPairs(dirs)
+        if subset == "train":
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBTraining(dirs)
+        elif subset == "dev":
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs)
+        elif subset == "hddcrp":
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructHDDCRPTest(self.hddcrp_parsed) # could be gold test or predicted test mentions
+        else:
+            print("* ERROR: unknown passed-in 'subset' param")
+            exit(1)
 
-        print("# pairs (createData()):",str(len(pairs)))
+        # lists can't be dictionary keys, so let's create a silly, temp mapping,
+        # which will only be used in this function
+        mentionIDToTokenList = {}
+        for i in range(len(mentionIDPairs)):
+            (mentionID1,mentionID2) = mentionIDPairs[i]
+            (tokenList1,tokenList2) = tokenListPairs[i]
+            mentionIDToTokenList[mentionID1] = tokenList1
+            mentionIDToTokenList[mentionID2] = tokenList2
 
         # determines which mentions we'll construct
-        DMsWeCareAbout = set()
-        for (dm1,dm2) in pairs:
-            DMsWeCareAbout.add(dm1)
-            DMsWeCareAbout.add(dm2)
+        mentionIDsWeCareAbout = set()
+        for (mentionID1,mentionID2) in mentionIDPairs:
+            mentionIDsWeCareAbout.add(mentionID1)
+            mentionIDsWeCareAbout.add(mentionID2)
 
-        # constructs the DM matrix for every mention
-        dmToMatrix = {}
+        # constructs the tokenList matrix for every mention
+        mentionIDToMatrix = {}
 
         numRows = 1 + 2*self.args.windowSize
         numCols = self.embeddingLength
-        for dm in DMsWeCareAbout:
-            m = self.corpus.dmToMention[dm]
+        for mentionID in mentionIDsWeCareAbout:
+
+            tokenList = mentionIDToTokenList[mentionID]
+
             curMentionMatrix = np.zeros(shape=(numRows,numCols))
             t_startIndex = 99999999
             t_endIndex = -1
 
             # gets token indices and constructs the Mention embedding
             menEmbedding = [0]*numCols
-            for t in m.corpusTokenIndices:
-                token = self.corpus.corpusTokens[t]
+            for token in tokenList:
                 curEmbedding = self.wordTypeToEmbedding[token.text]
                 menEmbedding = [x + y for x,y in zip(menEmbedding, curEmbedding)]
 
@@ -922,7 +848,7 @@ class CCNN:
                     t_endIndex = ind
 
             # sets the center
-            curMentionMatrix[self.args.windowSize] = [x / float(len(m.corpusTokenIndices)) for x in menEmbedding]
+            curMentionMatrix[self.args.windowSize] = [x / float(len(tokenList)) for x in menEmbedding]
 
             # the prev tokens
             for i in range(self.args.windowSize):
@@ -945,7 +871,6 @@ class CCNN:
                 emb = [0] * numCols
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
-                    #print("next",str(token))
                     if token.text in self.wordTypeToEmbedding:
                         emb = self.wordTypeToEmbedding[token.text]
                     else:
@@ -953,7 +878,7 @@ class CCNN:
                 curMentionMatrix[self.args.windowSize+1+i] = emb
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,numCols,1)
 
-            dmToMatrix[(m.doc_id,int(m.m_id))] = curMentionMatrix
+            mentionIDToMatrix[mentionID] = curMentionMatrix
 
         # TEMP; sanity check; just to test if our vectors are constructed correctly
         '''
@@ -984,10 +909,9 @@ class CCNN:
         '''
         # constructs final 5D matrix
         X = []
-        for (dm1,dm2) in pairs:
-            pair = np.asarray([dmToMatrix[dm1],dmToMatrix[dm2]])
+        for (mentionID1,mentionID2) in mentionIDPairs:
+            pair = np.asarray([mentionIDToMatrix[mentionID1],mentionIDToMatrix[mentionID2]])
             X.append(pair)
         Y = np.asarray(labels)
         X = np.asarray(X)
-
-        return (pairs, X,Y)
+        return (mentionIDPairs, X,Y)

@@ -28,11 +28,258 @@ class ECBHelper:
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
-
 ##################################################
 #    creates DM pairs for train/dev/test
 ##################################################
 ##################################################
+
+	def constructECBDev(self, dirs):
+		print("* in constructECBDev()")
+		devTokenListPairs = []
+		mentionIDPairs = []
+		labels = []
+
+		# finally, let's convert the DMs to their actual Tokens
+		DMToTokenLists = {} # saves time
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+			if dirNum not in dirs:
+				continue
+
+			for doc_id in self.corpus.dirToDocs[dirNum]:
+				docDMs = []
+				for ref in self.corpus.docToREFs[doc_id]:
+					for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
+						if dm not in docDMs:
+							docDMs.append(dm)
+
+				added = set()
+				for dm1 in docDMs:
+					for dm2 in docDMs:
+						if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+							continue
+
+						# sets dm1's
+						tokenList1 = []
+						if dm1 in DMToTokenLists.keys():
+							tokenList1 = DMToTokenLists[dm1]
+						else:
+							tokenList1 = self.corpus.dmToMention[dm1].tokens
+							DMToTokenLists[dm1] = tokenList1
+						
+						# sets dm2's
+						tokenList2 = []
+						if dm2 in DMToTokenLists.keys():
+							tokenList2 = DMToTokenLists[dm2]
+						else:
+							tokenList2 = self.corpus.dmToMention[dm2].tokens
+							DMToTokenLists[dm2] = tokenList2
+
+						devTokenListPairs.append((tokenList1,tokenList2))
+						mentionIDPairs.append((dm1,dm2))
+						if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+							labels.append(1)
+						else:
+							labels.append(0)
+
+						added.add((dm1,dm2))
+						added.add((dm2,dm1))
+		return (devTokenListPairs,mentionIDPairs,labels)
+
+	# constructs pairs of tokens and the corresponding labels, used for testing
+	# RETURNS: (tokenListPairs, label)
+	# e.g., (([Token1,Token2],[Token61]),1)
+	def constructECBTraining(self, dirs):
+		print("* in constructECBTraining()")
+		trainingPositives = []
+		trainingNegatives = []
+
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+
+		    # only process the training dirs
+			if dirNum not in dirs:
+				continue
+
+			added = set() # so we don't add the same pair twice
+			for doc_id in self.corpus.dirToDocs[dirNum]:
+				numRefsForThisDoc = len(self.corpus.docToREFs[doc_id])
+				for i in range(numRefsForThisDoc):
+					ref1 = self.corpus.docToREFs[doc_id][i]
+					for dm1 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+						for dm2 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+							if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
+
+								# adds a positive example
+								trainingPositives.append((dm1,dm2))
+								added.add((dm1,dm2))
+								added.add((dm2,dm1))
+								numNegsAdded = 0
+								j = i + 1
+								while numNegsAdded < self.args.numNegPerPos:
+
+									# pick the next REF
+									ref2 = self.corpus.docToREFs[doc_id][j%numRefsForThisDoc]
+									if numRefsForThisDoc == 1:
+										doc_id2 = doc_id
+										while doc_id2 == doc_id:
+											numDocsInDir = len(self.corpus.dirToDocs[dirNum])
+											doc_id2 = self.corpus.dirToDocs[dirNum][randint(0,numDocsInDir-1)]
+										numRefsForDoc2 = len(self.corpus.docToREFs[doc_id2])
+										ref2 = self.corpus.docToREFs[doc_id2][j%numRefsForDoc2]
+
+										numDMs = len(self.corpus.docREFsToDMs[(doc_id2,ref2)])
+
+										# pick a random negative from a different REF and different DOC
+										dm3 = self.corpus.docREFsToDMs[(doc_id2,ref2)][randint(0, numDMs-1)]
+										trainingNegatives.append((dm1,dm3))
+										numNegsAdded += 1
+
+									elif ref2 != ref1:
+										numDMs = len(self.corpus.docREFsToDMs[(doc_id,ref2)])
+
+										# pick a random negative from the different REF
+										dm3 = self.corpus.docREFsToDMs[(doc_id,ref2)][randint(0, numDMs-1)]
+										trainingNegatives.append((dm1,dm3))
+										numNegsAdded += 1
+									j += 1
+		# shuffle training
+		if self.args.shuffleTraining:
+			numPositives = len(trainingPositives)
+			for i in range(numPositives):
+				# pick 2 to change in place
+				a = randint(0,numPositives-1)
+				b = randint(0,numPositives-1)
+				swap = trainingPositives[a]
+				trainingPositives[a] = trainingPositives[b]
+				trainingPositives[b] = swap
+
+			numNegatives = len(trainingNegatives)
+			for i in range(numNegatives):
+				# pick 2 to change in place
+				a = randint(0,numNegatives-1)
+				b = randint(0,numNegatives-1)
+				swap = trainingNegatives[a]
+				trainingNegatives[a] = trainingNegatives[b]
+				trainingNegatives[b] = swap
+
+		print("#pos:",str(len(trainingPositives)))
+		print("#neg:",str(len(trainingNegatives)))
+
+		trainingTokenListPairs = []
+		mentionIDPairs = []
+		trainingLabels = []
+		j = 0
+
+		# finally, let's convert the DMs to their actual Tokens
+		DMToTokenLists = {} # saves time
+		for i in range(len(trainingPositives)):
+
+			(dm1,dm2) = trainingPositives[i]			
+			
+			# sets dm1's
+			tokenList1 = []
+			if dm1 in DMToTokenLists.keys():
+				tokenList1 = DMToTokenLists[dm1]
+			else:
+				tokenList1 = self.corpus.dmToMention[dm1].tokens
+				DMToTokenLists[dm1] = tokenList1
+			# sets dm2's
+			tokenList2 = []
+			if dm2 in DMToTokenLists.keys():
+				tokenList2 = DMToTokenLists[dm2]
+			else:
+				tokenList2 = self.corpus.dmToMention[dm2].tokens
+				DMToTokenLists[dm2] = tokenList2
+
+			trainingTokenListPairs.append((tokenList1,tokenList2))
+			mentionIDPairs.append((dm1,dm2))
+			trainingLabels.append(1)
+
+			# adds the negatives
+			for _ in range(self.args.numNegPerPos):
+
+				(dmneg1,dmneg2) = trainingNegatives[j]
+
+				# first neg dm
+				tokenListNeg1 = []
+				if dmneg1 in DMToTokenLists.keys():
+					tokenListNeg1 = DMToTokenLists[dmneg1]
+				else:
+					tokenListNeg1 = self.corpus.dmToMention[dmneg1].tokens
+					DMToTokenLists[dmneg1] = tokenListNeg1
+
+				# second neg dm
+				tokenListNeg2 = []
+				if dmneg2 in DMToTokenLists.keys():
+					tokenListNeg2 = DMToTokenLists[dmneg2]
+				else:
+					tokenListNeg2 = self.corpus.dmToMention[dmneg2].tokens
+					DMToTokenLists[dmneg2] = tokenListNeg2
+
+				trainingTokenListPairs.append((tokenListNeg1,tokenListNeg2))
+				mentionIDPairs.append((dmneg1,dmneg2))
+				trainingLabels.append(0)
+				j+=1
+		return (trainingTokenListPairs,mentionIDPairs,trainingLabels)
+	
+
+	# creates all HM (DM equivalent) for test set (could be gold hmentions or predicted hmentions)
+	def constructHDDCRPTest(self, hddcrp_parsed):
+		hTokenListPairs = []
+		mentionIDPairs = []
+		labels = []
+		numSingletons = 0
+		for doc_id in hddcrp_parsed.docToHMentions.keys():
+			HM_IDToTokenLists = {} # saves time
+			added = set()
+
+			if len(hddcrp_parsed.docToHMentions[doc_id]) == 1:
+				print("*** :",str(doc_id),"has exactly 1 hmention")
+				numSingletons += 1
+				hm1 = hddcrp_parsed.docToHMentions[doc_id][0]
+				tokenList = []
+				for t in hm1.tokens:
+					token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+					tokenList.append(token)
+				hTokenListPairs.append((tokenList,tokenList))
+				mentionIDPairs.append((hm1.hm_id,hm1.hm_id))
+				labels.append(1)
+			else:
+				for hm1 in hddcrp_parsed.docToHMentions[doc_id]:
+					hm1_id = hm1.hm_id
+					
+					tokenList1 = []
+					if hm1_id in HM_IDToTokenLists.keys():
+						tokenList1 = HM_IDToTokenLists[hm1_id]
+					else:
+						for t in hm1.tokens:
+							token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+							tokenList1.append(token)
+						HM_IDToTokenLists[hm1_id] = tokenList1
+
+					for hm2 in hddcrp_parsed.docToHMentions[doc_id]:
+						hm2_id = hm2.hm_id
+						
+						tokenList2 = []
+						if hm2_id in HM_IDToTokenLists.keys():
+							tokenList2 = HM_IDToTokenLists[hm2_id]
+						else:
+							for t in hm2.tokens:
+								token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+								tokenList2.append(token)
+							HM_IDToTokenLists[hm2_id] = tokenList2
+
+						if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
+							continue
+
+						hTokenListPairs.append((tokenList1,tokenList2))
+						mentionIDPairs.append((hm1_id,hm2_id))
+						if hm1.ref_id == hm2.ref_id:
+							labels.append(1)
+						else:
+							labels.append(0)
+						added.add((hm1_id,hm2_id))
+						added.add((hm2_id,hm1_id))
+		return (hTokenListPairs,mentionIDPairs,labels)
 
 	# creates all HM (DM equivalent) for test set
 	def constructAllWDHMPairs(self, hddcrp_pred):
@@ -64,6 +311,7 @@ class ECBHelper:
 		return (pairs, labels)
 
 ## WITHIN-DOC
+	'''
 	def constructAllWDDMPairs(self, dirs):
 		pairs = []
 		labels = []
@@ -93,7 +341,8 @@ class ECBHelper:
 						added.add((dm1,dm2))
 						added.add((dm2,dm1))
 		return (pairs, labels)
-
+	'''
+	'''
 	def constructSubsampledWDDMPairs(self, dirs):
 		print("* in constructSubsampledWDDMPairs()")
 		trainingPositives = []
@@ -180,7 +429,7 @@ class ECBHelper:
 			    trainingLabels.append(0)
 			    j+=1
 		return (trainingPairs,trainingLabels)
-
+	'''
 #### CROSS-DOC (aka all pairs) #####
 	def constructAllCDDMPairs(self, dirs):
 		print("* in constructAllDMPairs()")

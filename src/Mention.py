@@ -4,7 +4,7 @@ class Mention:
 		self.dirNum = dirNum
 		self.doc_id = doc_id
 		self.m_id = m_id
-		self.tokens = tokens # can remove after testing HDDCRP
+		self.tokens = tokens
 		self.corpusTokenIndices = corpusTokenIndices
 		self.text = text
 		self.isPred = isPred
