@@ -972,7 +972,7 @@ class CCNN:
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
 
-            fullMenEmbedding = lemmaEmb#avgGloveEmbedding + posEmb + lemmaEmb
+            fullMenEmbedding = avgGloveEmbedding + posEmb + lemmaEmb # lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -995,7 +995,7 @@ class CCNN:
 
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = prevLemmaEmb #pGloveEmb + prevPosEmb + prevLemmaEmb
+                fullTokenEmbedding = pGloveEmb + prevPosEmb + prevLemmaEmb # prevLemmaEmb
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1014,7 +1014,7 @@ class CCNN:
 
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = nextLemmaEmb #nGloveEmb + nextPosEmb + nextLemmaEmb
+                fullTokenEmbedding = GloveEmb + nextPosEmb + nextLemmaEmb #nextLemmaEmb
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 
