@@ -810,6 +810,9 @@ class CCNN:
         elif featurePOS == "onehot" or featurePOS == "emb_random" or featurePOS == "emb_glove":
             posLength = 50
 
+            if featurePOS == "emb_random" or featurePOS == "emb_glove":
+                posLength = self.helper.posEmbLength
+                
             # sum over all tokens first, optionally avg
             if posType == "sum" or posType == "avg":
                 sumEmb = [0]*posLength
