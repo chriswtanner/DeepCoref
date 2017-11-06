@@ -434,6 +434,7 @@ class CCNN:
             "nf" + str(self.args.numFilters) + "_" + \
             "fpos" + str(self.args.featurePOS) + "_" + \
             "pt" + str(self.args.posType) + "_" + \
+            "lt" + str(self.args.lemmaType) + "_" + \
             "sp" + str(stoppingPoint) + \
             ".txt"
 
@@ -804,6 +805,56 @@ class CCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
+    def getLemmaEmbedding(self, lemmaType, tokenList):
+        lemmaEmb = []
+        if lemmaType == "none": # as opposed to sum or avg
+            return lemmaEmb
+        elif lemmaType == "sum" or lemmaType == "avg":
+            lemmaLength = self.helper.lemmaEmbLength
+
+            # sum over all tokens first, optionally avg
+            sumEmb = [0]*lemmaLength
+            for t in tokenList:
+                # our current 1 ECB Token possibly maps to multiple StanTokens, so let's
+                # ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
+                pos = ""
+                lemma = ""
+                posOfLongestToken = ""
+                lemmaOfLongestToken = ""
+                longestToken = ""
+                for stanToken in t.stanTokens:
+                    if stanToken.pos in self.helper.badPOS:
+                        # only use the badPOS if no others have been set
+                        if pos == "":
+                            pos = stanToken.pos
+                            lemma = stanToken.lemma
+                    else: # save the longest, nonBad POS tag
+                        if len(stanToken.text) > len(longestToken):
+                            longestToken = stanToken.text
+                            posOfLongestToken = stanToken.pos 
+                            lemmaOfLongestToken = stanToken.lemma
+                if posOfLongestToken != "":
+                    pos = posOfLongestToken
+                    lemma = lemmaOfLongestToken
+                if pos == "":
+                    print("* ERROR: our POS empty!")
+                    exit(1)
+
+                curEmb = self.helper.lemmaToGloveEmbedding[lemma]
+                sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
+
+            if lemmaType == "avg":
+                avgEmb = [x / float(len(tokenList)) for x in sumEmb]
+                lemmaEmb = avgEmb
+            elif lemmaType == "sum":
+                lemmaEmb = sumEmb
+
+                #print("lemmaEmb:",str(lemmaEmb))
+        else: # can't be none, since we've specified featurePOS
+            print("* ERROR: lemmaType is illegal")
+        return lemmaEmb
+
+
     def getPOSEmbedding(self, featurePOS, posType, tokenList):
         posEmb = []
         if featurePOS == "none":
@@ -915,10 +966,13 @@ class CCNN:
                 if ind > t_endIndex:
                     t_endIndex = ind
 
-            posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
-
             avgGloveEmbedding = [x / float(len(tokenList)) for x in sumGloveEmbedding]
-            fullMenEmbedding = avgGloveEmbedding + posEmb
+            
+            # load other features
+            posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
+            lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
+
+            fullMenEmbedding = lemmaEmb#avgGloveEmbedding + posEmb + lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -940,7 +994,8 @@ class CCNN:
                         print("* ERROR, we don't have:",str(token.text))
 
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-                fullTokenEmbedding = pGloveEmb + prevPosEmb
+                prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+                fullTokenEmbedding = prevLemmaEmb #pGloveEmb + prevPosEmb + prevLemmaEmb
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -958,7 +1013,8 @@ class CCNN:
                         print("* ERROR, we don't have:",str(token.text))
 
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-                fullTokenEmbedding = nGloveEmb + nextPosEmb
+                nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+                fullTokenEmbedding = nextLemmaEmb #nGloveEmb + nextPosEmb + nextLemmaEmb
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

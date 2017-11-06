@@ -30,6 +30,10 @@ class ECBHelper:
 		self.posToGloveEmbedding = {}
 		self.posEmbLength = 100
 
+		# filled in by 
+		self.lemmaToGloveEmbedding = {}
+		self.lemmaEmbLength = 400
+
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
 ##################################################
@@ -37,7 +41,24 @@ class ECBHelper:
 ##################################################
 ##################################################
 
+	def loadLemmaEmbeddings(self, embeddingsFile):
+		print("self.args.lemmaType:",str(self.args.lemmaType))
+		if self.args.lemmaType == "none":
+			return
+		print("* in loadPOSEmbeddings")
+		self.lemmaToGloveEmbedding = {}
+		f = open(embeddingsFile, 'r', encoding="utf-8")
+		for line in f:
+			tokens = line.rstrip().split(" ")
+			lemma = tokens[0]
+			emb = [float(x) for x in tokens[1:]]
+			self.lemmaToGloveEmbedding[lemma] = emb
+		f.close()
+
 	def loadPOSEmbeddings(self, embeddingsFile):
+		print("self.args.featurePOS:",str(self.args.featurePOS))
+		if self.args.featurePOS == "none":
+			return
 		print("* in loadPOSEmbeddings")
 		self.posToGloveEmbedding = {}
 		f = open(embeddingsFile, 'r', encoding="utf-8")
@@ -625,24 +646,28 @@ class ECBHelper:
 				for t in self.corpus.globalSentenceNumToTokens[sent_num]:
 					# gets the POS
 					pos = ""
+					lemma = ""
 					posOfLongestToken = ""
+					lemmaOfLongestToken = ""
 					longestToken = ""
 					for stanToken in t.stanTokens:
 						if stanToken.pos in self.badPOS:
 							# only use the badPOS if no others have been set
 							if pos == "":
 								pos = stanToken.pos
+								lemma = stanToken.lemma
 						else: # save the longest, nonBad POS tag
 							if len(stanToken.text) > len(longestToken):
 								longestToken = stanToken.text
 								posOfLongestToken = stanToken.pos 
-
+								lemmaOfLongestToken = stanToken.lemma
 					if posOfLongestToken != "":
 						pos = posOfLongestToken
+						lemma = lemmaOfLongestToken
 					if pos == "":
 						print("* ERROR: our POS empty!")
 						exit(1)
-					outLine += pos + " "
+					outLine += lemma + " "#pos + " "
 				outLine = outLine.rstrip()
 				fout.write(outLine + "\n") # writes 1 sentence per line
 		fout.close()
@@ -889,4 +914,7 @@ class ECBHelper:
 			for _ in range(self.posEmbLength):
 				randEmb.append(random())
 			self.posToRandomEmbedding[pos] = randEmb
+
+		# following line should be commented out when we're creating a POS/LEMMA/etc file, before we have the embeddings
 		self.loadPOSEmbeddings(self.args.posEmbeddingsFile)
+		self.loadLemmaEmbeddings(self.args.lemmaEmbeddingsFile)

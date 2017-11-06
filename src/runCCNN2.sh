@@ -11,7 +11,7 @@ brownDir="/home/ctanner/researchcode/DeepCoref/"
 refDir="/Users/christanner/research/libraries/reference-coreference-scorers-8.01/"
 refDirBrown="/home/christanner/researchcode/libraries/reference-coreference-scorers"
 
-stoppingPoints=(0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601) # (0.49) # 0.501 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.601)
+stoppingPoints=(0.49) #(0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 source ~/researchcode/DeepCoref/venv/bin/activate
 
 if [ ${me} = "ctanner" ]
@@ -72,6 +72,9 @@ numFilters=${13}
 featurePOS=${14}
 posType=${15}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
+
+lemmaType=${16}
+lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings400.txt"
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 
@@ -88,6 +91,7 @@ echo "hddcrpFile:" $hddcrpFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "numFilters:" $numFilters
+echo "lemmaType:" $lemmaType
 echo "------------------------"
 
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
@@ -98,15 +102,15 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
 --numFilters=${numFilters} \
 --stanOutputDir=${stanOutputDir} \
---featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile}
-
+--featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
+--lemmaType=${lemmaType} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fpos"${featurePOS}"_pt"${posType}"_sp"${sp}".txt"
+	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

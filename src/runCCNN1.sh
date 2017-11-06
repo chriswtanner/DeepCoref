@@ -13,6 +13,7 @@ hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg") # "min" "avg"
 featurePOS=("emb_glove") # none   onehot   emb_random   emb_glove
 posType=("sum" "avg") # none  sum  avg
+lemmaType=("sum" "avg")
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -73,7 +74,10 @@ do
 										do
 											for nf in "${numFilters[@]}"
 											do
-												qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_${fpos}_${pt}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${nf} ${fpos} ${pt}
+												for lt in "${lemmaType[@]}"
+												do
+													qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_${fpos}_${pt}_lt${lt}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${nf} ${fpos} ${pt} ${lt}
+												done
 											done
 										done
 									done	

@@ -26,13 +26,39 @@ class CorefEngine:
 		# our representation -- so we can use their features
 		stan = StanParser(args, corpus) 
 		helper.addStanfordAnnotations(stan)
+		
+		'''
+		for t in corpus.corpusTokens:
+			# our current 1 ECB Token possibly maps to multiple StanTokens, so let's
+			# ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
+			pos = ""
+			posOfLongestToken = ""
+			longestToken = ""
+			for stanToken in t.stanTokens:
+				if stanToken.pos in helper.badPOS:
+					# only use the badPOS if no others have been set
+					if pos == "":
+					    pos = stanToken.pos
+				else: # save the longest, nonBad POS tag
+					if len(stanToken.text) > len(longestToken):
+						longestToken = stanToken.text
+						posOfLongestToken = stanToken.pos 
 
+			if posOfLongestToken != "":
+				pos = posOfLongestToken
+			if pos == "":
+				print("* ERROR: our POS empty!")
+				exit(1)
+			else:
+				print(str(t),"=>",str(pos))
+		exit(1)
+		'''
 		# trains and tests the pairwise-predictions via Conjoined-CNN
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
 		(pairs, predictions) = corefEngine.run()
 
 		# performs agg. clustering on our predicted, testset of HMentions
-		stoppingPoints = [0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
+		stoppingPoints = [0.49] # [0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		for sp in stoppingPoints:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
 			print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
