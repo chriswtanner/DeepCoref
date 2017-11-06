@@ -26,9 +26,6 @@ class CCNN:
         self.calculateMax = False
         self.args = args
 
-        self.numRows = 2
-        if self.args.windowSize == 0:
-            self.numRows = 1
         print("args:", str(args))
         print("tf version:",str(tf.__version__))
 
@@ -432,6 +429,7 @@ class CCNN:
             "dr" + str(self.args.dropout) + "_" + \
             "cm" + str(self.args.clusterMethod) + "_" + \
             "nf" + str(self.args.numFilters) + "_" + \
+            "fm" + str(self.args.filterMultiplier) + "_" + \
             "fpos" + str(self.args.featurePOS) + "_" + \
             "pt" + str(self.args.posType) + "_" + \
             "lt" + str(self.args.lemmaType) + "_" + \
@@ -642,55 +640,63 @@ class CCNN:
     # Base network to be shared (eq. to feature extraction).
     def create_base_network(self, input_shape):
         seq = Sequential()
+        curNumFilters = self.args.numFilters
+        kernel_rows = 1
+        if self.args.windowSize > 0:
+            kernel_rows = 3
 
-        if self.numRows == 2:
-            seq.add(Conv2D(32, kernel_size=(3, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)))
-            seq.add(Conv2D(64, kernel_size=(3, 3), activation='relu', padding="same", data_format="channels_first"))
-        else:
-            '''
-            seq.add(Conv2D(32, kernel_size=(self.numRows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)))
-            seq.add(Conv2D(64, kernel_size=(self.numRows, 3), activation='relu', padding="same", data_format="channels_first"))
-            '''
-            seq.add(Conv2D(100, kernel_size=(self.numRows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)))
-            seq.add(Conv2D(200, kernel_size=(self.numRows, 3), activation='relu', padding="same", data_format="channels_first"))
-        
-        seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same"))
+        seq.add(Conv2D(self.args.numFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+        seq.add(Dropout(float(self.args.dropout)))
+
+        curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+        seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
+        curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+
+        if kernel_rows == 3:
+            kernel_rows = 2
+
+        seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same"))
         
         # added following
         if self.args.numLayers == 2:
-            print("doing deep!! 2 sections of convolution")
-            seq.add(Conv2D(self.args.numFilters, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(self.args.numFilters*2, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/2.0))
+            print("going deep!! 2 sections of convolution")
+
+            seq.add(Conv2D(self.args.numFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+            seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+
+            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+            
             # end of added
         elif self.args.numLayers == 3:
-            print("doing deeper!! 3 sections of convolution")
-            seq.add(Conv2D(96, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(128, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/2.0))
+            print("going deeper!! 3 sections of convolution")
+            seq.add(Conv2D(self.args.numFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+            seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+
+            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
         
-            seq.add(Conv2D(196, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/2.5))
-            seq.add(Conv2D(256, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
-            seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
-            seq.add(Dropout(float(self.args.dropout)/3))
+            # entering level 3
+            seq.add(Conv2D(self.args.numFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", input_shape=input_shape, data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+            seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
+            curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
+
+            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            seq.add(Dropout(float(self.args.dropout)))
+        
         seq.add(Flatten())
-        if self.args.numLayers == 1:
-            seq.add(Dense(128, activation='relu'))
-        elif self.args.numLayers == 2:
-            seq.add(Dense(self.args.numFilters*3, activation='relu'))
-        elif self.args.numLayers == 3:
-            seq.add(Dense(512, activation='relu'))
-        else:
-            print("** ERROR: wrong # of convo layers")
-            exit(1)
+        seq.add(Dense(curNumFilters, activation='relu'))
         return seq
 
     # from a list of predictions, find the optimal f1 point

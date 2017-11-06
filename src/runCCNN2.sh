@@ -69,8 +69,9 @@ shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
 numFilters=${13}
-featurePOS=${14}
-posType=${15}
+filterMultiplier=${14}
+featurePOS=${15}
+posType=${16}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 
 lemmaType=${16}
@@ -100,7 +101,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
 --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
---numFilters=${numFilters} \
+--numFilters=${numFilters} --filterMultiplier=${filterMultiplier} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
 --lemmaType=${lemmaType} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
@@ -110,7 +111,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
+	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
