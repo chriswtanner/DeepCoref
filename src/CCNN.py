@@ -807,14 +807,13 @@ class CCNN:
         posEmb = []
         if featurePOS == "none":
             return posEmb
-        elif featurePOS == "onehot":
+        elif featurePOS == "onehot" or featurePOS == "emb_random" or featurePOS == "emb_glove":
             posLength = 50
 
             # sum over all tokens first, optionally avg
             if posType == "sum" or posType == "avg":
                 sumEmb = [0]*posLength
 
-                #tmpTokenTexts = []
                 for t in tokenList:
                     # our current 1 ECB Token possibly maps to multiple StanTokens, so let's
                     # ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
@@ -836,23 +835,25 @@ class CCNN:
                     if pos == "":
                         print("* ERROR: our POS empty!")
                         exit(1)
-                    #print(str(t.text),"->",str(pos))
+
                     curEmb = [0]*posLength
-                    curEmb[self.helper.posToIndex[pos]] += 1
+                    if featurePOS == "onehot":
+                        curEmb[self.helper.posToIndex[pos]] += 1
+                        
+                    elif featurePOS == "emb_random":
+                        curEmb = self.helper.posToRandomEmbedding[pos]
+
                     sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
-                    posEmb = sumEmb
-                #print("sumEmb:",str(sumEmb))
+
                 if posType == "avg":
                     avgEmb = [x / float(len(tokenList)) for x in sumEmb]
                     posEmb = avgEmb
+                elif posType == "sum":
+                    posEmb = sumEmb
 
                 #print("posEmb:",str(posEmb))
             else: # can't be none, since we've specified featurePOS
                 print("* ERROR: posType is illegal")
-        elif featurePOS == "emb_random":
-            a = 1
-        elif featurePOS == "emb_glove":
-            a = 1
         return posEmb
 
 

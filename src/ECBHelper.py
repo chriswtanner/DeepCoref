@@ -5,6 +5,7 @@ except ImportError:
 import numpy as np
 from collections import defaultdict
 from get_coref_metrics import *
+from random import random
 from random import randint
 class ECBHelper:
 
@@ -25,6 +26,9 @@ class ECBHelper:
 		# filled in by addStanfordAnnotations(), if called
 		self.posToIndex = {} # maps each of the 45 POS' to a unique index (alphabetical ordering), used for creating a feature
 		self.badPOS = ["‘’", "``", "POS", "$", "''"]
+		self.posToRandomEmbedding = {}
+		self.posToGloveEmbedding = {}
+		self.posEmbLength = 100
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
@@ -825,36 +829,18 @@ class ECBHelper:
 					exit(1)
 		print("we've successfully added stanford links to every single token within our",str(len(ourDocSet)),"docs")
 		
-		# makes a mapping from POS -> index
+		# makes:
+		# (1) a mapping from POS -> index
+		# (2) random embedding for each POS
 		i = 0
 		for pos in sorted(stanfordParser.posTags):
+			
+			# does 1
 			self.posToIndex[pos] = i
-			i += 1
-		#exit(1)
-		'''
-		if len(stanTokens) != len(ourTokens):
-			print("** ERROR, not same length!!",str(len(stanTokens)), " vs ecb's:", str(len(ourTokens)))
-			exit(1)
-		'''
-	# sentences
-	#	sentence #1 of 17
-	#		tokens
-	#			token 1 of 28
-	#				word
-	#				lemma
-	#				characteroffsetbegin
-	#				characteroffsetend
-	#				pos
-	#				ner
-	#				speaker
-	#	sentence #2 of 17
-	# coreference
-
-		'''
-		tree = ET.parse(stanFile)
-		root = tree.getroot()
-		for sentence in ET.find('sentence'):
-
-			sentence_id = sentence.get('id')	
-			print sentence_id
-		'''
+			i += 1			
+			
+			# does 2 (makes random embedding)
+			randEmb = []
+			for _ in range(self.posEmbLength):
+				randEmb.append(random())
+			self.posToRandomEmbedding[pos] = randEmb
