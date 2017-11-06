@@ -8,6 +8,7 @@ batchSize=(256) # 64 128
 shuffle=(f) # t                                                                                            
 embSize=(400) # 50                                                                                    
 dropout=(0.3 0.4) # 0.0 0.1 .2 .3 .5
+numFilters=(100 300 600)
 hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg") # "min" "avg"
 featurePOS=("emb_glove") # none   onehot   emb_random   emb_glove
@@ -70,7 +71,10 @@ do
 									do
 										for pt in "${posType[@]}"
 										do
-											qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_${fpos}_${pt}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${fpos} ${pt}
+											for nf in "${numFilters[@]}"
+											do
+												qsub -l gpus=1 -o gpuGOLD_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_${fpos}_${pt}.out runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hddcrp} ${dr} ${cm} ${nf} ${fpos} ${pt}
+											done
 										done
 									done	
 								done

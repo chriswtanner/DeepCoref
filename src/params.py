@@ -51,7 +51,8 @@ def setCorefEngineParams():
 	parser.add_argument("--clusterMethod", help="min, avg, or avgavg")	
 	parser.add_argument("--device", help="gpu or cpu")
 	parser.add_argument("--dropout", help="initial dropout rate", type=float)
-
+	parser.add_argument("--numFilters", help="num CNN filters", type=int)
+	
 	# optionally added features to the CCNN
 	parser.add_argument("--featurePOS", help="pos feature: {none,onehot,emb_random,emb_glove}", default="none")
 	parser.add_argument("--posType", help="pos feature: {none,sum,avg}", default="none")

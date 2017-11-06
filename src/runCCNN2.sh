@@ -68,8 +68,9 @@ batchSize=$7
 shuffleTraining=$8
 dropout=${11}
 clusterMethod=${12}
-featurePOS=${13}
-posType=${14}
+numFilters=${13}
+featurePOS=${14}
+posType=${15}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
@@ -86,6 +87,7 @@ echo "shuffleTraining:" $shuffleTraining
 echo "hddcrpFile:" $hddcrpFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
+echo "numFilters:" $numFilters
 echo "------------------------"
 
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
@@ -94,8 +96,9 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
 --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
- --stanOutputDir=${stanOutputDir} \
- --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile}
+--numFilters=${numFilters} \
+--stanOutputDir=${stanOutputDir} \
+--featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -103,7 +106,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_fpos"${featurePOS}"_pt"${posType}"_sp"${sp}".txt"
+	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fpos"${featurePOS}"_pt"${posType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

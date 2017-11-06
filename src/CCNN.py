@@ -431,6 +431,7 @@ class CCNN:
             "s" + str(self.args.shuffleTraining) + "_" + \
             "dr" + str(self.args.dropout) + "_" + \
             "cm" + str(self.args.clusterMethod) + "_" + \
+            "nf" + str(self.args.numFilters) + "_" + \
             "fpos" + str(self.args.featurePOS) + "_" + \
             "pt" + str(self.args.posType) + "_" + \
             "sp" + str(stoppingPoint) + \
@@ -660,9 +661,9 @@ class CCNN:
         # added following
         if self.args.numLayers == 2:
             print("doing deep!! 2 sections of convolution")
-            seq.add(Conv2D(300, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(self.args.numFilters, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/1.5))
-            seq.add(Conv2D(400, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
+            seq.add(Conv2D(self.args.numFilters*2, (self.numRows, 2), activation='relu', padding="same", data_format="channels_first"))
             seq.add(MaxPooling2D(pool_size=(self.numRows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)/2.0))
             # end of added
@@ -683,7 +684,7 @@ class CCNN:
         if self.args.numLayers == 1:
             seq.add(Dense(128, activation='relu'))
         elif self.args.numLayers == 2:
-            seq.add(Dense(256, activation='relu'))
+            seq.add(Dense(self.args.numFilters*3, activation='relu'))
         elif self.args.numLayers == 3:
             seq.add(Dense(512, activation='relu'))
         else:
