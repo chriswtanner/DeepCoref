@@ -812,7 +812,7 @@ class CCNN:
 
             if featurePOS == "emb_random" or featurePOS == "emb_glove":
                 posLength = self.helper.posEmbLength
-                
+
             # sum over all tokens first, optionally avg
             if posType == "sum" or posType == "avg":
                 sumEmb = [0]*posLength
@@ -845,7 +845,8 @@ class CCNN:
                         
                     elif featurePOS == "emb_random":
                         curEmb = self.helper.posToRandomEmbedding[pos]
-
+                    elif featurePOS == "emb_glove":
+                        curEmb = self.helper.posToGloveEmbedding[pos]
                     sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
 
                 if posType == "avg":

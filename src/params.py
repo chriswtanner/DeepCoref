@@ -14,10 +14,14 @@ def setWriteSentencesToFileParams():
 	parser.add_argument("--corpusPath", help="the corpus dir")
 	parser.add_argument("--replacementsFile", help="we replace all instances of these tokens which appear in our corpus -- this is to help standardize the format, useful for creating embeddings and running stanfordCoreNLP")
 	parser.add_argument("--stitchMentions", help="treat multi-token mentions as 1 word token", type=str2bool, nargs='?', default="f")
-	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, nargs='?', default="f")
+	parser.add_argument("--verbose", help="print a lot of debugging info", type=str2bool, default="f")
 
 	# ECBHelper
-	parser.add_argument("--writeOutDir", help="where we will output the files of corpus' tokens")
+	parser.add_argument("--writeOutDir", help="where we will output the files of corpus' tokens", default="")
+	parser.add_argument("--posFileOut", help="where we will output the files of corpus' POS tags", default="")
+
+	# StanParser
+	parser.add_argument("--stanOutputDir", help="the file that stanfordCoreNLP output'ed")
 	return parser.parse_args()
 
 def setCorefEngineParams():
@@ -51,6 +55,7 @@ def setCorefEngineParams():
 	# optionally added features to the CCNN
 	parser.add_argument("--featurePOS", help="pos feature: {none,onehot,emb_random,emb_glove}", default="none")
 	parser.add_argument("--posType", help="pos feature: {none,sum,avg}", default="none")
+	parser.add_argument("--posEmbeddingsFile", help="the POS embeddings file", default="none")
 	return parser.parse_args()	
 
 # allows for handling boolean params

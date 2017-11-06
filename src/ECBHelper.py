@@ -37,6 +37,17 @@ class ECBHelper:
 ##################################################
 ##################################################
 
+	def loadPOSEmbeddings(self, embeddingsFile):
+		print("* in loadPOSEmbeddings")
+		self.posToGloveEmbedding = {}
+		f = open(embeddingsFile, 'r', encoding="utf-8")
+		for line in f:
+			tokens = line.rstrip().split(" ")
+			pos = tokens[0]
+			emb = [float(x) for x in tokens[1:]]
+			self.posToGloveEmbedding[pos] = emb
+		f.close()
+
 	def constructECBDev(self, dirs):
 		print("* in constructECBDev()")
 		devTokenListPairs = []
@@ -603,6 +614,40 @@ class ECBHelper:
 ##################################################
 ##################################################
 
+	def writeAllPOSToFile(self, outputFile):
+		fout = open(outputFile, 'w')
+
+		print("writing:",str(outputFile))
+		for doc_id in self.corpus.docToGlobalSentenceNums.keys():
+
+			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
+				outLine = ""
+				for t in self.corpus.globalSentenceNumToTokens[sent_num]:
+					# gets the POS
+					pos = ""
+					posOfLongestToken = ""
+					longestToken = ""
+					for stanToken in t.stanTokens:
+						if stanToken.pos in self.badPOS:
+							# only use the badPOS if no others have been set
+							if pos == "":
+								pos = stanToken.pos
+						else: # save the longest, nonBad POS tag
+							if len(stanToken.text) > len(longestToken):
+								longestToken = stanToken.text
+								posOfLongestToken = stanToken.pos 
+
+					if posOfLongestToken != "":
+						pos = posOfLongestToken
+					if pos == "":
+						print("* ERROR: our POS empty!")
+						exit(1)
+					outLine += pos + " "
+				outLine = outLine.rstrip()
+				fout.write(outLine + "\n") # writes 1 sentence per line
+		fout.close()
+
+
 	# outputs our ECB corpus in plain-text format; 1 doc per doc, and 1 sentence per line
 	def writeAllSentencesToFile(self, outputDir):
 		
@@ -844,3 +889,4 @@ class ECBHelper:
 			for _ in range(self.posEmbLength):
 				randEmb.append(random())
 			self.posToRandomEmbedding[pos] = randEmb
+		self.loadPOSEmbeddings(self.args.posEmbeddingsFile)

@@ -10,7 +10,7 @@ embSize=(400) # 50
 dropout=(0.3 0.4) # 0.0 0.1 .2 .3 .5
 hddcrp="predict"
 clusterMethod=("min" "avg" "avgavg") # "min" "avg"
-featurePOS=("onehot") # none   onehot   emb_random   emb_glove
+featurePOS=("emb_glove") # none   onehot   emb_random   emb_glove
 posType=("sum" "avg") # none  sum  avg
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate

@@ -70,6 +70,7 @@ dropout=${11}
 clusterMethod=${12}
 featurePOS=${13}
 posType=${14}
+posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 
@@ -94,7 +95,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
 --batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
  --stanOutputDir=${stanOutputDir} \
- --featurePOS=${featurePOS} --posType=${posType}
+ --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
