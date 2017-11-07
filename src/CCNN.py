@@ -419,7 +419,9 @@ class CCNN:
                 exit(1)
 
         # constructs output file
-        fileOut = str(self.args.resultsDir) + "predict." + \
+        fileOut = str(self.args.resultsDir) + \
+            str(self.args.hddcrpBaseFile) + "_" + \
+            "lb" + str(self.args.lemmaBaseFile) + "_" + \
             "nl" + str(self.args.numLayers) + "_" + \
             "ne" + str(self.args.numEpochs) + "_" + \
             "ws" + str(self.args.windowSize) + "_" + \
@@ -440,7 +442,7 @@ class CCNN:
         fout = open(fileOut, 'w')
 
         # reads the original CoNLL, while writing each line
-        f = open(self.args.hddcrpFile, 'r')
+        f = open(self.args.hddcrpFullFile, 'r')
         tokenIndex = 0
         REFToStartTuple = defaultdict(list)
         for line in f:

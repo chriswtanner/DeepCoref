@@ -16,7 +16,7 @@ class CorefEngine:
 		args = params.setCorefEngineParams()
 
 		# figures out which mentions (HMentions) HDDCRP thinks exist
-		hddcrp_parsed = HDDCRPParser(args.hddcrpFile) # loads HDDCRP's pred or gold mentions file
+		hddcrp_parsed = HDDCRPParser(args.hddcrpFullFile) # loads HDDCRP's pred or gold mentions file
 
 		# parses the real, actual corpus (ECB's XML files)
 		corpus = ECBParser(args)

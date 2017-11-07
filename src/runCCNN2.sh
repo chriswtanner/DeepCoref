@@ -42,7 +42,9 @@ refDir=${scriptDir}"reference-coreference-scorers-8.01/"
 corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
-hddcrpFile=${baseDir}"data/"${10}".WD.semeval.txt" # MAKE SURE THIS IS WHAT YOU WANT (gold vs predict)
+
+hddcrpBaseFile=${10}
+hddcrpFullFile=${baseDir}"data/"${hddcrpBaseFile}".WD.semeval.txt" # MAKE SURE THIS IS WHAT YOU WANT (gold vs predict)
 verbose="true"
 stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-06-09/"
 stitchMentions="False"
@@ -74,7 +76,8 @@ posType=${16}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 
 lemmaType=${17}
-lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings.6B.300.txt" # lemmaEmbeddings400.txt
+lemmaBaseFile=${18}
+lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings."${lemmaBaseFile}".txt" # 6B.300 or 840B.300 or 400
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
 
@@ -87,11 +90,12 @@ echo "windowSize:" $windowSize
 echo "numNegPerPos:" $numNegPerPos
 echo "batchSize:" $batchSize
 echo "shuffleTraining:" $shuffleTraining
-echo "hddcrpFile:" $hddcrpFile
+echo "hddcrpFullFile:" $hddcrpFullFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "numFilters:" $numFilters
 echo "lemmaType:" $lemmaType
+echo "lemmaEmbeddingsFile:" ${lemmaEmbeddingsFile}
 echo "------------------------"
 
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
@@ -99,11 +103,13 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} \
 --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
---batchSize=${batchSize} --hddcrpFile=${hddcrpFile} --dropout=${dropout} --clusterMethod=${clusterMethod} \
+--batchSize=${batchSize} \
+--hddcrpBaseFile=${hddcrpBaseFile} --hddcrpFullFile=${hddcrpFullFile} \
+--dropout=${dropout} --clusterMethod=${clusterMethod} \
 --numFilters=${numFilters} --filterMultiplier=${filterMultiplier} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
---lemmaType=${lemmaType} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
+--lemmaType=${lemmaType} --lemmaBaseFile=${lemmaBaseFile} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -111,7 +117,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/predict.nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_lb"${lemmaBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

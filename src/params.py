@@ -38,8 +38,9 @@ def setCorefEngineParams():
 	parser.add_argument("--stanOutputDir", help="the file that stanfordCoreNLP output'ed")
 
 	# CCNN
-	parser.add_argument("--resultsDir", help="the full path to /results")	
-	parser.add_argument("--hddcrpFile", help="the filename of hddcrpFile to load in (gold or predict)")
+	parser.add_argument("--resultsDir", help="the full path to /results")
+	parser.add_argument("--hddcrpBaseFile", help="the base filename of hddcrp file to load in (gold or predict)")
+	parser.add_argument("--hddcrpFullFile", help="the fullpath of hddcrpBaseFile")
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
 	parser.add_argument("--numLayers", help="1 or 2 conv sections", type=int)
 	parser.add_argument("--embeddingsFile", help="the file that contains the embeddings")
@@ -59,7 +60,8 @@ def setCorefEngineParams():
 	parser.add_argument("--posEmbeddingsFile", help="the POS embeddings file", default="none")
 
 	parser.add_argument("--lemmaType", help="pos feature: {none,sum,avg}", default="none")
-	parser.add_argument("--lemmaEmbeddingsFile", help="the POS embeddings file", default="none")
+	parser.add_argument("--lemmaBaseFile", help="the basename of the lemma file", default="none")
+	parser.add_argument("--lemmaEmbeddingsFile", help="the complete lemma embeddings file (lemmaBaseFile plus full path)", default="none")
 	return parser.parse_args()	
 
 # allows for handling boolean params
