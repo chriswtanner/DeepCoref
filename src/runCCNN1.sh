@@ -56,7 +56,7 @@ do
 															for hdd in "${hddcrpBaseFile[@]}"
 															do
 																# qsub -pe smp 8 -l vlong -o
-																fout=gpuGOLD_lb${lb}_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_${fpos}_${pt}_lt${lt}.out
+																fout=gpu${hdd}_lb${lb}_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_${fpos}_${pt}_lt${lt}.out
 																echo ${fout}
 																if [ ${hn} = "titanx" ]
 																then
