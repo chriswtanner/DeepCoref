@@ -73,7 +73,7 @@ featurePOS=${15}
 posType=${16}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 
-lemmaType=${16}
+lemmaType=${17}
 lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings.6B.300.txt" # lemmaEmbeddings400.txt
 stanOutputDir=${baseDir}"data/stanford_output/"
 cd $scriptDir
