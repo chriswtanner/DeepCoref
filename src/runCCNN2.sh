@@ -8,9 +8,6 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-refDir="/Users/christanner/research/libraries/reference-coreference-scorers-8.01/"
-refDirBrown="/home/christanner/researchcode/libraries/reference-coreference-scorers"
-
 stoppingPoints=(0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 source ~/researchcode/DeepCoref/venv/bin/activate
 
@@ -39,7 +36,9 @@ then
 	fi 
 fi
 
+
 scriptDir=${baseDir}"src/"
+refDir=${scriptDir}"reference-coreference-scorers-8.01/"
 corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
@@ -105,6 +104,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
 --lemmaType=${lemmaType} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
+
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob

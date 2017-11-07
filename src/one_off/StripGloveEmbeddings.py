@@ -3,7 +3,7 @@
 class StripGloveEmbeddings:
 
 	bigGloveFile = "/Users/christanner/research/libraries/glove.6B/glove.6B.300d.txt"  # glove.840B.300d.txt" # 
-	smallGloveFile = "/Users/christanner/research/DeepCoref/data/lemmaEmbeddings400.txt"
+	smallGloveFile = "/Users/christanner/research/DeepCoref/data/gloveEmbeddings50.txt"
 
 	outputFile = "/Users/christanner/research/DeepCoref/data/gloveEmbeddings.6B.300.txt"
 
@@ -18,16 +18,30 @@ class StripGloveEmbeddings:
 	badTokens["plice"] = ["police"]
 	badTokens["moussaouus"] = ["moussaoui"]
 	badTokens["horrorpop"] = ["horror", "pop"]
-	badTokens["horrorpop"] = ["horror", "pop"]
+	badTokens["respomsible"] = ["responsible"]
+	badTokens["hospitalise"] = ["hospitalize"]
+	badTokens["univerasity"] = ["university"]
+	badTokens["shadowserver"] = ["shadow", "server"]
+	badTokens["instagramm"] = ["instagram"]
+	badTokens["te-north"] = ["the", "north"]
+	badTokens["athttp"] = ["http"]
+	badTokens["funnybook"] = ["funny", "book"]
+	badTokens["unspectactular"] = ["not", "spectacular"]
+
+	outputMap = {}
 
 	# load steh types we care about
 	typesWeCareAbout = set()
+	missing = set()
 	f = open(smallGloveFile, 'r')
 	for line in f:
 		tokens = line.rstrip().split(" ")
 		wordType = tokens[0]
-		typesWeCareAbout.add(wordType)	
+		typesWeCareAbout.add(wordType)
+		missing.add(wordType)
 	f.close()
+	print("# total we care about:",str(len(typesWeCareAbout)))
+	
 
 	f = open(bigGloveFile, 'r', encoding="utf-8")
 	found = set()
@@ -36,35 +50,101 @@ class StripGloveEmbeddings:
 		wordType = tokens[0]
 		if wordType in typesWeCareAbout:
 			found.add(wordType)
+			missing.remove(wordType)
 			emb = [float(x) for x in tokens[1:]]
 			#wordTypeToEmbedding[wordType] = emb
+			outputMap[wordType] = emb
 			#self.embeddingLength = len(emb)
 	f.close()
-	print("missing:")
-	for i in typesWeCareAbout:
-		if i not in found:
-			tokens = []
-			if " " in i:
-				tokens = i.split(" ")
+	print("missing:",str(len(missing)))
+	print("outputMap:",str(len(outputMap.keys())))
+
+	# tries again, but lowercases them (we don't want to lowercase the 1st pass)
+	f = open(bigGloveFile, 'r', encoding="utf-8")
+	for line in f:
+		tokens = line.rstrip().split(" ")
+		wordType = tokens[0].lower()
+		if wordType in missing:
+			found.add(wordType)
+			missing.remove(wordType)
+			emb = [float(x) for x in tokens[1:]]
+			#wordTypeToEmbedding[wordType] = emb
+			outputMap[wordType] = emb
+			#self.embeddingLength = len(emb)
+	f.close()
+	print("missing (after lcase'ing:",str(len(missing)))
+	print("outputMap:",str(len(outputMap.keys())))
+	missingMap = {}
+	missingTokens = set()
+	for i in missing:
+		tokens = []
+		if " " in i:
+			tokens = i.split(" ")
+		else:
+			tokens = [i]
+
+		allTokens = []
+		for t in tokens:
+			if "." in t:
+				for _ in t.split("."):
+					allTokens.append(_)
+			elif "-" in i:
+				for _ in t.split("-"):
+					allTokens.append(_)
+			elif "/" in i:
+				for _ in t.split("/"):
+					allTokens.append(_)
 			else:
-				tokens = [i]
+				allTokens.append(t)
+		for t in allTokens:
+			missingTokens.add(t)
 
-			allTokens = []
-			for t in tokens:
-				if "." in t:
-					for _ in t.split("."):
-						allTokens.append(_)
-				elif "-" in i:
-					for _ in t.split("-"):
-						allTokens.append(_)
-				elif "/" in i:
-					for _ in t.split("/"):
-						allTokens.append(_)
-				else:
-					allTokens.append(t)
-			print(str(i),"=>",str(allTokens))
+		if i in badTokens.keys():
+			missingMap[i] = badTokens[i]
+		else:
+			missingMap[i] = allTokens
+		#print(str(i),"=>",str(missingMap[i]))
 
-	print("# total we care about:",str(len(typesWeCareAbout)))
-	print("of these, we found:",str(len(found)))
+	# final round
+	f = open(bigGloveFile, 'r', encoding="utf-8")
+	missingTokenToEmb = {}
+	for line in f:
+		tokens = line.rstrip().split(" ")
+		wordType = tokens[0].lower()
+		if wordType in missingTokens:
+			emb = [float(x) for x in tokens[1:]]
+			missingTokenToEmb[wordType] = emb
+	f.close()
 
+	stillMissing = 0
+	for m in missing:
 
+		sumEmb = [0]*300
+		numMissingFound = 0
+		#print("missingMap[m]:",str(missingMap[m]))
+		# look at each token
+		for t in missingMap[m]:
+
+			# lets add it, if we have it
+			if t in missingTokenToEmb.keys():
+				sumEmb = [x + y for x,y in zip(sumEmb, missingTokenToEmb[t])]
+				numMissingFound += 1
+		if numMissingFound > 0:
+			avgEmb = []
+			for _ in sumEmb:
+				avgEmb.append(_ / float(numMissingFound))
+			outputMap[m] = avgEmb
+		else:
+			stillMissing += 1
+			outputMap[m] = [0]*300
+	print("stillMissing:",str(stillMissing))
+
+	print("outputMap:",str(len(outputMap.keys())))
+	fout = open(outputFile, 'w')
+	for w in outputMap.keys():
+		line = str(w)
+		for f in outputMap[w]:
+			line += " " + str(f)
+		line = line.rstrip()
+		fout.write(line + "\n")
+	fout.close()
