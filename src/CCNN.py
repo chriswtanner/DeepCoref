@@ -393,8 +393,6 @@ class CCNN:
                     else:
                         print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
 
-            
-
         # end of going through every doc
         print("# golden clusters:",str(len(goldenSuperSet.keys())))
         print("# our clusters:",str(len(ourClusterSuperSet)))
@@ -981,7 +979,7 @@ class CCNN:
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
 
-            fullMenEmbedding = avgGloveEmbedding #avgGloveEmbedding + posEmb + lemmaEmb # lemmaEmb
+            fullMenEmbedding = lemmaEmb #avgGloveEmbedding + posEmb + lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -1004,7 +1002,7 @@ class CCNN:
 
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = pGloveEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+                fullTokenEmbedding = prevLemmaEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1023,7 +1021,7 @@ class CCNN:
 
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = nGloveEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
+                fullTokenEmbedding = nextLemmaEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

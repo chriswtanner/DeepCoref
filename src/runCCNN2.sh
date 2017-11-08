@@ -52,9 +52,9 @@ resultsDir=${baseDir}"results/"
 
 # glove params
 gWindowSize=6
-embeddingBaseFile=$9
+embeddingsBaseFile=$9
 numEpochs=50
-gloveOutput=${baseDir}"data/gloveEmbeddings."${embeddingBaseFile}".txt"
+gloveOutput=${baseDir}"data/gloveEmbeddings."${embeddingsBaseFile}".txt"
 
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"

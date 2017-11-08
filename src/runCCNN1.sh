@@ -9,15 +9,15 @@ numNeg=(7) # 10) # 5 10 15
 batchSize=(128) # 64 128
 shuffle=(f) # t                                                                                  
 embeddingsBaseFile=("400") # "6B.300") # 50                                                                                    
-dropout=(0.3) # 0.4) # 0.0 0.1 .2 .3 .5
+dropout=(0.25) # 0.4) # 0.0 0.1 .2 .3 .5
 numFilters=(64) # 128) # 300 600)
-filterMultiplier=(1.0) # 1.5 2.0)
-hddcrpBaseFile=("predict") # "predict" predict.ran")
+filterMultiplier=(2.0) # 1.5 2.0)
+hddcrpBaseFile=("predict.ran") # "predict" predict.ran")
 clusterMethod=("avgavg") # "avg" "avgavg") # "min" "avg"
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("none") # "sum" "avg")
-lemmaBaseFile=("400") # 6B.300 or 840B.300 or 400
+lemmaBaseFile=("6B.300") # 6B.300 or 840B.300 or 400
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
