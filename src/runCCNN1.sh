@@ -35,46 +35,43 @@ do
 				do
 					for s in "${shuffle[@]}"
 					do
-						for emb in "${embSize[@]}"
+						for dr in "${dropout[@]}"
 						do
-							for dr in "${dropout[@]}"
+							for cm in "${clusterMethod[@]}"
 							do
-								for cm in "${clusterMethod[@]}"
+								for fpos in "${featurePOS[@]}"
 								do
-									for fpos in "${featurePOS[@]}"
+									for pt in "${posType[@]}"
 									do
-										for pt in "${posType[@]}"
+										for nf in "${numFilters[@]}"
 										do
-											for nf in "${numFilters[@]}"
+											for fm in "${filterMultiplier[@]}"
 											do
-												for fm in "${filterMultiplier[@]}"
+												for lt in "${lemmaType[@]}"
 												do
-													for lt in "${lemmaType[@]}"
+													for lb in "${lemmaBaseFile[@]}"
 													do
-														for lb in "${lemmaBaseFile[@]}"
+														for emb in "${embeddingsBaseFile[@]}"
 														do
-															for emb in "${embeddingsBaseFile[@]}"
+															for hdd in "${hddcrpBaseFile[@]}"
 															do
-																for hdd in "${hddcrpBaseFile[@]}"
-																do
-																	# qsub -pe smp 8 -l vlong -o
-																	fout=gpu${hdd}_lb${lb}_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_${fpos}_${pt}_lt${lt}.out
-																	echo ${fout}
-																	if [ ${hn} = "titanx" ]
-																	then
-																		./runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb} > ${fout}												
-																	else
-																		qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb}
-																	fi
-																done
+																# qsub -pe smp 8 -l vlong -o
+																fout=gpu${hdd}_lb${lb}_nl${nl}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_${fpos}_${pt}_lt${lt}.out
+																echo ${fout}
+																if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
+																then
+																	./runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb} > ${fout}												
+																else
+																	qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb}
+																fi
 															done
 														done
 													done
 												done
 											done
 										done
-									done	
-								done
+									done
+								done	
 							done
 						done
 					done
