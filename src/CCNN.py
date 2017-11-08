@@ -428,6 +428,7 @@ class CCNN:
             "neg" + str(self.args.numNegPerPos) + "_" + \
             "bs" + str(self.args.batchSize) + "_" + \
             "s" + str(self.args.shuffleTraining) + "_" + \
+            "e" + str(self.args.embeddingsBaseFile) + "_" + \
             "dr" + str(self.args.dropout) + "_" + \
             "cm" + str(self.args.clusterMethod) + "_" + \
             "nf" + str(self.args.numFilters) + "_" + \
@@ -980,7 +981,7 @@ class CCNN:
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
 
-            fullMenEmbedding = lemmaEmb #avgGloveEmbedding + posEmb + lemmaEmb # lemmaEmb
+            fullMenEmbedding = avgGloveEmbedding #avgGloveEmbedding + posEmb + lemmaEmb # lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -1003,7 +1004,7 @@ class CCNN:
 
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = prevLemmaEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+                fullTokenEmbedding = pGloveEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1016,13 +1017,13 @@ class CCNN:
                     token = self.corpus.corpusTokens[ind]
                     tmpTokenList.append(token)
                     if token.text in self.wordTypeToEmbedding:
-                        emb = self.wordTypeToEmbedding[token.text]
+                        nGloveEmb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
 
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = nextLemmaEmb # GloveEmb + nextPosEmb + nextLemmaEmb #
+                fullTokenEmbedding = nGloveEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

@@ -52,9 +52,9 @@ resultsDir=${baseDir}"results/"
 
 # glove params
 gWindowSize=6
-embeddingSize=$9
+embeddingBaseFile=$9
 numEpochs=50
-gloveOutput=${baseDir}"data/gloveEmbeddings"${embeddingSize}".txt"
+gloveOutput=${baseDir}"data/gloveEmbeddings."${embeddingBaseFile}".txt"
 
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
@@ -90,6 +90,7 @@ echo "windowSize:" $windowSize
 echo "numNegPerPos:" $numNegPerPos
 echo "batchSize:" $batchSize
 echo "shuffleTraining:" $shuffleTraining
+echo "embeddingsFile:" $embeddingsFile
 echo "hddcrpFullFile:" $hddcrpFullFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
@@ -100,7 +101,8 @@ echo "------------------------"
 
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} \
---stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} --embeddingsFile=${embeddingsFile} \
+--stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} \
+--embeddingsBaseFile=${embeddingsBaseFile} --embeddingsFile=${embeddingsFile} \
 --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
 --batchSize=${batchSize} \
@@ -117,7 +119,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_lb"${lemmaBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_lb"${lemmaBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
