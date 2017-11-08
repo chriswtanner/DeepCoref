@@ -13,7 +13,7 @@ from collections import OrderedDict
 from operator import itemgetter
 from keras.datasets import mnist
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, MaxPooling2D
+from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
 from keras.optimizers import RMSprop
 from keras import backend as K
 from tensorflow.python.client import device_lib
@@ -656,7 +656,7 @@ class CCNN:
         if kernel_rows == 3:
             kernel_rows = 2
 
-        seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same"))
+        seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same"))
         
         # added following
         if self.args.numLayers == 2:
@@ -669,7 +669,7 @@ class CCNN:
             seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
             curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
 
-            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
             seq.add(Dropout(float(self.args.dropout)))
             
             # end of added

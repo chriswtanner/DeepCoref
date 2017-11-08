@@ -16,7 +16,7 @@ hddcrpBaseFile=("predict.ran") # "predict" predict.ran")
 clusterMethod=("avgavg") # "avg" "avgavg") # "min" "avg"
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
-lemmaType=("none") # "sum" "avg")
+lemmaType=("avg") # "sum" "avg")
 lemmaBaseFile=("6B.300") # 6B.300 or 840B.300 or 400
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
@@ -60,7 +60,8 @@ do
 																echo ${fout}
 																if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
 																then
-																	./runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb} > ${fout}												
+																	echo "* kicking off runCCNN2 natively"
+																	./runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb} # > ${fout}												
 																else
 																	qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${lb}
 																fi

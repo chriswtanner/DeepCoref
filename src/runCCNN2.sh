@@ -8,8 +8,7 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
-source ~/researchcode/DeepCoref/venv/bin/activate
+stoppingPoints=(0.26) # 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 
 if [ ${me} = "ctanner" ]
 then
@@ -27,6 +26,7 @@ then
 		echo ${LD_LIBRARY_PATH}
 	else
 		echo "*   ON THE GRID!"
+		source ~/researchcode/DeepCoref/venv/bin/activate
 		# export CUDA_HOME=/usr
 		export CUDA_HOME=/contrib/projects/cuda8.0
 		export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
@@ -35,7 +35,6 @@ then
 		echo ${LD_LIBRARY_PATH}
 	fi 
 fi
-
 
 scriptDir=${baseDir}"src/"
 refDir=${scriptDir}"reference-coreference-scorers-8.01/"
@@ -79,26 +78,40 @@ lemmaType=${17}
 lemmaBaseFile=${18}
 lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings."${lemmaBaseFile}".txt" # 6B.300 or 840B.300 or 400
 stanOutputDir=${baseDir}"data/stanford_output/"
-cd $scriptDir
 
 echo "-------- params --------"
 echo "corpus:" $1
+echo "resultsDir:" ${resultsDir}
 echo "device:" ${device}
 echo "numLayers:" $numLayers
+echo "replacementsFile:" ${replacementsFile}
+echo "stitchMentions:" $stitchMentions
+echo "mentionsFile:" $mentionsFile
+echo "embeddingsBaseFile:" $embeddingsBaseFile
+echo "embeddingsFile:" $embeddingsFile
+echo "embeddingsType:" $embeddingsType
 echo "numEpochs:" $numEpochs
+echo "verbose:" $verbose
 echo "windowSize:" $windowSize
+echo "shuffleTraining:" $shuffleTraining
 echo "numNegPerPos:" $numNegPerPos
 echo "batchSize:" $batchSize
-echo "shuffleTraining:" $shuffleTraining
-echo "embeddingsFile:" $embeddingsFile
+echo "hddcrpBaseFile:" $hddcrpBaseFile
 echo "hddcrpFullFile:" $hddcrpFullFile
 echo "dropout:" $dropout
 echo "clusterMethod:" $clusterMethod
 echo "numFilters:" $numFilters
+echo "filterMultiplier:" $filterMultiplier
+echo "stanOutputDir:" $stanOutputDir
+echo "featurePOS:" $featurePOS
+echo "posType:" $posType
+echo "posEmbeddingsFile:" $posEmbeddingsFile
 echo "lemmaType:" $lemmaType
+echo "lemmaBaseFile:" $lemmaBaseFile
 echo "lemmaEmbeddingsFile:" ${lemmaEmbeddingsFile}
 echo "------------------------"
 
+cd $scriptDir
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} \
 --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} \
