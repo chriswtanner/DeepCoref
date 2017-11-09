@@ -3,16 +3,16 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(1) # 25) # 30) # 5 10 20
+numEpochs=(15 25) # 25) # 30) # 5 10 20
 windowSize=(0) # 1 2 3
 numNeg=(7) # 10) # 5 10 15
-batchSize=(64) # 128) # 64 128
+batchSize=(64 128) # 64 128
 shuffle=(f) # t                                                                                  
 embeddingsBaseFile=("400") # "6B.300") # 50                                                                                    
-dropout=(0.1) # 0.2 0.3 0.4 0.5) # 0.4) # 0.0 0.1 .2 .3 .5
+dropout=(0.1 0.2 0.3 0.4 0.5) # 0.4) # 0.0 0.1 .2 .3 .5
 clusterMethod=("avgavg") # "avg" "avgavg") # "min" "avg"
-numFilters=(32) # 64 128) # 128) # 300 600)
-filterMultiplier=(0.5) # 1.0 2.0) # 1.5 2.0)
+numFilters=(32 64 128) # 128) # 300 600)
+filterMultiplier=(0.5 1.0 2.0) # 1.5 2.0)
 hddcrpBaseFile=("predict.ran") # "predict" predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
