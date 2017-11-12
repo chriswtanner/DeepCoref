@@ -2,10 +2,10 @@
 # 			and output the subset of word types we care about 
 class StripGloveEmbeddings:
 
-	bigGloveFile = "/Users/christanner/research/libraries/glove.6B/glove.6B.300d.txt"  # glove.840B.300d.txt" # 
+	bigGloveFile = "/Users/christanner/research/libraries/glove.840B.300d.txt" # glove.6B/glove.6B.300d.txt
 	smallGloveFile = "/Users/christanner/research/DeepCoref/data/wordTokens.txt" #gloveEmbeddings50.txt"
 
-	outputFile = "/Users/christanner/research/DeepCoref/data/wordEmbeddings.6B.300.txt"
+	outputFile = "/Users/christanner/research/DeepCoref/data/wordEmbeddings.840B.300.txt"
 
 	badTokens = {}
 	badTokens["cybercriminal"] = ["cyber","criminal"]
@@ -22,6 +22,9 @@ class StripGloveEmbeddings:
 	badTokens["hospitalise"] = ["hospitalize"]
 	badTokens["univerasity"] = ["university"]
 	badTokens["shadowserver"] = ["shadow", "server"]
+	badTokens["shadowservers"] = ["shadow", "servers"]
+	badTokens["microserver"] = ["micro", "server"]
+	badTokens["microservers"] = ["micro", "servers"]
 	badTokens["instagramm"] = ["instagram"]
 	badTokens["te-north"] = ["the", "north"]
 	badTokens["athttp"] = ["http"]

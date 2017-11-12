@@ -435,7 +435,7 @@ class CCNN:
             "cm" + str(self.args.clusterMethod) + "_" + \
             "nf" + str(self.args.numFilters) + "_" + \
             "fm" + str(self.args.filterMultiplier) + "_" + \
-            "fpos" + str(self.args.featurePOS) + "_" + \
+            "fp" + str(self.args.featurePOS) + "_" + \
             "pt" + str(self.args.posType) + "_" + \
             "lt" + str(self.args.lemmaType) + "_" + \
             "dt" + str(self.args.dependencyType) + "_" + \
@@ -559,7 +559,6 @@ class CCNN:
         # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
         print("# embeddings loaded:",str(len(self.wordTypeToEmbedding.keys())))
-        print("aggravate:",str(self.wordTypeToEmbedding["aggravate"]))
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs) #self.createData(self.helper.trainingDirs, True)
         dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs) #self.createData(self.helper.devDirs, False)
@@ -811,6 +810,13 @@ class CCNN:
                 self.embeddingLength = len(emb)
             f.close()
         self.wordTypeToEmbedding["'knows"] = self.wordTypeToEmbedding["knows"]
+        self.wordTypeToEmbedding["takeing"] = self.wordTypeToEmbedding["taking"]
+        self.wordTypeToEmbedding["arested"] = self.wordTypeToEmbedding["arrested"]
+        self.wordTypeToEmbedding["intpo"] = self.wordTypeToEmbedding["into"]        
+        self.wordTypeToEmbedding["texa"] = self.wordTypeToEmbedding["texas"]
+        self.wordTypeToEmbedding["itune"] = self.wordTypeToEmbedding["itunes"]
+        self.wordTypeToEmbedding["degenere"] = self.wordTypeToEmbedding["degeneres"]
+
     # TEMP
     def getCosineSim(self, a, b):
         numerator = 0
@@ -831,6 +837,8 @@ class CCNN:
             # sum over all tokens first, optionally avg
             sumEmb = [0]*self.embeddingLength
             numFound = 0
+
+            tmpParentLemmas = []
             for t in tokenList:
                 bestStanToken = self.helper.getBestStanToken(t.stanTokens)
                 
@@ -840,6 +848,10 @@ class CCNN:
                 for stanParentLink in bestStanToken.parentLinks:
                     parentLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
                     curEmb = [0]*self.embeddingLength
+                    
+                    # TMP: just to see which texts we are missing
+                    tmpParentLemmas.append(parentLemma)
+
                     if parentLemma == "ROOT":
                         curEmb = [1]*self.embeddingLength
                     else:
@@ -859,7 +871,7 @@ class CCNN:
                 exit(1)
             '''
             if numFound == 0:
-                print("* WARNING: numFound 0:",str(tokenList))
+                print("* WARNING: numFound 0:",str(tmpParentLemmas))       
             if dependencyType == "avg":
                 if numFound > 0:
                     avgEmb = [x / float(numFound) for x in sumEmb]
@@ -1033,6 +1045,8 @@ class CCNN:
             else:
                 avgGloveEmbedding = sumGloveEmbedding
                 print("* WARNING: we had 0 tokens of:",str(tokenList))
+                for t in tokenList:
+                    print("t:",str(t.text))
             # load other features
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
