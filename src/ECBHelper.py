@@ -31,8 +31,8 @@ class ECBHelper:
 		self.posEmbLength = 100
 
 		# filled in by 
-		self.lemmaToGloveEmbedding = {}
-		self.lemmaEmbLength = 400
+		self.wordToGloveEmbedding = {}
+		self.wordEmbLength = 400
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
@@ -40,20 +40,22 @@ class ECBHelper:
 #    creates DM pairs for train/dev/test
 ##################################################
 ##################################################
-
-	def loadLemmaEmbeddings(self, embeddingsFile):
+	'''
+	def loadWordEmbeddings(self, embeddingsFile):
 		print("self.args.lemmaType:",str(self.args.lemmaType))
-		if self.args.lemmaType == "none":
+		print("self.args.dependencyType:",str(self.args.dependencyType))
+		if self.args.lemmaType == "none" and self.args.dependencyType == "none":
 			return
-		print("* in loadPOSEmbeddings")
-		self.lemmaToGloveEmbedding = {}
+		print("* in loadWordEmbeddings")
+		self.wordToGloveEmbedding = {}
 		f = open(embeddingsFile, 'r', encoding="utf-8")
 		for line in f:
 			tokens = line.rstrip().split(" ")
-			lemma = tokens[0]
+			word = tokens[0]
 			emb = [float(x) for x in tokens[1:]]
-			self.lemmaToGloveEmbedding[lemma] = emb
+			self.wordToGloveEmbedding[word] = emb
 		f.close()
+	'''
 
 	def loadPOSEmbeddings(self, embeddingsFile):
 		print("self.args.featurePOS:",str(self.args.featurePOS))
@@ -638,40 +640,82 @@ class ECBHelper:
 	def writeAllPOSToFile(self, outputFile):
 		fout = open(outputFile, 'w')
 
+		# for:
+		# - word
+		# - word's lemma
+		# - dependency parent
+		# - dependency parent's lemma
+		# - dependency child
+		# - dependency child's lemma
+		allWordTypes = set()
 		print("writing:",str(outputFile))
 		for doc_id in self.corpus.docToGlobalSentenceNums.keys():
-
 			for sent_num in sorted(self.corpus.docToGlobalSentenceNums[doc_id]):
 				outLine = ""
 				for t in self.corpus.globalSentenceNumToTokens[sent_num]:
-					# gets the POS
-					pos = ""
-					lemma = ""
-					posOfLongestToken = ""
-					lemmaOfLongestToken = ""
-					longestToken = ""
-					for stanToken in t.stanTokens:
-						if stanToken.pos in self.badPOS:
-							# only use the badPOS if no others have been set
-							if pos == "":
-								pos = stanToken.pos
-								lemma = stanToken.lemma
-						else: # save the longest, nonBad POS tag
-							if len(stanToken.text) > len(longestToken):
-								longestToken = stanToken.text
-								posOfLongestToken = stanToken.pos 
-								lemmaOfLongestToken = stanToken.lemma
-					if posOfLongestToken != "":
-						pos = posOfLongestToken
-						lemma = lemmaOfLongestToken
-					if pos == "":
-						print("* ERROR: our POS empty!")
-						exit(1)
-					outLine += lemma + " "#pos + " "
-				outLine = outLine.rstrip()
-				fout.write(outLine + "\n") # writes 1 sentence per line
+
+					bestStanToken = self.getBestStanToken(t.stanTokens)
+
+					pos = bestStanToken.pos
+					allWordTypes.add(t.text)
+
+					allWordTypes.add(bestStanToken.text)
+					allWordTypes.add(bestStanToken.lemma)
+
+					# look at its dependency parent
+					for stanParentLink in bestStanToken.parentLinks:
+						allWordTypes.add(stanParentLink.parent.lemma)
+						allWordTypes.add(stanParentLink.parent.text)
+					for stanChildLink in bestStanToken.childLinks:
+						allWordTypes.add(stanChildLink.child.lemma)
+						allWordTypes.add(stanChildLink.child.text)				#print("* we have:",str(len(bestStanToken.parentLinks)),"parents")
+					#if len(bestStanToken.childLinks) != 1:
+					#print("* we have:",str(len(bestStanToken.childLinks)),"children")
+
+					#outLine += lemma + " "#pos + " "
+
+		for t in allWordTypes:
+			if t.startswith("'") or t.startswith("\""):
+				print(str(t),"->",str(self.removeQuotes(t)))
+			t = self.removeQuotes(t)
+			if len(t) > 0:
+				fout.write(str(t) + "\n")
 		fout.close()
 
+	# removes the leading and trailing quotes, if they exist
+	def removeQuotes(self, token):
+		if len(token) > 0:
+			if token == "''" or token == "\"":
+				return "\""
+			elif token == "'" or token == "'s":
+				return token
+			else: # there's more substance to it, not a lone quote
+				if token[0] == "'" or token[0] == "\"":
+					token = token[1:]
+				if len(token) > 0:
+					if token[-1] == "'" or token[-1] == "\"":
+						token = token[0:-1]
+				return token
+		else:
+			print("* found a blank")
+			return ""
+	def getBestStanToken(self, stanTokens):
+		longestToken = ""
+		bestStanToken = None
+		for stanToken in stanTokens:
+			if stanToken.pos in self.badPOS:
+				# only use the badPOS if no others have been set
+				if bestStanToken == None:
+					bestStanToken = stanToken
+			else: # save the longest, nonBad POS tag
+				if len(stanToken.text) > len(longestToken):
+					longestToken = stanToken.text
+					bestStanToken = stanToken
+		if bestStanToken == None:
+			print("* ERROR: our bestStanToken is empty!")
+			exit(1)
+		
+		return bestStanToken
 
 	# outputs our ECB corpus in plain-text format; 1 doc per doc, and 1 sentence per line
 	def writeAllSentencesToFile(self, outputDir):
@@ -917,4 +961,4 @@ class ECBHelper:
 
 		# following line should be commented out when we're creating a POS/LEMMA/etc file, before we have the embeddings
 		self.loadPOSEmbeddings(self.args.posEmbeddingsFile)
-		self.loadLemmaEmbeddings(self.args.lemmaEmbeddingsFile)
+		# self.loadLemmaEmbeddings(self.args.lemmaEmbeddingsFile)

@@ -8,7 +8,7 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
+stoppingPoints=(0.26) # 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 
 if [ ${me} = "ctanner" ]
 then
@@ -70,13 +70,13 @@ dropout=${11}
 clusterMethod=${12}
 numFilters=${13}
 filterMultiplier=${14}
+# features
 featurePOS=${15}
 posType=${16}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
-
 lemmaType=${17}
-lemmaBaseFile=${18}
-lemmaEmbeddingsFile=${baseDir}"data/lemmaEmbeddings."${lemmaBaseFile}".txt" # 6B.300 or 840B.300 or 400
+dependencyType=${18}
+
 stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
@@ -107,8 +107,7 @@ echo "featurePOS:" $featurePOS
 echo "posType:" $posType
 echo "posEmbeddingsFile:" $posEmbeddingsFile
 echo "lemmaType:" $lemmaType
-echo "lemmaBaseFile:" $lemmaBaseFile
-echo "lemmaEmbeddingsFile:" ${lemmaEmbeddingsFile}
+echo "dependencyType:" $dependencyType
 echo "------------------------"
 
 cd $scriptDir
@@ -124,15 +123,17 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --numFilters=${numFilters} --filterMultiplier=${filterMultiplier} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
---lemmaType=${lemmaType} --lemmaBaseFile=${lemmaBaseFile} --lemmaEmbeddingsFile=${lemmaEmbeddingsFile}
+--lemmaType=${lemmaType} \
+--dependencyType=${dependencyType}
 
+exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_lb"${lemmaBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fpos"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

@@ -69,6 +69,7 @@ class StanParser:
 		document = root[0]
 		sentences, corefs = document
 
+		self.types = set()
 		for elem in sentences: #tree.iter(tag='sentence'):
 
 			sentenceNum = int(elem.attrib["id"])
@@ -128,7 +129,7 @@ class StanParser:
 						
 						parent, child = dep
 						relationship = dep.attrib["type"]
-
+						self.types.add(relationship)
 						parentToken = sentenceTokens[sentenceNum][int(parent.attrib["idx"])]
 						childToken = sentenceTokens[sentenceNum][int(child.attrib["idx"])]
 

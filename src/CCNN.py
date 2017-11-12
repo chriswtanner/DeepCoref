@@ -38,6 +38,11 @@ class CCNN:
         self.corpus = corpus
         self.helper = helper
         self.hddcrp_parsed = hddcrp_parsed
+
+        # just for understanding the data more
+        self.lemmas = set()
+        self.OOVLemmas = set()
+        self.mentionLengthToMentions = defaultdict(list)
         print("-----------------------")
 
     # creates clusters for our hddcrp predictions
@@ -419,7 +424,6 @@ class CCNN:
         # constructs output file
         fileOut = str(self.args.resultsDir) + \
             str(self.args.hddcrpBaseFile) + "_" + \
-            "lb" + str(self.args.lemmaBaseFile) + "_" + \
             "nl" + str(self.args.numLayers) + "_" + \
             "ne" + str(self.args.numEpochs) + "_" + \
             "ws" + str(self.args.windowSize) + "_" + \
@@ -434,6 +438,7 @@ class CCNN:
             "fpos" + str(self.args.featurePOS) + "_" + \
             "pt" + str(self.args.posType) + "_" + \
             "lt" + str(self.args.lemmaType) + "_" + \
+            "dt" + str(self.args.dependencyType) + "_" + \
             "sp" + str(stoppingPoint) + \
             ".txt"
 
@@ -553,18 +558,23 @@ class CCNN:
 
         # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
-
+        print("# embeddings loaded:",str(len(self.wordTypeToEmbedding.keys())))
+        print("aggravate:",str(self.wordTypeToEmbedding["aggravate"]))
         # constructs the training and dev files
         training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs) #self.createData(self.helper.trainingDirs, True)
         dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs) #self.createData(self.helper.devDirs, False)
         testing_pairs, testing_data, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
 
-        input_shape = training_data.shape[2:]
-
         print("* training data shape:",str(training_data.shape))
         print("* dev data shape:",str(dev_data.shape))
         print("* test data shape:",str(testing_data.shape))
+        print("# unique lemmas:",str(len(self.lemmas)))
+        print("# of which were OOV:",str(len(self.OOVLemmas)))
+        for _ in self.mentionLengthToMentions.keys():
+            print("mentionLength:",str(_)," has ",str(len(self.mentionLengthToMentions[_])),"mentions")
+
         # network definition
+        input_shape = training_data.shape[2:]
         base_network = self.create_base_network(input_shape)
 
         input_a = Input(shape=input_shape)
@@ -800,7 +810,7 @@ class CCNN:
                 self.wordTypeToEmbedding[wordType] = emb
                 self.embeddingLength = len(emb)
             f.close()
-
+        self.wordTypeToEmbedding["'knows"] = self.wordTypeToEmbedding["knows"]
     # TEMP
     def getCosineSim(self, a, b):
         numerator = 0
@@ -812,42 +822,69 @@ class CCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
+    def getDependencyEmbedding(self, dependencyType, tokenList):
+        dependencyEmb = []
+        if dependencyType == "none": # as opposed to sum or avg
+            return dependencyEmb
+        elif dependencyType == "sum" or dependencyType == "avg":
+
+            # sum over all tokens first, optionally avg
+            sumEmb = [0]*self.embeddingLength
+            numFound = 0
+            for t in tokenList:
+                bestStanToken = self.helper.getBestStanToken(t.stanTokens)
+                
+                if len(bestStanToken.parentLinks) == 0:
+                    print("* token has no dependency parent!")
+                    exit(1)
+                for stanParentLink in bestStanToken.parentLinks:
+                    parentLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
+                    curEmb = [0]*self.embeddingLength
+                    if parentLemma == "ROOT":
+                        curEmb = [1]*self.embeddingLength
+                    else:
+                        curEmb = self.wordTypeToEmbedding[parentLemma]
+                    
+                    isOOV = True
+                    for _ in curEmb:
+                        if _ != 0:
+                            isOOV = False
+                            numFound += 1
+                    
+                    sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
+            '''
+            if isOOV:
+                print("* we found a token that is OOV!")
+                print(tokenList)
+                exit(1)
+            '''
+            if numFound == 0:
+                print("* WARNING: numFound 0:",str(tokenList))
+            if dependencyType == "avg":
+                if numFound > 0:
+                    avgEmb = [x / float(numFound) for x in sumEmb]
+                else:
+                    avgEmb = sumEmb
+                dependencyEmb = avgEmb
+            elif dependencyType == "sum":
+                dependencyEmb = sumEmb
+                #print("lemmaEmb:",str(lemmaEmb))
+        else: # can't be none, since we've specified featurePOS
+            print("* ERROR: dependencyType is illegal")
+        return dependencyEmb
+
     def getLemmaEmbedding(self, lemmaType, tokenList):
         lemmaEmb = []
         if lemmaType == "none": # as opposed to sum or avg
             return lemmaEmb
         elif lemmaType == "sum" or lemmaType == "avg":
-            lemmaLength = self.helper.lemmaEmbLength
+            lemmaLength = self.helper.wordEmbLength
 
             # sum over all tokens first, optionally avg
             sumEmb = [0]*lemmaLength
             for t in tokenList:
-                # our current 1 ECB Token possibly maps to multiple StanTokens, so let's
-                # ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
-                pos = ""
-                lemma = ""
-                posOfLongestToken = ""
-                lemmaOfLongestToken = ""
-                longestToken = ""
-                for stanToken in t.stanTokens:
-                    if stanToken.pos in self.helper.badPOS:
-                        # only use the badPOS if no others have been set
-                        if pos == "":
-                            pos = stanToken.pos
-                            lemma = stanToken.lemma
-                    else: # save the longest, nonBad POS tag
-                        if len(stanToken.text) > len(longestToken):
-                            longestToken = stanToken.text
-                            posOfLongestToken = stanToken.pos 
-                            lemmaOfLongestToken = stanToken.lemma
-                if posOfLongestToken != "":
-                    pos = posOfLongestToken
-                    lemma = lemmaOfLongestToken
-                if pos == "":
-                    print("* ERROR: our POS empty!")
-                    exit(1)
-
-                curEmb = self.helper.lemmaToGloveEmbedding[lemma]
+                lemma = self.helper.getBestStanToken(t.stanTokens).lemma
+                curEmb = self.wordTypeToEmbedding[lemma]
                 sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
 
             if lemmaType == "avg":
@@ -855,12 +892,10 @@ class CCNN:
                 lemmaEmb = avgEmb
             elif lemmaType == "sum":
                 lemmaEmb = sumEmb
-
                 #print("lemmaEmb:",str(lemmaEmb))
         else: # can't be none, since we've specified featurePOS
             print("* ERROR: lemmaType is illegal")
         return lemmaEmb
-
 
     def getPOSEmbedding(self, featurePOS, posType, tokenList):
         posEmb = []
@@ -958,14 +993,34 @@ class CCNN:
 
             tokenList = mentionIDToTokenList[mentionID]
 
+            # just for understanding our data more
+            self.mentionLengthToMentions[len(tokenList)].append(tokenList)
+
             t_startIndex = 99999999
             t_endIndex = -1
 
             # gets token indices and constructs the Mention embedding
             sumGloveEmbedding = [0]*self.embeddingLength
+            numTokensFound = 0
             for token in tokenList:
-                curEmbedding = self.wordTypeToEmbedding[token.text]
-                sumGloveEmbedding = [x + y for x,y in zip(sumGloveEmbedding, curEmbedding)]
+
+                cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
+                cleanedText = self.helper.removeQuotes(token.text)
+                #print(str(token.text),"->",str(cleanedText),"cleaned stan:",str(cleanedStan))
+                
+                if cleanedText in self.wordTypeToEmbedding.keys():
+                    curEmbedding = self.wordTypeToEmbedding[cleanedText]
+                else:
+                    curEmbedding = self.wordTypeToEmbedding[cleanedStan]
+                hasEmbedding = False
+                for _ in curEmbedding:
+                    if _ != 0:
+                        hasEmbedding = True
+                        break
+
+                if hasEmbedding:
+                    numTokensFound += 1
+                    sumGloveEmbedding = [x + y for x,y in zip(sumGloveEmbedding, curEmbedding)]
                 #print("curEmbedding:",str(curEmbedding))
                 ind = self.corpus.corpusTokensToCorpusIndex[token]
                 if ind < t_startIndex:
@@ -973,13 +1028,16 @@ class CCNN:
                 if ind > t_endIndex:
                     t_endIndex = ind
 
-            avgGloveEmbedding = [x / float(len(tokenList)) for x in sumGloveEmbedding]
-            
+            if numTokensFound > 0:
+                avgGloveEmbedding = [x / float(numTokensFound) for x in sumGloveEmbedding]
+            else:
+                avgGloveEmbedding = sumGloveEmbedding
+                print("* WARNING: we had 0 tokens of:",str(tokenList))
             # load other features
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
-
-            fullMenEmbedding = lemmaEmb #avgGloveEmbedding + posEmb + lemmaEmb
+            dependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tokenList)
+            fullMenEmbedding = dependencyEmb #avgGloveEmbedding + posEmb + lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -999,10 +1057,11 @@ class CCNN:
                         pGloveEmb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
-
+                        exit(1)
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = prevLemmaEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+                prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+                fullTokenEmbedding = prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1021,7 +1080,8 @@ class CCNN:
 
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                fullTokenEmbedding = nextLemmaEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
+                nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+                fullTokenEmbedding = nextDependencyEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

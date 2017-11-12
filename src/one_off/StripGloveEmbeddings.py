@@ -3,9 +3,9 @@
 class StripGloveEmbeddings:
 
 	bigGloveFile = "/Users/christanner/research/libraries/glove.6B/glove.6B.300d.txt"  # glove.840B.300d.txt" # 
-	smallGloveFile = "/Users/christanner/research/DeepCoref/data/gloveEmbeddings50.txt"
+	smallGloveFile = "/Users/christanner/research/DeepCoref/data/wordTokens.txt" #gloveEmbeddings50.txt"
 
-	outputFile = "/Users/christanner/research/DeepCoref/data/gloveEmbeddings.6B.300.txt"
+	outputFile = "/Users/christanner/research/DeepCoref/data/wordEmbeddings.6B.300.txt"
 
 	badTokens = {}
 	badTokens["cybercriminal"] = ["cyber","criminal"]
@@ -36,12 +36,12 @@ class StripGloveEmbeddings:
 	f = open(smallGloveFile, 'r')
 	for line in f:
 		tokens = line.rstrip().split(" ")
-		wordType = tokens[0]
-		typesWeCareAbout.add(wordType)
-		missing.add(wordType)
+		#wordType = tokens[0]
+		for t in tokens:
+			typesWeCareAbout.add(t)
+			missing.add(t)
 	f.close()
 	print("# total we care about:",str(len(typesWeCareAbout)))
-	
 
 	f = open(bigGloveFile, 'r', encoding="utf-8")
 	found = set()

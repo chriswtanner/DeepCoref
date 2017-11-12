@@ -23,7 +23,7 @@ class WriteSentencesToFile:
 
 		# loads stanford's parsed version of our corpus and aligns it w/
 		# our representation -- so we can use their features
-		stan = StanParser(args, corpus) 
+		stan = StanParser(args, corpus)
 		helper.addStanfordAnnotations(stan)
 
 		helper.writeAllPOSToFile(args.posFileOut)

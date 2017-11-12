@@ -59,11 +59,12 @@ def setCorefEngineParams():
 	parser.add_argument("--featurePOS", help="pos feature: {none,onehot,emb_random,emb_glove}", default="none")
 	parser.add_argument("--posType", help="pos feature: {none,sum,avg}", default="none")
 	parser.add_argument("--posEmbeddingsFile", help="the POS embeddings file", default="none")
-
+	# note, we used to read in the files for embeddings when we wanted to use 
+	# lemma, distinct from the regular word embeddings and dependency embeddings
+	# but it makes most sense to just read in 1 set of embeddings (which have all the word types we'd care to use)
 	parser.add_argument("--lemmaType", help="pos feature: {none,sum,avg}", default="none")
-	parser.add_argument("--lemmaBaseFile", help="the basename of the lemma file", default="none")
-	parser.add_argument("--lemmaEmbeddingsFile", help="the complete lemma embeddings file (lemmaBaseFile plus full path)", default="none")
-	return parser.parse_args()	
+	parser.add_argument("--dependencyType", help="dependency feature: {none,sum,avg}", default="none")
+	return parser.parse_args()
 
 # allows for handling boolean params
 def str2bool(v):
