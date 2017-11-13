@@ -835,10 +835,13 @@ class CCNN:
         elif dependencyType == "sum" or dependencyType == "avg":
 
             # sum over all tokens first, optionally avg
-            sumEmb = [0]*self.embeddingLength
-            numFound = 0
+            sumParentEmb = [0]*self.embeddingLength
+            sumChildrenEmb = [0]*self.embeddingLength
 
+            numParentFound = 0
             tmpParentLemmas = []
+            numChildrenFound = 0
+            tmpChildrenLemmas = []
             for t in tokenList:
                 bestStanToken = self.helper.getBestStanToken(t.stanTokens)
                 
@@ -846,7 +849,7 @@ class CCNN:
                     print("* token has no dependency parent!")
                     exit(1)
                 for stanParentLink in bestStanToken.parentLinks:
-                    parentLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
+                    parentLemma = self.helper.removeQuotes(stanParentLink.parent.text)
                     curEmb = [0]*self.embeddingLength
                     
                     # TMP: just to see which texts we are missing
@@ -861,26 +864,44 @@ class CCNN:
                     for _ in curEmb:
                         if _ != 0:
                             isOOV = False
-                            numFound += 1
+                            numParentFound += 1
                     
-                    sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
-            '''
-            if isOOV:
-                print("* we found a token that is OOV!")
-                print(tokenList)
-                exit(1)
-            '''
-            if numFound == 0:
-                print("* WARNING: numFound 0:",str(tmpParentLemmas))       
+                    sumParentEmb = [x + y for x,y in zip(sumParentEmb, curEmb)]
+                '''
+                if len(bestStanToken.childLinks) == 0:
+                    print("* token has no dependency children!")
+                for stanChildLink in bestStanToken.childLinks:
+                    childLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
+                    curEmb = [0]*self.embeddingLength
+                    
+                    # TMP: just to see which texts we are missing
+                    tmpParentLemmas.append(parentLemma)
+
+                    if parentLemma == "ROOT":
+                        curEmb = [1]*self.embeddingLength
+                    else:
+                        curEmb = self.wordTypeToEmbedding[parentLemma]
+                    
+                    isOOV = True
+                    for _ in curEmb:
+                        if _ != 0:
+                            isOOV = False
+                            numParentFound += 1
+                    
+                    sumParentEmb = [x + y for x,y in zip(sumParentEmb, curEmb)]
+                '''
+
+            if numParentFound == 0:
+                print("* WARNING: numParentFound 0:",str(tmpParentLemmas))       
             if dependencyType == "avg":
-                if numFound > 0:
-                    avgEmb = [x / float(numFound) for x in sumEmb]
+                if numParentFound > 0:
+                    avgParentEmb = [x / float(numParentFound) for x in sumParentEmb]
                 else:
-                    avgEmb = sumEmb
-                dependencyEmb = avgEmb
+                    avgParentEmb = sumParentEmb
+                dependencyEmb = avgParentEmb
             elif dependencyType == "sum":
-                dependencyEmb = sumEmb
-                #print("lemmaEmb:",str(lemmaEmb))
+                dependencyEmb = sumParentEmb
+
         else: # can't be none, since we've specified featurePOS
             print("* ERROR: dependencyType is illegal")
         return dependencyEmb
