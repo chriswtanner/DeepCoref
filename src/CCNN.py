@@ -709,7 +709,7 @@ class CCNN:
                 seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
             else:
                 print("* ERROR: invalid poolType; must be 'avg' or 'max'")
-                
+
             seq.add(Dropout(float(self.args.dropout)))
         
             # entering level 3
@@ -872,7 +872,7 @@ class CCNN:
                     print("* token has no dependency parent!")
                     exit(1)
                 for stanParentLink in bestStanToken.parentLinks:
-                    parentLemma = self.helper.removeQuotes(stanParentLink.parent.text)
+                    parentLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
                     curEmb = [0]*self.embeddingLength
                     
                     # TMP: just to see which texts we are missing
@@ -890,44 +890,47 @@ class CCNN:
                             numParentFound += 1
                     
                     sumParentEmb = [x + y for x,y in zip(sumParentEmb, curEmb)]
-                '''
+                
+                # makes embedding for the dependency children's lemmas
                 if len(bestStanToken.childLinks) == 0:
                     print("* token has no dependency children!")
                 for stanChildLink in bestStanToken.childLinks:
-                    childLemma = self.helper.removeQuotes(stanParentLink.parent.lemma)
+                    childLemma = self.helper.removeQuotes(stanChildLink.child.lemma)
                     curEmb = [0]*self.embeddingLength
                     
                     # TMP: just to see which texts we are missing
-                    tmpParentLemmas.append(parentLemma)
+                    tmpChildrenLemmas.append(childLemma)
 
-                    if parentLemma == "ROOT":
+                    if childLemma == "ROOT":
                         curEmb = [1]*self.embeddingLength
                     else:
-                        curEmb = self.wordTypeToEmbedding[parentLemma]
+                        curEmb = self.wordTypeToEmbedding[childLemma]
                     
                     isOOV = True
                     for _ in curEmb:
                         if _ != 0:
                             isOOV = False
-                            numParentFound += 1
+                            numChildrenFound += 1
                     
-                    sumParentEmb = [x + y for x,y in zip(sumParentEmb, curEmb)]
-                '''
-
+                    sumChildrenEmb = [x + y for x,y in zip(sumChildrenEmb, curEmb)]
+                
+            # makes parent emb
+            parentEmb = sumParentEmb
             if numParentFound == 0:
                 print("* WARNING: numParentFound 0:",str(tmpParentLemmas))       
-            if dependencyType == "avg":
-                if numParentFound > 0:
-                    avgParentEmb = [x / float(numParentFound) for x in sumParentEmb]
-                else:
-                    avgParentEmb = sumParentEmb
-                dependencyEmb = avgParentEmb
-            elif dependencyType == "sum":
-                dependencyEmb = sumParentEmb
+            if dependencyType == "avg" and numParentFound > 0:
+                    parentEmb = [x / float(numParentFound) for x in sumParentEmb]
 
+            # makes chid emb
+            childrenEmb = sumChildrenEmb
+            if numChildrenFound == 0:
+                print("* WARNING: numChildrenFound 0:",str(tmpChildrenLemmas))       
+            if dependencyType == "avg" and numChildrenFound > 0:
+                    childrenEmb = [x / float(numChildrenFound) for x in sumChildrenEmb]
+
+            return parentEmb + childrenEmb
         else: # can't be none, since we've specified featurePOS
             print("* ERROR: dependencyType is illegal")
-        return dependencyEmb
 
     def getLemmaEmbedding(self, lemmaType, tokenList):
         lemmaEmb = []
