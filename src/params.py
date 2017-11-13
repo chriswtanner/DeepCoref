@@ -43,6 +43,7 @@ def setCorefEngineParams():
 	parser.add_argument("--hddcrpFullFile", help="the fullpath of hddcrpBaseFile")
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
 	parser.add_argument("--numLayers", help="1 or 2 conv sections", type=int)
+	parser.add_argument("--poolType", help="avg or max")
 	parser.add_argument("--embeddingsBaseFile", help="the basename of the embeddings file")
 	parser.add_argument("--embeddingsFile", help="the full path of the embeddings file")
 	parser.add_argument("--embeddingsType", help="type or token") # no default, because this could be tricky, so we want to make it deliberate

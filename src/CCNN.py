@@ -425,6 +425,7 @@ class CCNN:
         fileOut = str(self.args.resultsDir) + \
             str(self.args.hddcrpBaseFile) + "_" + \
             "nl" + str(self.args.numLayers) + "_" + \
+            "pool" + str(self.args.poolType) + "_" + \
             "ne" + str(self.args.numEpochs) + "_" + \
             "ws" + str(self.args.windowSize) + "_" + \
             "neg" + str(self.args.numNegPerPos) + "_" + \
@@ -665,7 +666,12 @@ class CCNN:
         if kernel_rows == 3:
             kernel_rows = 2
 
-        seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same"))
+        if self.args.poolType == "avg":
+            seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+        elif self.args.poolType == "max":
+            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+        else:
+            print("* ERROR: invalid poolType; must be 'avg' or 'max'")
         
         # added following
         if self.args.numLayers == 2:
@@ -678,7 +684,13 @@ class CCNN:
             seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
             curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
 
-            seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            if self.args.poolType == "avg":
+                seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            elif self.args.poolType == "max":
+                seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            else:
+                print("* ERROR: invalid poolType; must be 'avg' or 'max'")
+
             seq.add(Dropout(float(self.args.dropout)))
             
             # end of added
@@ -691,7 +703,13 @@ class CCNN:
             seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
             curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
 
-            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            if self.args.poolType == "avg":
+                seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            elif self.args.poolType == "max":
+                seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            else:
+                print("* ERROR: invalid poolType; must be 'avg' or 'max'")
+                
             seq.add(Dropout(float(self.args.dropout)))
         
             # entering level 3
@@ -702,7 +720,12 @@ class CCNN:
             seq.add(Conv2D(curNumFilters, kernel_size=(kernel_rows, 3), activation='relu', padding="same", data_format="channels_first"))
             curNumFilters = int(round(curNumFilters*self.args.filterMultiplier))
 
-            seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            if self.args.poolType == "avg":
+                seq.add(AveragePooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            elif self.args.poolType == "max":
+                seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
+            else:
+                print("* ERROR: invalid poolType; must be 'avg' or 'max'")
             seq.add(Dropout(float(self.args.dropout)))
         
         seq.add(Flatten())

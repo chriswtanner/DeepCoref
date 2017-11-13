@@ -42,7 +42,7 @@ corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 
-hddcrpBaseFile=${10}
+hddcrpBaseFile=${11}
 hddcrpFullFile=${baseDir}"data/"${hddcrpBaseFile}".WD.semeval.txt" # MAKE SURE THIS IS WHAT YOU WANT (gold vs predict)
 verbose="true"
 stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-06-09/"
@@ -51,7 +51,7 @@ resultsDir=${baseDir}"results/"
 
 # glove params
 gWindowSize=6
-embeddingsBaseFile=$9
+embeddingsBaseFile=${10}
 numEpochs=50
 gloveOutput=${baseDir}"data/gloveEmbeddings."${embeddingsBaseFile}".txt"
 
@@ -61,21 +61,22 @@ embeddingsFile=${gloveOutput}
 embeddingsType="type"
 device=$2
 numLayers=$3
-numEpochs=$4
-windowSize=$5
-numNegPerPos=$6
-batchSize=$7
-shuffleTraining=$8
-dropout=${11}
-clusterMethod=${12}
-numFilters=${13}
-filterMultiplier=${14}
+poolType=$4
+numEpochs=$5
+windowSize=$6
+numNegPerPos=$7
+batchSize=$8
+shuffleTraining=$9
+dropout=${12}
+clusterMethod=${13}
+numFilters=${14}
+filterMultiplier=${15}
 # features
-featurePOS=${15}
-posType=${16}
+featurePOS=${16}
+posType=${17}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
-lemmaType=${17}
-dependencyType=${18}
+lemmaType=${18}
+dependencyType=${19}
 
 stanOutputDir=${baseDir}"data/stanford_output/"
 
@@ -84,6 +85,7 @@ echo "corpus:" $1
 echo "resultsDir:" ${resultsDir}
 echo "device:" ${device}
 echo "numLayers:" $numLayers
+echo "poolType:" $poolType
 echo "replacementsFile:" ${replacementsFile}
 echo "stitchMentions:" $stitchMentions
 echo "mentionsFile:" $mentionsFile
@@ -112,7 +114,8 @@ echo "------------------------"
 
 cd $scriptDir
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
---numLayers=${numLayers} --corpusPath=${corpusPath} --replacementsFile=${replacementsFile} \
+--numLayers=${numLayers} --poolType=${poolType} --corpusPath=${corpusPath} \
+--replacementsFile=${replacementsFile} \
 --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} \
 --embeddingsBaseFile=${embeddingsBaseFile} --embeddingsFile=${embeddingsFile} \
 --embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
@@ -132,7 +135,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
