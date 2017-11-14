@@ -19,7 +19,7 @@ featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("none") # "sum") # "sum" "avg")
 dependencyType=("none") # "sum") # "sum") # "sum" "avg")
-charType=("concat") # "none" "concat" "sum" "avg"
+charType=("sum" "avg") # "none" "concat" "sum" "avg"
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
