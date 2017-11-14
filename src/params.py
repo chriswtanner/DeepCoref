@@ -65,6 +65,8 @@ def setCorefEngineParams():
 	# but it makes most sense to just read in 1 set of embeddings (which have all the word types we'd care to use)
 	parser.add_argument("--lemmaType", help="pos feature: {none,sum,avg}", default="none")
 	parser.add_argument("--dependencyType", help="dependency feature: {none,sum,avg}", default="none")
+	parser.add_argument("--charEmbeddingsFile", help="the char embeddings file", default="none")
+	parser.add_argument("--charType", help="charEmb feature: {none,concat,avg}", default="none")
 	return parser.parse_args()
 
 # allows for handling boolean params

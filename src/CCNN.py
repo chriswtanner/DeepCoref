@@ -440,6 +440,7 @@ class CCNN:
             "pt" + str(self.args.posType) + "_" + \
             "lt" + str(self.args.lemmaType) + "_" + \
             "dt" + str(self.args.dependencyType) + "_" + \
+            "ct" + str(self.args.charType) + "_" + \
             "sp" + str(stoppingPoint) + \
             ".txt"
 
@@ -850,6 +851,55 @@ class CCNN:
             denomA = denomA + (a[i]*a[i])
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
+        
+    def getCharEmbedding(self, charType, tokenList):
+        charEmb = []
+        if charType == "none": # as opposed to sum or avg
+            return charEmb
+        elif charType == "sum" or charType == "avg":
+            charLength = self.helper.charEmbLength
+
+            # sum over all tokens first, optionally avg
+            sumEmb = [0]*charLength
+            numCharsFound = 0
+            for t in tokenList:
+                lemma = self.helper.getBestStanToken(t.stanTokens).lemma
+
+                for char in lemma:
+                    if char in self.helper.charToEmbedding.keys():
+                        curEmb = self.helper.charToEmbedding[char]
+                        sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
+                        numCharsFound += 1
+                    else:
+                        print("* WARNING: we don't have char:",str(char))
+
+            if charType == "avg":
+                avgEmb = [x / float(numCharsFound) for x in sumEmb]
+                charEmb = avgEmb
+            elif charType == "sum":
+                charEmb = sumEmb
+
+        elif charType == "concat":
+            numCharsFound = 0
+            for t in tokenList:
+                lemma = self.helper.getBestStanToken(t.stanTokens).lemma
+                for char in lemma:
+                    if char in self.helper.charToEmbedding.keys():
+                        if numCharsFound == 20:
+                            break
+                        else:
+                            curEmb = self.helper.charToEmbedding[char]
+                            charEmb += curEmb
+                            numCharsFound += 1
+                    else:
+                        print("* WARNING: we don't have char:",str(char))   
+
+            while len(charEmb) < 400:
+                charEmb.append(0.0)
+
+        else: # can't be none, since we've specified featurePOS
+            print("* ERROR: charType is illegal")
+        return charEmb
 
     def getDependencyEmbedding(self, dependencyType, tokenList):
         dependencyEmb = []
@@ -1098,7 +1148,8 @@ class CCNN:
             posEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tokenList)
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
             dependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tokenList)
-            fullMenEmbedding = dependencyEmb #avgGloveEmbedding + posEmb + lemmaEmb
+            charEmb = self.getCharEmbedding(self.args.charType, tokenList)
+            fullMenEmbedding = charEmb#dependencyEmb #avgGloveEmbedding + posEmb + lemmaEmb
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -1122,7 +1173,8 @@ class CCNN:
                 prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
                 prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-                fullTokenEmbedding = prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+                prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+                fullTokenEmbedding = prevCharEmb#prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1142,7 +1194,9 @@ class CCNN:
                 nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
                 nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-                fullTokenEmbedding = nextDependencyEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
+                nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+                
+                fullTokenEmbedding = nextCharEmb #nextDependencyEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

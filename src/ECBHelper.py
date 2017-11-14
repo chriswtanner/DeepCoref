@@ -34,6 +34,10 @@ class ECBHelper:
 		self.wordToGloveEmbedding = {}
 		self.wordEmbLength = 400
 
+		# filled in by
+		self.charToEmbedding = {}
+		self.charEmbLength = 300
+
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
 ##################################################
@@ -56,13 +60,28 @@ class ECBHelper:
 			self.wordToGloveEmbedding[word] = emb
 		f.close()
 	'''
+	def loadCharacterEmbeddings(self, charEmbeddingsFile):
+		print("self.args.charEmbeddingsFile:",str(charEmbeddingsFile))
+		if self.args.charType == "none":
+			return
+		print("* in loadCharacterEmbeddings")
+		self.charToEmbedding = {}
+		f = open(self.args.charEmbeddingsFile, 'r', encoding="utf-8")
+		for line in f:
+			tokens = line.rstrip().split(" ")
+			char = tokens[0]
+			emb = [float(x) for x in tokens[1:]]
+			self.charEmbLength = len(emb)
+			self.charToEmbedding[char] = emb
+		f.close()
 
 	def loadPOSEmbeddings(self, embeddingsFile):
+		self.posToGloveEmbedding = {}
 		print("self.args.featurePOS:",str(self.args.featurePOS))
 		if self.args.featurePOS == "none":
 			return
 		print("* in loadPOSEmbeddings")
-		self.posToGloveEmbedding = {}
+
 		f = open(embeddingsFile, 'r', encoding="utf-8")
 		for line in f:
 			tokens = line.rstrip().split(" ")
@@ -962,3 +981,4 @@ class ECBHelper:
 		# following line should be commented out when we're creating a POS/LEMMA/etc file, before we have the embeddings
 		self.loadPOSEmbeddings(self.args.posEmbeddingsFile)
 		# self.loadLemmaEmbeddings(self.args.lemmaEmbeddingsFile)
+		self.loadCharacterEmbeddings(self.args.charEmbeddingsFile)

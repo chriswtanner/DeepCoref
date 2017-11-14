@@ -40,6 +40,7 @@ scriptDir=${baseDir}"src/"
 refDir=${scriptDir}"reference-coreference-scorers-8.01/"
 corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
+charEmbeddingsFile=${baseDir}"data/charGloveEmbeddings.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 
 hddcrpBaseFile=${11}
@@ -77,6 +78,7 @@ posType=${17}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 lemmaType=${18}
 dependencyType=${19}
+charType=${20}
 
 stanOutputDir=${baseDir}"data/stanford_output/"
 
@@ -110,6 +112,8 @@ echo "posType:" $posType
 echo "posEmbeddingsFile:" $posEmbeddingsFile
 echo "lemmaType:" $lemmaType
 echo "dependencyType:" $dependencyType
+echo "charEmbeddingsFile:" $charEmbeddingsFile
+echo "charType:" $charType
 echo "------------------------"
 
 cd $scriptDir
@@ -127,7 +131,9 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
 --lemmaType=${lemmaType} \
---dependencyType=${dependencyType}
+--dependencyType=${dependencyType} \
+--charEmbeddingsFile=${charEmbeddingsFile} \
+--charType=${charType}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -135,7 +141,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_sp"${sp}".txt"
 
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
