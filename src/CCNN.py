@@ -851,7 +851,7 @@ class CCNN:
             denomA = denomA + (a[i]*a[i])
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
-        
+
     def getCharEmbedding(self, charType, tokenList):
         charEmb = []
         if charType == "none": # as opposed to sum or avg
@@ -874,8 +874,10 @@ class CCNN:
                         print("* WARNING: we don't have char:",str(char))
 
             if charType == "avg":
-                avgEmb = [x / float(numCharsFound) for x in sumEmb]
-                charEmb = avgEmb
+                if numCharsFound > 1:
+                    charEmb = [x / float(numCharsFound) for x in sumEmb]
+                else:
+                    charEmb = sumEmb
             elif charType == "sum":
                 charEmb = sumEmb
 
@@ -968,15 +970,15 @@ class CCNN:
             parentEmb = sumParentEmb
             if numParentFound == 0:
                 print("* WARNING: numParentFound 0:",str(tmpParentLemmas))       
-            if dependencyType == "avg" and numParentFound > 0:
-                    parentEmb = [x / float(numParentFound) for x in sumParentEmb]
+            if dependencyType == "avg" and numParentFound > 1:
+                parentEmb = [x / float(numParentFound) for x in sumParentEmb]
 
             # makes chid emb
             childrenEmb = sumChildrenEmb
             if numChildrenFound == 0:
                 print("* WARNING: numChildrenFound 0:",str(tmpChildrenLemmas))       
-            if dependencyType == "avg" and numChildrenFound > 0:
-                    childrenEmb = [x / float(numChildrenFound) for x in sumChildrenEmb]
+            if dependencyType == "avg" and numChildrenFound > 1:
+                childrenEmb = [x / float(numChildrenFound) for x in sumChildrenEmb]
 
             return parentEmb + childrenEmb
         else: # can't be none, since we've specified featurePOS
