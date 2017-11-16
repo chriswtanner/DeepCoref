@@ -441,6 +441,10 @@ class CCNN:
             "lt" + str(self.args.lemmaType) + "_" + \
             "dt" + str(self.args.dependencyType) + "_" + \
             "ct" + str(self.args.charType) + "_" + \
+            "st" + str(self.args.SSType) + "_" + \
+            "ws2" + str(self.args.SSwindowSize) + "_" + \
+            "vs" + str(self.args.SSvectorSize) + "_" + \
+            "sl" + str(self.args.SSlog) + "_" + \
             "sp" + str(stoppingPoint) + \
             ".txt"
 
@@ -852,6 +856,31 @@ class CCNN:
             denomB = denomB + (b[i]*b[i])   
         return float(numerator) / (float(math.sqrt(denomA)) * float(math.sqrt(denomB)))
 
+    def getSSEmbedding(self, SSType, tokenList):
+        ssEmb = []
+        if SSType == "none":
+            return ssEmb
+        elif SSType == "sum" or SSType == "avg":
+            ssLength = self.helper.SSEmbLength
+            sumEmb = [0]*ssLength
+            numFound = 0
+            for t in tokenList:
+                if t.text in self.helper.SSMentionTypeToVec.keys():
+                    curEmb = self.helper.SSMentionTypeToVec[t.text]
+                    sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
+                    numFound += 1
+                else:
+                    print("* WARNING: we didn't find:",str(t.text),"in SSMentionTypeToVec")
+
+            ssEmb = sumEmb
+            if SSType == "avg" and numFound > 1:
+                avgEmb = [x / float(numFound) for x in sumEmb]
+                ssEmb = avgEmb
+            return ssEmb
+        else: # can't be none, since we've specified featurePOS
+            print("* ERROR: SSType is illegal")
+            exit(1)
+
     def getCharEmbedding(self, charType, tokenList):
         charEmb = []
         if charType == "none": # as opposed to sum or avg
@@ -878,6 +907,9 @@ class CCNN:
                     charEmb = [x / float(numCharsFound) for x in sumEmb]
                 else:
                     charEmb = sumEmb
+                print("sum:",str(sumEmb))
+                print("numCharsFound:",str(numCharsFound))
+                print("avg:",str(charEmb))
             elif charType == "sum":
                 charEmb = sumEmb
 
@@ -1117,8 +1149,7 @@ class CCNN:
 
                 cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
                 cleanedText = self.helper.removeQuotes(token.text)
-                #print(str(token.text),"->",str(cleanedText),"cleaned stan:",str(cleanedStan))
-                
+
                 if cleanedText in self.wordTypeToEmbedding.keys():
                     curEmbedding = self.wordTypeToEmbedding[cleanedText]
                 else:
@@ -1151,7 +1182,8 @@ class CCNN:
             lemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tokenList)
             dependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tokenList)
             charEmb = self.getCharEmbedding(self.args.charType, tokenList)
-            fullMenEmbedding = charEmb#dependencyEmb #avgGloveEmbedding + posEmb + lemmaEmb
+            ssEmb = self.getSSEmbedding(self.args.SSType, tokenList)
+            fullMenEmbedding = posEmb + lemmaEmb + dependencyEmb + charEmb + ssEmb #avgGloveEmbedding
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
@@ -1167,7 +1199,8 @@ class CCNN:
                 if ind >= 0:
                     token = self.corpus.corpusTokens[ind]
                     tmpTokenList.append(token)
-                    if token.text in self.wordTypeToEmbedding:
+                    cleanedText = self.helper.removeQuotes(token.text)
+                    if cleanedText in self.wordTypeToEmbedding:
                         pGloveEmb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
@@ -1176,7 +1209,8 @@ class CCNN:
                 prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
                 prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
                 prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-                fullTokenEmbedding = prevCharEmb#prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+                prevSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+                fullTokenEmbedding = prevPosEmb + prevLemmaEmb + prevDependencyEmb + prevCharEmb + prevSSEmb #prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
                 curMentionMatrix[i] = fullTokenEmbedding
 
             # gets the 'next' tokens
@@ -1188,7 +1222,8 @@ class CCNN:
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
                     tmpTokenList.append(token)
-                    if token.text in self.wordTypeToEmbedding:
+                    cleanedText = self.helper.removeQuotes(token.text)
+                    if cleanedText in self.wordTypeToEmbedding:
                         nGloveEmb = self.wordTypeToEmbedding[token.text]
                     else:
                         print("* ERROR, we don't have:",str(token.text))
@@ -1197,8 +1232,8 @@ class CCNN:
                 nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
                 nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
                 nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-                
-                fullTokenEmbedding = nextCharEmb #nextDependencyEmb # nGloveEmb + nextPosEmb + nextLemmaEmb #
+                nextSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+                fullTokenEmbedding = nextPosEmb + nextLemmaEmb + nextDependencyEmb + nextCharEmb + nextSSEmb
                 curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 

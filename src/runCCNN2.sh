@@ -8,7 +8,7 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.15 0.17 0.19 0.21 0.23 0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
+stoppingPoints=(0.15) # 0.17 0.19 0.21 0.23 0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 
 if [ ${me} = "ctanner" ]
 then
@@ -56,6 +56,8 @@ embeddingsBaseFile=${10}
 numEpochs=50
 gloveOutput=${baseDir}"data/gloveEmbeddings."${embeddingsBaseFile}".txt"
 
+stoplistFile=${baseDir}"data/stopwords.txt"
+
 # additional coref engine params
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
 embeddingsFile=${gloveOutput}
@@ -79,11 +81,15 @@ posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
 lemmaType=${18}
 dependencyType=${19}
 charType=${20}
-
+SSType=${21}
+SSwindowSize=${22}
+SSvectorSize=${23}
+SSlog=${24}
 stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
 echo "corpus:" $1
+echo "stoplistFile:" $stoplistFile
 echo "resultsDir:" ${resultsDir}
 echo "device:" ${device}
 echo "numLayers:" $numLayers
@@ -114,10 +120,17 @@ echo "lemmaType:" $lemmaType
 echo "dependencyType:" $dependencyType
 echo "charEmbeddingsFile:" $charEmbeddingsFile
 echo "charType:" $charType
+echo "SSType:" $SSType
+echo "SSwindowSize:" $SSwindowSize
+echo "SSvectorSize:" $SSvectorSize
+echo "SSlog:" $SSlog
 echo "------------------------"
 
 cd $scriptDir
-python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
+
+python3 -u CorefEngine.py --resultsDir=${resultsDir} \
+--stoplistFile=${stoplistFile} \
+--device=${device} \
 --numLayers=${numLayers} --poolType=${poolType} --corpusPath=${corpusPath} \
 --replacementsFile=${replacementsFile} \
 --stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} \
@@ -133,7 +146,11 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --device=${device} \
 --lemmaType=${lemmaType} \
 --dependencyType=${dependencyType} \
 --charEmbeddingsFile=${charEmbeddingsFile} \
---charType=${charType}
+--charType=${charType} \
+--SSType=${SSType} \
+--SSwindowSize=${SSwindowSize} \
+--SSvectorSize=${SSvectorSize} \
+--SSlog=${SSlog}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
@@ -141,8 +158,7 @@ shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_sp"${sp}".txt"
-
+	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_sp"${sp}".txt"
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

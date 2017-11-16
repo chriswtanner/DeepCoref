@@ -29,6 +29,7 @@ def setCorefEngineParams():
 
 	# ECBParser
 	parser.add_argument("--corpusPath", help="the corpus dir")
+	parser.add_argument("--stoplistFile", help="stoplist file")
 	parser.add_argument("--replacementsFile", help="we replace all instances of these tokens which appear in our corpus -- this is to help standardize the format, useful for creating embeddings and running stanfordCoreNLP")
 	parser.add_argument("--mentionsFile", help="the subset of mentions we care about (usually just Events)")
 	parser.add_argument("--stitchMentions", help="treat multi-token mentions as 1 word token", type=str2bool, nargs='?', default="f")
@@ -67,6 +68,10 @@ def setCorefEngineParams():
 	parser.add_argument("--dependencyType", help="dependency feature: {none,sum,avg}", default="none")
 	parser.add_argument("--charEmbeddingsFile", help="the char embeddings file", default="none")
 	parser.add_argument("--charType", help="charEmb feature: {none,concat,avg}", default="none")
+	parser.add_argument("--SSType", help="semantic spaceEmb feature: {none,sum,avg}", default="none")
+	parser.add_argument("--SSwindowSize", help="semantic space - windowSize: {0,3,5,7}", default="none", type=int)
+	parser.add_argument("--SSvectorSize", help="semantic space - vectorSize: {0,100,200,400}", default="none", type=int)
+	parser.add_argument("--SSlog", help="use log probabilities or not for semantic space prob", type=str2bool, nargs='?', default="f")
 	return parser.parse_args()
 
 # allows for handling boolean params

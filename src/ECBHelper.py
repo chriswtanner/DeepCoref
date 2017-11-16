@@ -3,6 +3,8 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 import numpy as np
+import operator
+import math
 from collections import defaultdict
 from get_coref_metrics import *
 from random import random
@@ -38,6 +40,12 @@ class ECBHelper:
 		self.charToEmbedding = {}
 		self.charEmbLength = 300
 
+		# filled in by createSemantic*()
+		self.SSMentionTypeToVec = {}
+		self.SSEmbLength = -1
+
+		self.stopWordsFile = self.args.stoplistFile
+
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
 ##################################################
@@ -60,6 +68,138 @@ class ECBHelper:
 			self.wordToGloveEmbedding[word] = emb
 		f.close()
 	'''
+	def loadStopWords(self, stopWordsFile):
+		f = open(stopWordsFile, 'r')
+		stopwords = set()
+		for line in f:
+			stopwords.add(line.rstrip().lower())
+		f.close()
+		return stopwords
+
+	def createSemanticSpaceSimVectors(self, hddcrp_parsed):
+		self.SSMentionTypeToVec = {}
+		if self.args.SSType == "none":
+			return
+		print("* in createSemanticSpaceSimVectors()")
+		W = self.args.SSwindowSize
+
+		# stores mentions' types
+		mentionTypes = set()
+		stopwords = self.loadStopWords(self.stopWordsFile)
+
+		# makes a set of all mentions Tokens
+		mentionTokens = set()
+		mentionTokens.update(self.getECBMentionTokens(self.trainingDirs))
+		mentionTokens.update(self.getECBMentionTokens(self.devDirs))
+		mentionTokens.update(self.getStanMentionTokens(hddcrp_parsed))
+		for t in mentionTokens:
+			if t.text not in stopwords and len(t.text) > 1:
+				mentionTypes.add(t.text)
+		print("# unique mention Types:",str(len(mentionTypes)))
+
+		# gets the most popular N words (N = args.SSvectorSize)
+		# which aren't stopwords and are > 1 char in length
+		wordCounts = defaultdict(int)
+		for t in self.corpus.corpusTokens:
+			if t.text not in stopwords and len(t.text) > 1:
+				wordCounts[t.text] += 1
+		# puts the top N words into a 'topWords'
+		sorted_wordCounts = sorted(wordCounts.items(), key=operator.itemgetter(1), reverse=True)
+		commonTypes = [x[0] for x in sorted_wordCounts][0:self.args.SSvectorSize]
+
+		# frees memory
+		wordCounts = None
+		sorted_wordCounts = None
+
+		mentionWordsCounts = defaultdict(int)
+		commonWordsCounts = defaultdict(int)
+		mentionAndCommonCounts = defaultdict(int)
+
+		for doc in self.corpus.docToTokens:
+
+			# stores locations of all tokens we care about (both common words and mention tokens)
+			mentionWordsLocations = defaultdict(set)
+			commonWordsLocations = defaultdict(set)
+			
+			for t in self.corpus.docToTokens[doc]:
+				if t.text in commonTypes:
+					commonWordsLocations[t.text].add(int(t.tokenID))
+					commonWordsCounts[t.text] += 1
+				if t.text in mentionTypes:
+					mentionWordsLocations[t.text].add(int(t.tokenID))
+					mentionWordsCounts[t.text] += 1
+			for m in mentionWordsLocations:
+				for l in mentionWordsLocations[m]:
+					lower = l - W
+					upper = l + W
+					for c in commonWordsLocations.keys():
+						if c != m:
+							for l2 in commonWordsLocations[c]:
+								if l2 >= lower and l2 <= upper:
+									mentionAndCommonCounts[(m,c)] = mentionAndCommonCounts[(m,c)] + 1
+		
+		# pre-compute these, so that we can use them if we do the log probs of PMI
+		commonWordProbs = {}
+		paddingValue = 0.00001
+		unionWords = set()
+		for c in commonWordsCounts.keys():
+			unionWords.add(c)
+		print("# unionWords:",str(len(unionWords)))
+		for m in mentionWordsCounts.keys():
+			unionWords.add(m)
+		print("# unionWords:",str(len(unionWords)))
+		sumCounts = sum(commonWordsCounts.values())
+		sumCounts += float(paddingValue)*len(commonWordsCounts)
+		for m in mentionWordsCounts:
+			if m not in commonWordsCounts:
+				sumCounts += mentionWordsCounts[m] + paddingValue
+		for c in commonWordsCounts:
+			commonWordProbs[c] = float(commonWordsCounts[c]) / float(sumCounts)
+		
+		#for c in sorted(commonWordProbs.items(), key=operator.itemgetter(1), reverse=True):
+		#	print(c)
+
+		for m in mentionTypes:
+			vec = []
+			for c in commonTypes:
+
+				if commonWordProbs[c] == 0:
+					print("* ERROR: commonWordProbs[c] == 0")
+					exit(1)
+
+				# calculates PMI via log probs
+				if self.args.SSlog:
+					#print("log prob")
+					cooccurCount = paddingValue
+					if (m,c) in mentionAndCommonCounts.keys():
+						cwc = commonWordsCounts[c]
+						mc = mentionWordsCounts[m]
+						# sanity check
+						if cwc == 0 or mc == 0:
+							print("* ERROR: counts are incorrect")
+							exit(1)
+						cooccurCount += mentionAndCommonCounts[(m,c)]
+					if mentionWordsCounts[m] <= 0:
+						print("* ERROR: somehow, mentionWordsCounts[m] <= 0")
+						exit(1)
+					cooccurProb = float(cooccurCount) / float(mentionWordsCounts[m])	
+					vec.append(math.log(float(cooccurProb) / float(commonWordProbs[c])))
+				else: # calculates raw freq counts
+					#print("NOT log prob")
+					cooccurCount = float(paddingValue)
+					if (m,c) in mentionAndCommonCounts.keys():
+						cwc = commonWordsCounts[c]
+						mc = mentionWordsCounts[m]
+						# sanity check
+						if cwc == 0 or mc == 0:
+							print("* ERROR: counts are incorrect")
+							exit(1)
+						cooccurCount += mentionAndCommonCounts[(m,c)]
+					vec.append(float(cooccurCount) / (float(commonWordsCounts[c]) * float(mentionWordsCounts[m])))
+
+			self.SSMentionTypeToVec[m] = vec
+			self.SSEmbLength = len(vec)
+
 	def loadCharacterEmbeddings(self, charEmbeddingsFile):
 		print("self.args.charEmbeddingsFile:",str(charEmbeddingsFile))
 		if self.args.charType == "none":
@@ -141,6 +281,29 @@ class ECBHelper:
 						added.add((dm1,dm2))
 						added.add((dm2,dm1))
 		return (devTokenListPairs,mentionIDPairs,labels)
+
+	# returns the Tokens (belonging to Mentions) within the Stan-parsed file
+	def getStanMentionTokens(self, hddcrp_parsed):
+		mentionTokens = set()
+		for doc_id in hddcrp_parsed.docToHMentions.keys():
+			for hm in hddcrp_parsed.docToHMentions[doc_id]:
+				for t in hm.tokens:
+					token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+					mentionTokens.add(token)
+		return mentionTokens
+
+	# returns the Tokens (belonging to Mentions) within the passed-in dirs
+	def getECBMentionTokens(self, dirs):
+		mentionTokens = set()
+		for dirNum in sorted(self.corpus.dirToREFs.keys()):
+			if dirNum not in dirs:
+				continue
+			for doc_id in self.corpus.dirToDocs[dirNum]:
+				for dm in self.corpus.docToDMs[doc_id]:
+					for t in self.corpus.dmToMention[dm].tokens:
+						mentionTokens.add(t)
+		return mentionTokens
+
 
 	# constructs pairs of tokens and the corresponding labels, used for testing
 	# RETURNS: (tokenListPairs, label)

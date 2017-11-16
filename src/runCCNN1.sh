@@ -19,7 +19,11 @@ featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("none") # "sum") # "sum" "avg")
 dependencyType=("none") # "sum") # "sum") # "sum" "avg")
-charType=("sum" "avg") # "none" "concat" "sum" "avg"
+charType=("none") # "none" "concat" "sum" "avg"
+SSType=("sum") # "none" "sum" "avg"
+SSwindowSize=(3) # 3 5 7
+SSvectorSize=(200) # 100 400 800
+SSlog=(f)
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -57,20 +61,32 @@ do
 														do
 															for ct in "${charType[@]}"
 															do
-																for emb in "${embeddingsBaseFile[@]}"
+																for st in "${SSType[@]}"
 																do
-																	for hdd in "${hddcrpBaseFile[@]}"
+																	for ws2 in "${SSwindowSize[@]}"
 																	do
-																		# qsub -pe smp 8 -l vlong -o
-																		fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}.out
-																		echo ${fout}
-																		if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
-																		then
-																			echo "* kicking off runCCNN2 natively"
-																			./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} # > ${fout}												
-																		else
-																			qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct}
-																		fi
+																		for vs in "${SSvectorSize[@]}"
+																		do
+																			for sl in "${SSlog[@]}"
+																			do
+																				for emb in "${embeddingsBaseFile[@]}"
+																				do
+																					for hdd in "${hddcrpBaseFile[@]}"
+																					do
+																						# qsub -pe smp 8 -l vlong -o
+																						fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}.out
+																						echo ${fout}
+																						if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
+																						then
+																							echo "* kicking off runCCNN2 natively"
+																							./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} # > ${fout}												
+																						else
+																							qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl}
+																						fi
+																					done
+																				done
+																			done
+																		done
 																	done
 																done
 															done
