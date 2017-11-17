@@ -844,6 +844,7 @@ class CCNN:
         self.wordTypeToEmbedding["texa"] = self.wordTypeToEmbedding["texas"]
         self.wordTypeToEmbedding["itune"] = self.wordTypeToEmbedding["itunes"]
         self.wordTypeToEmbedding["degenere"] = self.wordTypeToEmbedding["degeneres"]
+        self.wordTypeToEmbedding["#oscars"] = self.wordTypeToEmbedding["oscars"]
 
     # TEMP
     def getCosineSim(self, a, b):
