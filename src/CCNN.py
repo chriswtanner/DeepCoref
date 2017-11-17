@@ -887,7 +887,7 @@ class CCNN:
 
     def getCharEmbedding(self, charType, tokenList):
         charEmb = []
-        if charType == "none": # as opposed to sum or avg
+        if charType == "none" or len(tokenList) == 0: # as opposed to sum or avg
             return charEmb
         elif charType == "sum" or charType == "avg":
             charLength = self.helper.charEmbLength
@@ -1203,20 +1203,24 @@ class CCNN:
                 pGloveEmb = [0]*self.embeddingLength    
                 if ind >= 0:
                     token = self.corpus.corpusTokens[ind]
-                    tmpTokenList.append(token)
+                    cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
                     cleanedText = self.helper.removeQuotes(token.text)
+                    tmpTokenList.append(token)
                     if cleanedText in self.wordTypeToEmbedding:
-                        pGloveEmb = self.wordTypeToEmbedding[token.text]
+                        pGloveEmb = self.wordTypeToEmbedding[cleanedText]
                     else:
-                        print("* ERROR, we don't have:",str(token.text))
-                        exit(1)
+                        pGloveEmb = self.wordTypeToEmbedding[cleanedStan]
+                        print("* WARNING, we don't have:",str(token.text))
+                        #exit(1)
                 #curMentionMatrix[i] = fullTokenEmbedding
-            prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-            prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-            prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-            prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-            prevSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
-            prevTokenEmbedding = prevPosEmb + prevLemmaEmb + prevDependencyEmb + prevCharEmb + prevSSEmb #prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
+            prevTokenEmbedding = []
+            if len(tmpTokenList) > 0:
+                prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+                prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+                prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+                prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+                prevSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+                prevTokenEmbedding = prevPosEmb + prevLemmaEmb + prevDependencyEmb + prevCharEmb + prevSSEmb #prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
 
             # gets the 'next' tokens
             tmpTokenList = []
@@ -1228,23 +1232,24 @@ class CCNN:
                 #original: tmpTokenList = []
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
-                    tmpTokenList.append(token)
+                    cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
                     cleanedText = self.helper.removeQuotes(token.text)
+                    tmpTokenList.append(token)
                     if cleanedText in self.wordTypeToEmbedding:
-                        nGloveEmb = self.wordTypeToEmbedding[token.text]
+                        nGloveEmb = self.wordTypeToEmbedding[cleanedText]
                     else:
-                        print("* ERROR, we don't have:",str(token.text))
-
-            nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-            nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-            nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-            nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-            nextSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
-            nextTokenEmbedding = nextPosEmb + nextLemmaEmb + nextDependencyEmb + nextCharEmb + nextSSEmb
+                        nGloveEmb = self.wordTypeToEmbedding[cleanedStan]
+                        print("* WARNING, we don't have:",str(token.text))
+            nextTokenEmbedding = []
+            if len(tmpTokenList) > 0:
+                nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+                nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+                nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+                nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+                nextSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+                nextTokenEmbedding = nextPosEmb + nextLemmaEmb + nextDependencyEmb + nextCharEmb + nextSSEmb
                 #sumNextTokenEmbedding = [x + y for x,y in zip(sumNextTokenEmbedding, nextTokenEmbedding)]
                 #curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
-            
-            print("nextLemmaEmb:",str(len(nextLemmaEmb)))
 
             # NEW
             fullEmbedding = prevTokenEmbedding + fullMenEmbedding + nextTokenEmbedding

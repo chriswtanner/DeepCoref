@@ -3,7 +3,7 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(2) # 15 30) # 25) # 30) # 5 10 20
+numEpochs=(3) # 15 30) # 25) # 30) # 5 10 20
 windowSize=(0) # 1 2 3
 numNeg=(7) # 7) # 10) # 5 10 15
 batchSize=(64) # 128) # 64 128
@@ -17,7 +17,7 @@ filterMultiplier=(2.0) # 2.0) # 1.0 2.0) # 1.5 2.0)
 hddcrpBaseFile=("predict") # "predict.ran") # "predict.ran") # "predict" predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
-lemmaType=("none") # "sum") # "sum" "avg")
+lemmaType=("sum") # "sum") # "sum" "avg")
 dependencyType=("none") # "sum") # "sum") # "sum" "avg")
 charType=("concat") # "none" "concat" "sum" "avg"
 SSType=("none") # "none" "sum" "avg"
