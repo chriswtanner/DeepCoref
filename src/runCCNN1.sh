@@ -3,7 +3,7 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(3) # 15 30) # 25) # 30) # 5 10 20
+numEpochs=(1) # 15 30) # 25) # 30) # 5 10 20
 windowSize=(0) # 1 2 3
 numNeg=(7) # 7) # 10) # 5 10 15
 batchSize=(64) # 128) # 64 128
@@ -12,14 +12,14 @@ poolType=("max") # "avg") # "max" "avg")
 embeddingsBaseFile=("6B.300") # "840B.300") # "6B.300") # 50
 dropout=(0.0) # 0.2 0.4) # 0.4) # 0.2 0.3 0.4 0.5) # 0.4) # 0.0 0.1 .2 .3 .5
 clusterMethod=("avg") # "avgavg") # "avg" "avgavg") # "min" "avg"
-numFilters=(32) # 64) # 64 128) # 128) # 300 600)
-filterMultiplier=(2.0) # 2.0) # 1.0 2.0) # 1.5 2.0)
-hddcrpBaseFile=("predict") # "predict.ran") # "predict.ran") # "predict" predict.ran")
+numFilters=(4) # 64) # 64 128) # 128) # 300 600)
+filterMultiplier=(1.0) # 2.0) # 1.0 2.0) # 1.5 2.0)
+hddcrpBaseFile=("predict.ran") # "predict.ran") # "predict.ran") # "predict" predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("sum") # "sum") # "sum" "avg")
 dependencyType=("none") # "sum") # "sum") # "sum" "avg")
-charType=("concat") # "none" "concat" "sum" "avg"
+charType=("none") # "none" "concat" "sum" "avg"
 SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) #3 5 7) # 3 5 7
 SSvectorSize=(0) #100 400 800) # 100 400 800
