@@ -837,6 +837,9 @@ class CCNN:
                 self.wordTypeToEmbedding[wordType] = emb
                 self.embeddingLength = len(emb)
             f.close()
+
+        self.helper.wordEmbLength = self.embeddingLength # lemmas use this
+
         self.wordTypeToEmbedding["'knows"] = self.wordTypeToEmbedding["knows"]
         self.wordTypeToEmbedding["takeing"] = self.wordTypeToEmbedding["taking"]
         self.wordTypeToEmbedding["arested"] = self.wordTypeToEmbedding["arrested"]
@@ -1130,7 +1133,7 @@ class CCNN:
         # constructs the tokenList matrix for every mention
         mentionIDToMatrix = {}
 
-        numRows = 1 + 2*self.args.windowSize
+        numRows = 1 #1 + 2*self.args.windowSize
         numCols = self.embeddingLength
 
         for mentionID in mentionIDsWeCareAbout:
@@ -1188,15 +1191,16 @@ class CCNN:
             #print("fullMenEmbedding:",str(fullMenEmbedding))
 
             # sets the center
-            curMentionMatrix = np.zeros(shape=(numRows,len(fullMenEmbedding)))
-            curMentionMatrix[self.args.windowSize] = fullMenEmbedding
+            # BELOW IS THE PROPER, ORIGINAL WAY
+            #curMentionMatrix = np.zeros(shape=(numRows,len(fullMenEmbedding)))
+            #curMentionMatrix[self.args.windowSize] = fullMenEmbedding
 
             # the prev tokens
+            tmpTokenList = []
             for i in range(self.args.windowSize):
                 ind = t_startIndex - self.args.windowSize + i
 
-                pGloveEmb = [0]*self.embeddingLength
-                tmpTokenList = []
+                pGloveEmb = [0]*self.embeddingLength    
                 if ind >= 0:
                     token = self.corpus.corpusTokens[ind]
                     tmpTokenList.append(token)
@@ -1206,20 +1210,22 @@ class CCNN:
                     else:
                         print("* ERROR, we don't have:",str(token.text))
                         exit(1)
-                prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-                prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-                prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-                prevSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
-                fullTokenEmbedding = prevPosEmb + prevLemmaEmb + prevDependencyEmb + prevCharEmb + prevSSEmb #prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
-                curMentionMatrix[i] = fullTokenEmbedding
+                #curMentionMatrix[i] = fullTokenEmbedding
+            prevPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+            prevLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+            prevDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+            prevCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+            prevSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+            prevTokenEmbedding = prevPosEmb + prevLemmaEmb + prevDependencyEmb + prevCharEmb + prevSSEmb #prevDependencyEmb #pGloveEmb + prevPosEmb + prevLemmaEmb # 
 
             # gets the 'next' tokens
+            tmpTokenList = []
             for i in range(self.args.windowSize):
                 ind = t_endIndex + 1 + i
 
                 nGloveEmb = [0]*self.embeddingLength
-                tmpTokenList = []
+                
+                #original: tmpTokenList = []
                 if ind < self.corpus.numCorpusTokens - 1:
                     token = self.corpus.corpusTokens[ind]
                     tmpTokenList.append(token)
@@ -1229,14 +1235,30 @@ class CCNN:
                     else:
                         print("* ERROR, we don't have:",str(token.text))
 
-                nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
-                nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
-                nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
-                nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
-                nextSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
-                fullTokenEmbedding = nextPosEmb + nextLemmaEmb + nextDependencyEmb + nextCharEmb + nextSSEmb
-                curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
-            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
+            nextPosEmb = self.getPOSEmbedding(self.args.featurePOS, self.args.posType, tmpTokenList)
+            nextLemmaEmb = self.getLemmaEmbedding(self.args.lemmaType, tmpTokenList)
+            nextDependencyEmb = self.getDependencyEmbedding(self.args.dependencyType, tmpTokenList)
+            nextCharEmb = self.getCharEmbedding(self.args.charType, tmpTokenList)
+            nextSSEmb = self.getSSEmbedding(self.args.SSType, tmpTokenList)
+            nextTokenEmbedding = nextPosEmb + nextLemmaEmb + nextDependencyEmb + nextCharEmb + nextSSEmb
+                #sumNextTokenEmbedding = [x + y for x,y in zip(sumNextTokenEmbedding, nextTokenEmbedding)]
+                #curMentionMatrix[self.args.windowSize+1+i] = fullTokenEmbedding
+            
+            print("nextLemmaEmb:",str(len(nextLemmaEmb)))
+
+            # NEW
+            fullEmbedding = prevTokenEmbedding + fullMenEmbedding + nextTokenEmbedding
+            print("nextTokenEmbedding:",str(len(nextTokenEmbedding)))
+            print("prevTokenEmbedding:",str(len(prevTokenEmbedding)))
+            print("fullMenEmbedding:",str(len(fullMenEmbedding)))
+            print("full:",str(len(fullEmbedding)))
+            exit(1)
+            curMentionMatrix = np.zeros(shape=(1,len(fullEmbedding)))
+            curMentionMatrix[0] = fullEmbedding    
+            curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullEmbedding),1)
+            
+            # old way
+            #curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullMenEmbedding),1)
 
             mentionIDToMatrix[mentionID] = curMentionMatrix
 
