@@ -1248,11 +1248,12 @@ class CCNN:
 
             # NEW
             fullEmbedding = prevTokenEmbedding + fullMenEmbedding + nextTokenEmbedding
+            '''
             print("nextTokenEmbedding:",str(len(nextTokenEmbedding)))
             print("prevTokenEmbedding:",str(len(prevTokenEmbedding)))
             print("fullMenEmbedding:",str(len(fullMenEmbedding)))
             print("full:",str(len(fullEmbedding)))
-            exit(1)
+            '''
             curMentionMatrix = np.zeros(shape=(1,len(fullEmbedding)))
             curMentionMatrix[0] = fullEmbedding    
             curMentionMatrix = np.asarray(curMentionMatrix).reshape(numRows,len(fullEmbedding),1)
