@@ -22,39 +22,14 @@ class CorefEngine:
 		corpus = ECBParser(args)
 		helper = ECBHelper(args, corpus)
 
-		helper.createSemanticSpaceSimVectors(hddcrp_parsed) # just uses args and corpus
+		if args.SSType != "none":
+			helper.createSemanticSpaceSimVectors(hddcrp_parsed) # just uses args and corpus
 
 		# loads stanford's parsed version of our corpus and aligns it w/
 		# our representation -- so we can use their features
 		stan = StanParser(args, corpus) 
 		helper.addStanfordAnnotations(stan)
 
-		'''
-		for t in corpus.corpusTokens:
-			# our current 1 ECB Token possibly maps to multiple StanTokens, so let's
-			# ignore the StanTokens that are ‘’ `` POS $, if possible (they may be our only ones)
-			pos = ""
-			posOfLongestToken = ""
-			longestToken = ""
-			for stanToken in t.stanTokens:
-				if stanToken.pos in helper.badPOS:
-					# only use the badPOS if no others have been set
-					if pos == "":
-					    pos = stanToken.pos
-				else: # save the longest, nonBad POS tag
-					if len(stanToken.text) > len(longestToken):
-						longestToken = stanToken.text
-						posOfLongestToken = stanToken.pos 
-
-			if posOfLongestToken != "":
-				pos = posOfLongestToken
-			if pos == "":
-				print("* ERROR: our POS empty!")
-				exit(1)
-			else:
-				print(str(t),"=>",str(pos))
-		exit(1)
-		'''
 		# trains and tests the pairwise-predictions via Conjoined-CNN
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
 		(pairs, predictions) = corefEngine.run()
@@ -63,8 +38,7 @@ class CorefEngine:
 		stoppingPoints = [0.51] #[0.15,0.17,0.19,0.21,0.23,0.26,0.28,0.301,0.32,0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		for sp in stoppingPoints:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
-			corefEngine.analyzeResults(pairs, predictions, predictedClusters)
-			exit(1)
+			#corefEngine.analyzeResults(pairs, predictions, predictedClusters)
 			print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 			corefEngine.writeCoNLLFile(predictedClusters, sp)
 		print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")

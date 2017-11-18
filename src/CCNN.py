@@ -578,8 +578,9 @@ class CCNN:
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
         print("# embeddings loaded:",str(len(self.wordTypeToEmbedding.keys())))
         # constructs the training and dev files
-        training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs) #self.createData(self.helper.trainingDirs, True)
-        dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs) #self.createData(self.helper.devDirs, False)
+        training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs)
+        dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs)
+        #testing_pairs, testing_data, testing_labels = self.createData("test", self.helper.testingDirs)
         testing_pairs, testing_data, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
 
         print("* training data shape:",str(training_data.shape))
@@ -1121,6 +1122,10 @@ class CCNN:
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBTraining(dirs)
         elif subset == "dev":
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs)
+        elif subset == "test":
+            # this is not a mistake; constructECBDev() merely fetches all examples (no negative-subsampling),
+            # so it's okay to re-use it to get the testing data
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs)  
         elif subset == "hddcrp":
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructHDDCRPTest(self.hddcrp_parsed) # could be gold test or predicted test mentions
         else:
