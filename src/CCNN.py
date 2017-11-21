@@ -447,7 +447,7 @@ class CCNN:
             hmidToPredictions[hm_id1][hm_id2] = pred
             hmidToPredictions[hm_id2][hm_id1] = pred
         for hm_id in hmidToPredictions:
-            print("hm_id":,str(hm_id))
+            print("hm_id:",str(hm_id))
             sorted_distances = sorted(hmidToPredictions[hm_id].items(), key=operator.itemgetter(1), reverse=True)
             for s in sorted_distances:
                 print("s:",str(s))
