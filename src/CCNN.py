@@ -415,11 +415,8 @@ class CCNN:
             for m in predictedClusters[cluster_id]:
                 print("m:",str(m))
             i = 0
-            print("pairs:",str(pairs))
-            print("predictions:",str(predictions))
-            while i < 10:
-                print("pairs:",str(pairs[i]),"pred:",str(predictions[i]))
-                i += 1
+            
+            exit(1)
 
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):
