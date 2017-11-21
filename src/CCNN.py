@@ -410,13 +410,37 @@ class CCNN:
         return (ourClusterSuperSet, goldenSuperSet)
 
     def analyzeResults(self, pairs, predictions, predictedClusters):
+
+        # sanity check: ensures all pairs are accounted for
+        predictedHMIDs = set()
+        for p in pairs:
+            (hm_id1,hm_id2) = p
+            predictedHMIDs.add(hm_id1)
+            predictedHMIDs.add(hm_id2)
+        
+        parsedHMIDs = set()
+        numMissing = 0
+        for doc_id in self.hddcrp_parsed.docToHMentions.keys():
+            for hm in self.hddcrp_parsed.docToHMentions[doc_id]:
+                parsedHMIDs.add(hm.hm_id)
+                if hm.hm_id not in predictedHMIDs:
+                    numMissing += 1
+        print("predictedHMIDs:",str(len(predictedHMIDs)))
+        print("parsedHMIDs:",str(len(parsedHMIDs)))
+        print("# from parsing that we didnt' cluster:",str(numMissing))
+        numMissing = 0
+        for hm_id in predictedHMIDs:
+            if hm_id not in parsedHMIDs:
+                numMissing += 1
+        print("# from predicting that we didn't parse:",str(numMissing))
+        exit(1)
+
         for cluster_id in predictedClusters:
             print("cluster_id:",str(cluster_id))
             for m in predictedClusters[cluster_id]:
                 print("m:",str(m))
             i = 0
-            
-            exit(1)
+        exit(1)
 
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):

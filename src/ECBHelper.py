@@ -91,7 +91,7 @@ class ECBHelper:
 		mentionTokens = set()
 		mentionTokens.update(self.getECBMentionTokens(self.trainingDirs))
 		mentionTokens.update(self.getECBMentionTokens(self.devDirs))
-		mentionTokens.update(self.getStanMentionTokens(hddcrp_parsed))
+		mentionTokens.update(self.getHDDCRPMentionTokens(hddcrp_parsed))
 		for t in mentionTokens:
 			if t.text not in stopwords and len(t.text) > 1:
 				mentionTypes.add(t.text)
@@ -282,8 +282,8 @@ class ECBHelper:
 						added.add((dm2,dm1))
 		return (devTokenListPairs,mentionIDPairs,labels)
 
-	# returns the Tokens (belonging to Mentions) within the Stan-parsed file
-	def getStanMentionTokens(self, hddcrp_parsed):
+	# returns the Tokens (belonging to Mentions) within the hddcrp_parsed file
+	def getHDDCRPMentionTokens(self, hddcrp_parsed):
 		mentionTokens = set()
 		for doc_id in hddcrp_parsed.docToHMentions.keys():
 			for hm in hddcrp_parsed.docToHMentions[doc_id]:

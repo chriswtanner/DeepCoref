@@ -19,6 +19,13 @@ class HMention:
 		for t in self.tokens:
 			t.hm_ids.add(hm_id)
 
+	def getMentionText(self):
+		text = ""
+		for t in self.tokens:
+			text += str(t.text) + " "
+		text = text.rstrip()
+		return text
+
 	def __str__(self):
 		text = ""
 		for t in self.tokens:

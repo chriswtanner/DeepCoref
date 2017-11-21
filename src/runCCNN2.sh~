@@ -128,9 +128,30 @@ echo "------------------------"
 
 cd $scriptDir
 
+python3 -u CorefEngine.py --resultsDir=${resultsDir} \
+--stoplistFile=${stoplistFile} \
+--device=${device} \
+--numLayers=${numLayers} --poolType=${poolType} --corpusPath=${corpusPath} \
+--replacementsFile=${replacementsFile} \
+--stitchMentions=${stitchMentions} --mentionsFile=${mentionsFile} \
+--embeddingsBaseFile=${embeddingsBaseFile} --embeddingsFile=${embeddingsFile} \
+--embeddingsType=${embeddingsType} --numEpochs=${numEpochs} --verbose=${verbose} \
+--windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
+--batchSize=${batchSize} \
+--hddcrpBaseFile=${hddcrpBaseFile} --hddcrpFullFile=${hddcrpFullFile} \
+--dropout=${dropout} --clusterMethod=${clusterMethod} \
+--numFilters=${numFilters} --filterMultiplier=${filterMultiplier} \
+--stanOutputDir=${stanOutputDir} \
+--featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
+--lemmaType=${lemmaType} \
+--dependencyType=${dependencyType} \
+--charEmbeddingsFile=${charEmbeddingsFile} \
+--charType=${charType} \
+--SSType=${SSType} \
+--SSwindowSize=${SSwindowSize} \
+--SSvectorSize=${SSvectorSize} \
+--SSlog=${SSlog}
 
-
-exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
