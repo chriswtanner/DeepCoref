@@ -437,14 +437,13 @@ class CCNN:
         print("# from predicting that we didn't parse:",str(numMissing))
         if numMissing > 0:
             exit(1)
-        exit(1)
         # end of sanity chk
 
         # stores distances from every hmention
         hmidToPredictions = defaultdict(lambda : defaultdict(float))
         for i in range(len(pairs)):
             (hm_id1,hm_id2) = pairs[i]
-            pred = prediction[i][0]
+            pred = predictions[i][0]
             hmidToPredictions[hm_id1][hm_id2] = pred
             hmidToPredictions[hm_id2][hm_id1] = pred
         for hm_id in hmidToPredictions:
@@ -453,7 +452,6 @@ class CCNN:
             for s in sorted_distances:
                 print("s:",str(s))
             exit(1)
-
 
         for cluster_id in predictedClusters:
             print("cluster_id:",str(cluster_id))

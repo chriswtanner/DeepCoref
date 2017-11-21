@@ -2,11 +2,11 @@
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
-numLayers=(2) # 3) # 1 3
+numLayers=(1) # 3) # 1 3
 numEpochs=(1) # 15 30) # 25) # 30) # 5 10 20
 windowSize=(0) # 1 2 3
-numNeg=(7) # 7) # 10) # 5 10 15
-batchSize=(64) # 128) # 64 128
+numNeg=(1) # 7) # 10) # 5 10 15
+batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg") # "max" "avg")
 embeddingsBaseFile=("6B.300") # "840B.300") # "6B.300") # 50
