@@ -481,7 +481,7 @@ class CCNN:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
                     hmention = self.hddcrp_parsed.hm_idToHMention[hm_id]
-                    fout1.write("\t\t[",str(hm_id),"]:" + str(hmention.getMentionText()) + "\n")
+                    fout1.write("\t\t[" + str(hm_id),"]:" + str(hmention.getMentionText()) + "\n")
 
              # goes through each mention (redundanty, aka m1 -> all.. and m2 -> all)
             for hm_id in self.hddcrp_parsed.docToHMentions[doc_id]:
