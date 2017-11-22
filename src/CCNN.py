@@ -484,11 +484,12 @@ class CCNN:
                     fout1.write("\t\t[" + str(hm_id) + "]:" + str(hmention.getMentionText()) + "\n")
 
              # goes through each mention (redundanty, aka m1 -> all.. and m2 -> all)
-            for hm_id in self.hddcrp_parsed.docToHMentions[doc_id]:
-                sorted_distances = sorted(hmidToPredictions[hm_id].items(), key=operator.itemgetter(1), reverse=False)
-                gold_ref1 = self.hddcrp_parsed.hm_idToHMention[hm_id].ref_id
-                pred_ref1 = hm_idToPredictedClusterID[hm_id]
-                fout2.write("\tHMENTION:" + str(hm_id) + "\n")
+            for hm in self.hddcrp_parsed.docToHMentions[doc_id]:
+                hm_id1 = hm.hm_id
+                sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
+                gold_ref1 = hm.ref_id
+                pred_ref1 = hm_idToPredictedClusterID[hm_id1]
+                fout2.write("\tHMENTION:" + str(hm_id1) + "\n")
                 for (hm_id2,pred) in sorted_distances:
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
                     pred_ref2 = hm_idToPredictedClusterID[hm_id2]
