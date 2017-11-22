@@ -1,0 +1,3 @@
+#!/bin/bash
+grep "CoNLLF1" ~/*${1}*  | sort -k3 --numeric | cut -d " " -f2,3 | tail
+ls -lah ~/*${1}* | wc

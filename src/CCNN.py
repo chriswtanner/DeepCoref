@@ -440,24 +440,56 @@ class CCNN:
         # end of sanity chk
 
         # stores distances from every hmention
+        # hm_id1 -> {hm_id2 -> score}
         hmidToPredictions = defaultdict(lambda : defaultdict(float))
         for i in range(len(pairs)):
             (hm_id1,hm_id2) = pairs[i]
             pred = predictions[i][0]
             hmidToPredictions[hm_id1][hm_id2] = pred
             hmidToPredictions[hm_id2][hm_id1] = pred
+
+            # sanity chk: ensures both hms belong to the same doc
+            doc1 = self.hddcrp_parsed.hm_idToHMention[hm_id1].doc_id
+            doc2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].doc_id
+            if doc1 != doc2:
+                print("*ERROR: hms belong to diff docs")
+                exit(1)
+
+        # sets hm_id to cluster num
+        hm_idToPredictedClusterID = {}
+        for c_id in predictedClusters.keys():
+            for hm_id in predictedClusters[c_id]:
+                hm_idToPredictedClusterID[hm_id] = c_id
+
+        # sets hm_id to golden ref cluster num on a per-doc basis
+        # doc_id -> {REF -> hm_id}
+        docToGoldenREF = defaultdict(lambda : defaultdict(set))
+        for hm_id in hm_idToPredictedClusterID:
+            doc_id = self.hddcrp_parsed.hm_idToHMention[hm_id].doc_id
+            ref_id = self.hddcrp_parsed.hm_idToHMention[hm_id].ref_id
+            docToGoldenREF[doc_id][ref_id].add(hm_id)
+
+        # goes through each doc
+        for doc_id in self.docToGoldenREF:
+            print("DOC:",str(doc_id),"\n---------------------")
+            for ref_id in self.docToGoldenREF[doc_id]:
+                print("\tREF:",str(ref_id))
+                for hm_id in docToGoldenREF[doc_id][ref_id]:
+                    hmention = self.hddcrp_parsed.hm_idToHMention[hm_id]
+                    print("\t\t[",str(hm_id),"]:",str(hmention.getMentionText()))
+                print("\n")
+
+        '''
         for hm_id in hmidToPredictions:
             print("hm_id:",str(hm_id))
-            sorted_distances = sorted(hmidToPredictions[hm_id].items(), key=operator.itemgetter(1), reverse=True)
+            sorted_distances = sorted(hmidToPredictions[hm_id].items(), key=operator.itemgetter(1), reverse=False)
             for s in sorted_distances:
                 print("s:",str(s))
             exit(1)
+        '''
 
-        for cluster_id in predictedClusters:
-            print("cluster_id:",str(cluster_id))
-            for m in predictedClusters[cluster_id]:
-                print("m:",str(m))
-            i = 0
+
+        #
         exit(1)
 
     # writes CoNLL file in the same format as args.hddcrpFile
