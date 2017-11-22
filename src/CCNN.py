@@ -470,7 +470,7 @@ class CCNN:
             docToGoldenREF[doc_id][ref_id].add(hm_id)
 
         # goes through each doc
-        for doc_id in self.docToGoldenREF:
+        for doc_id in docToGoldenREF:
             print("DOC:",str(doc_id),"\n---------------------")
             for ref_id in self.docToGoldenREF[doc_id]:
                 print("\tREF:",str(ref_id))
