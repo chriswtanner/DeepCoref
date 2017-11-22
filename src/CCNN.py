@@ -506,8 +506,8 @@ class CCNN:
 
         # prints in order of best performing ot worst (per pairwise accuracy)
         for (doc_id,f1) in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
-            fout1.write("DOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
-            fout2.write("DOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
+            fout1.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
+            fout2.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
             for ref_id in docToGoldenREF[doc_id]:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
@@ -520,18 +520,18 @@ class CCNN:
                 sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
                 gold_ref1 = hm.ref_id
                 pred_ref1 = hm_idToPredictedClusterID[hm_id1]
-                fout2.write("\tHMENTION:" + str(hm_id1) + "(" + str(hm.getMentionText()) + ")\n")
+                fout2.write("\nHMENTION:" + str(hm_id1) + "(" + str(hm.getMentionText()) + ")\n")
                 for (hm_id2,pred) in sorted_distances:
                     hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
                     pred_ref2 = hm_idToPredictedClusterID[hm_id2]
-                    prefix = ""
+                    prefix = "  "
                     if gold_ref1 == gold_ref2 and pred_ref1 == pred_ref2: # we got it
-                        prefix = "**"
+                        prefix += "**"
                     elif gold_ref1 == gold_ref2 and pred_ref1 != pred_ref2: # we missed it
-                        prefix = "-"
+                        prefix += "-"
                     elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
-                        prefix = "+"
+                        prefix += "+"
                     fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + "\n")
         fout1.close()
         fout2.close()
