@@ -472,7 +472,7 @@ class CCNN:
         # goes through each doc
         for doc_id in docToGoldenREF:
             print("DOC:",str(doc_id),"\n---------------------")
-            for ref_id in self.docToGoldenREF[doc_id]:
+            for ref_id in docToGoldenREF[doc_id]:
                 print("\tREF:",str(ref_id))
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
                     hmention = self.hddcrp_parsed.hm_idToHMention[hm_id]
