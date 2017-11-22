@@ -494,8 +494,13 @@ class CCNN:
                     if gold_ref1 == gold_ref2:
                         num_golds += 1
             recall = float(num_correct) / float(num_golds)
-            prec = float(num_correct) / float(num_pred)
-            f1 = 2*(recall*prec) / float(recall + prec)
+            prec = 0
+            if num_pred > 0:
+                prec = float(num_correct) / float(num_pred)
+            denom = float(recall + prec)
+            f1 = 0
+            if denom > 0:
+                f1 = 2*(recall*prec) / float(denom)
             docToF1[doc_id] = f1
 
 
