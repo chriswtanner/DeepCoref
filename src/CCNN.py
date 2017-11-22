@@ -505,9 +505,9 @@ class CCNN:
 
 
         # prints in order of best performing ot worst (per pairwise accuracy)
-        for doc_id in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
-            fout1.write("DOC:" + str(doc_id) + " f1:" + str(docToF1[doc_id]) + "\n---------------------\n")
-            fout2.write("DOC:" + str(doc_id) + " f1:" + str(docToF1[doc_id]) + "\n---------------------\n")
+        for (doc_id,f1) in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
+            fout1.write("DOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
+            fout2.write("DOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
             for ref_id in docToGoldenREF[doc_id]:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
