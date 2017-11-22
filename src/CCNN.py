@@ -473,10 +473,36 @@ class CCNN:
         fout1 = open("tmp_golden.txt",'w')
         fout2 = open("tmp_preds.txt", "w")
 
+        # computes accuracy
+        num_correct = 0
+        num_pred = 0
+        num_golds = 0
+        docToF1 = {}
+        for doc_id in self.hddcrp_parsed.docToHMentions.keys():
+            for hm in self.hddcrp_parsed.docToHMentions[doc_id]:
+                hm_id1 = hm.hm_id
+                sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
+                gold_ref1 = hm.ref_id
+                pred_ref1 = hm_idToPredictedClusterID[hm_id1]
+                for (hm_id2,pred) in sorted_distances:
+                    gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
+                    pred_ref2 = hm_idToPredictedClusterID[hm_id2]
+                    if pred_ref1 == pred_ref2:
+                        num_pred += 1
+                        if gold_ref1 == gold_ref2: # we correctly got it
+                            num_correct += 1
+                    if gold_ref1 == gold_ref2:
+                        num_golds += 1
+            recall = float(num_correct) / float(num_golds)
+            prec = float(num_correct) / float(num_pred)
+            f1 = 2*(recall*prec) / float(recall + prec)
+            docToF1[doc_id] = f1
+
+
         # prints in order of best performing ot worst (per pairwise accuracy)
-        for doc_id in docToGoldenREF:
-            fout1.write("DOC:" + str(doc_id) + "\n---------------------\n")
-            fout2.write("DOC:" + str(doc_id) + "\n---------------------\n")
+        for doc_id in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
+            fout1.write("DOC:" + str(doc_id) + " f1:" + str(docToF1[doc_id]) + "\n---------------------\n")
+            fout2.write("DOC:" + str(doc_id) + " f1:" + str(docToF1[doc_id]) + "\n---------------------\n")
             for ref_id in docToGoldenREF[doc_id]:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
@@ -489,8 +515,9 @@ class CCNN:
                 sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
                 gold_ref1 = hm.ref_id
                 pred_ref1 = hm_idToPredictedClusterID[hm_id1]
-                fout2.write("\tHMENTION:" + str(hm_id1) + "\n")
+                fout2.write("\tHMENTION:" + str(hm_id1) + "(" + str(hm.getMentionText()) + ")\n")
                 for (hm_id2,pred) in sorted_distances:
+                    hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
                     pred_ref2 = hm_idToPredictedClusterID[hm_id2]
                     prefix = ""
@@ -500,7 +527,7 @@ class CCNN:
                         prefix = "-"
                     elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
                         prefix = "+"
-                    fout2.write(str(prefix) + str(hm_id2) + str(pred) + "\n")
+                    fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + "\n")
         fout1.close()
         fout2.close()
         '''
