@@ -442,6 +442,10 @@ class CCNN:
         # stores distances from every hmention
         # hm_id1 -> {hm_id2 -> score}
         hmidToPredictions = defaultdict(lambda : defaultdict(float))
+
+        # stores distances for every doc]
+        # doc_id -> {(hm_id1,hm_id2) -> score}
+        docToPredictions = defaultdict(lambda : defaultdict(float))
         for i in range(len(pairs)):
             (hm_id1,hm_id2) = pairs[i]
             pred = predictions[i][0]
@@ -454,6 +458,9 @@ class CCNN:
             if doc1 != doc2:
                 print("*ERROR: hms belong to diff docs")
                 exit(1)
+
+            if (hm_id1,hm_id2) not in docToPredictions[doc1] and (hm_id2,hm_id1) not in docToPredictions[doc1]:
+                docToPredictions[doc1][(hm_id1,hm_id2)] = pred
 
         # sets hm_id to cluster num
         hm_idToPredictedClusterID = {}
@@ -472,13 +479,16 @@ class CCNN:
         # goes through each doc
         fout1 = open("tmp_golden.txt",'w')
         fout2 = open("tmp_preds.txt", "w")
+        fout3 = open("tmp_allpreds.txt", "w")
 
         # computes accuracy
-        num_correct = 0
-        num_pred = 0
-        num_golds = 0
         docToF1 = {}
+        docToRecall = {}
+        docToPrec = {}
         for doc_id in self.hddcrp_parsed.docToHMentions.keys():
+            num_correct = 0
+            num_pred = 0
+            num_golds = 0
             for hm in self.hddcrp_parsed.docToHMentions[doc_id]:
                 hm_id1 = hm.hm_id
                 sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
@@ -493,21 +503,44 @@ class CCNN:
                             num_correct += 1
                     if gold_ref1 == gold_ref2:
                         num_golds += 1
-            recall = float(num_correct) / float(num_golds)
+            recall = 1
+            if num_golds > 0:
+                recall = float(num_correct) / float(num_golds)
             prec = 0
             if num_pred > 0:
                 prec = float(num_correct) / float(num_pred)
             denom = float(recall + prec)
+            docToRecall[doc_id] = recall
+            docToPrec[doc_id] = prec
             f1 = 0
             if denom > 0:
                 f1 = 2*(recall*prec) / float(denom)
             docToF1[doc_id] = f1
 
 
-        # prints in order of best performing ot worst (per pairwise accuracy)
+        # prints in order of best performing to worst (per pairwise accuracy)
         for (doc_id,f1) in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
-            fout1.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
-            fout2.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + "\n---------------------\n")
+            numREFs = len(docToGoldenREF[doc_id])
+            fout1.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
+            fout2.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
+            fout3.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
+            for (pair,pred) in sorted(docToPredictions[doc_id].items(), key=operator.itemgetter(1), reverse=False):
+                (hm_id1,hm_id2) = pair
+                hmention1 = self.hddcrp_parsed.hm_idToHMention[hm_id1]
+                hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
+                gold_ref1 = hmention1.ref_id
+                pred_ref1 = hm_idToPredictedClusterID[hm_id1]
+                gold_ref2 = hmention2.ref_id
+                pred_ref2 = hm_idToPredictedClusterID[hm_id2]
+                prefix = "  "
+                if gold_ref1 == gold_ref2 and pred_ref1 == pred_ref2: # we got it
+                    prefix += "**"
+                elif gold_ref1 == gold_ref2 and pred_ref1 != pred_ref2: # we missed it
+                    prefix += "-"
+                elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
+                    prefix += "+"
+                fout3.write(str(prefix) + " " + str(hm_id1) + " (" + str(hmention1.getMentionText()) + ") and " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + "\n")
+
             for ref_id in docToGoldenREF[doc_id]:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
@@ -520,7 +553,12 @@ class CCNN:
                 sorted_distances = sorted(hmidToPredictions[hm_id1].items(), key=operator.itemgetter(1), reverse=False)
                 gold_ref1 = hm.ref_id
                 pred_ref1 = hm_idToPredictedClusterID[hm_id1]
-                fout2.write("\nHMENTION:" + str(hm_id1) + "(" + str(hm.getMentionText()) + ")\n")
+
+                doc_id = hm.doc_id
+                sentNum = hm.tokens[0].sentenceNum
+                sent = ' '.join(self.hddcrp_parsed.docSentences[doc_id][sentNum])
+
+                fout2.write("\nHMENTION:" + str(hm_id1) + " (" + str(hm.getMentionText()) + ") -- " + str(sent) + "\n")
                 for (hm_id2,pred) in sorted_distances:
                     hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
@@ -532,9 +570,12 @@ class CCNN:
                         prefix += "-"
                     elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
                         prefix += "+"
-                    fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + "\n")
+
+                    sent = ' '.join(self.hddcrp_parsed.docSentences[hmention2.doc_id][hmention2.tokens[0].sentenceNum])
+                    fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + " -- " + str(sent) + "\n")
         fout1.close()
         fout2.close()
+        fout3.close()
         '''
         for hm_id in hmidToPredictions:
             print("hm_id:",str(hm_id))

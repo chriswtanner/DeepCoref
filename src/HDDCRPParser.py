@@ -29,6 +29,10 @@ class HDDCRPParser:
 		tokenIndex = 0
 		sentenceNum = 0
 		hm_id = 0
+
+		# TMP: only used for analyzeResults() in CCNN (to see the original sentences)
+		self.docSentences = defaultdict(lambda : defaultdict(list))
+
 		f = open(inputFile, "r")
 		for line in f:
 			line = line.rstrip()
@@ -45,6 +49,9 @@ class HDDCRPParser:
 				self.htokens[tokenIndex] = curToken
 				self.UIDToToken[curToken.UID] = curToken
 				self.docToUIDs[doc].append(curToken.UID)
+
+				# TMP: only used for analyzeResults() in CCNN (to see the original sentences)
+				self.docSentences[doc][sentenceNum].append(text.lower())
 
 				refs = []
 				if ref_.find("|") == -1:
