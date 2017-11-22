@@ -475,20 +475,20 @@ class CCNN:
 
         # prints in order of best performing ot worst (per pairwise accuracy)
         for doc_id in docToGoldenREF:
-            fout1.write("DOC:",str(doc_id),"\n---------------------\n")
-            fout2.write("DOC:",str(doc_id),"\n---------------------\n")
+            fout1.write("DOC:" + str(doc_id) + "\n---------------------\n")
+            fout2.write("DOC:" + str(doc_id) + "\n---------------------\n")
             for ref_id in docToGoldenREF[doc_id]:
-                fout1.write("\tREF:",str(ref_id),"\n")
+                fout1.write("\tREF:" + str(ref_id) + "\n")
                 for hm_id in docToGoldenREF[doc_id][ref_id]:
                     hmention = self.hddcrp_parsed.hm_idToHMention[hm_id]
-                    fout1.write("\t\t[",str(hm_id),"]:",str(hmention.getMentionText()),"\n")
+                    fout1.write("\t\t[",str(hm_id),"]:" + str(hmention.getMentionText()) + "\n")
 
              # goes through each mention (redundanty, aka m1 -> all.. and m2 -> all)
             for hm_id in self.hddcrp_parsed.docToHMentions[doc_id]:
                 sorted_distances = sorted(hmidToPredictions[hm_id].items(), key=operator.itemgetter(1), reverse=False)
                 gold_ref1 = self.hddcrp_parsed.hm_idToHMention[hm_id].ref_id
                 pred_ref1 = hm_idToPredictedClusterID[hm_id]
-                fout2.write("\tHMENTION:",str(hm_id),"\n")
+                fout2.write("\tHMENTION:" + str(hm_id) + "\n")
                 for (hm_id2,pred) in sorted_distances:
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
                     pred_ref2 = hm_idToPredictedClusterID[hm_id2]
@@ -499,7 +499,7 @@ class CCNN:
                         prefix = "-"
                     elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
                         prefix = "+"
-                    fout2.write(str(prefix),str(hm_id2),str(pred),"\n")
+                    fout2.write(str(prefix) + str(hm_id2) + str(pred) + "\n")
         fout1.close()
         fout2.close()
         '''
