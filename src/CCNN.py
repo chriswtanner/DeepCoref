@@ -462,11 +462,16 @@ class CCNN:
             if (hm_id1,hm_id2) not in docToPredictions[doc1] and (hm_id2,hm_id1) not in docToPredictions[doc1]:
                 docToPredictions[doc1][(hm_id1,hm_id2)] = pred
 
-        # sets hm_id to cluster num
+        docToClusterIDs = defaultdict(set)
+
+        # (1) sets hm_id to cluster num
+        # (2) sets the predicted cluster IDs for each doc
         hm_idToPredictedClusterID = {}
         for c_id in predictedClusters.keys():
             for hm_id in predictedClusters[c_id]:
                 hm_idToPredictedClusterID[hm_id] = c_id
+                doc_id = self.hddcrp_parsed.hm_idToHMention[hm_id].doc_id
+                docToClusterIDs[doc_id].add(c_id)
 
         # sets hm_id to golden ref cluster num on a per-doc basis
         # doc_id -> {REF -> hm_id}
@@ -477,10 +482,11 @@ class CCNN:
             docToGoldenREF[doc_id][ref_id].add(hm_id)
 
         # goes through each doc
-        fout1 = open("tmp_golden.txt",'w')
+        fout1 = open("tmp_goldenClusters.txt",'w')
         fout2 = open("tmp_preds.txt", "w")
         fout3 = open("tmp_allpreds.txt", "w")
-
+        fout4 = open("tmp_predClusters.txt", "w")
+        
         # computes accuracy
         docToF1 = {}
         docToRecall = {}
@@ -524,6 +530,7 @@ class CCNN:
             fout1.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
             fout2.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
             fout3.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
+            fout4.write("\nDOC:" + str(doc_id) + " f1:" + str(f1) + " rec:" + str(docToRecall[doc_id]) + "; prec:" + str(docToPrec[doc_id]) + " [# REFS:" + str(numREFs) + "]\n---------------------\n")
             for (pair,pred) in sorted(docToPredictions[doc_id].items(), key=operator.itemgetter(1), reverse=False):
                 (hm_id1,hm_id2) = pair
                 hmention1 = self.hddcrp_parsed.hm_idToHMention[hm_id1]
@@ -540,6 +547,12 @@ class CCNN:
                 elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
                     prefix += "+"
                 fout3.write(str(prefix) + " " + str(hm_id1) + " (" + str(hmention1.getMentionText()) + ") and " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + "\n")
+
+            for c_id in docToClusterIDs[doc_id]:
+                fout4.write("\tCLUSTER:" + str(c_id) + "\n")
+                for hm_id in predictedClusters[c_id]:
+                    hmention = self.hddcrp_parsed.hm_idToHMention[hm_id]
+                    fout4.write("\t\t[" + str(hm_id) + "]:" + str(hmention.getMentionText()) + "\n")
 
             for ref_id in docToGoldenREF[doc_id]:
                 fout1.write("\tREF:" + str(ref_id) + "\n")
@@ -576,6 +589,7 @@ class CCNN:
         fout1.close()
         fout2.close()
         fout3.close()
+        fout4.close()
         '''
         for hm_id in hmidToPredictions:
             print("hm_id:",str(hm_id))
