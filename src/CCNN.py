@@ -1409,7 +1409,9 @@ class CCNN:
                         if curCount > highestFreqLemma:
                             highestFreqLemma = curCount
                             tokenWithMostFrequentLemma = _
-                        elif curCount == highestFreqLemma: # only if the word is longer; this breaks ties
+                        elif curCount == highestFreqLemma and len(_.text) > len(tokenWithMostFrequentLemma.text): # only if the word is longer; this breaks ties
+                            highestFreqLemma = curCount
+                            tokenWithMostFrequentLemma = _
 
                 if tokenWithMostFrequentLemma == None:
                     print("** ERROR: didn't map multi-token mention correctly")
