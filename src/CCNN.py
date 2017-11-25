@@ -802,41 +802,30 @@ class CCNN:
 
         # train accuracy
         print("-----------\npredicting training")
-        pred = model.predict([training_data[:, 0], training_data[:, 1]])
+        training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
         sys.stdout.flush()
-        bestProb_train = self.compute_optimal_f1("training",0.5, pred, training_labels)
-        print("training acc:", str(self.compute_accuracy(bestProb_train, pred, training_labels)))
+        bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
+        print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
 
-        '''
-        for i in range(len(pairs)):
-            gold = "false"
-            dm1,dm2 = pairs[i]
-            if self.dmToREF[dm1] == self.dmToREF[dm2]:
-                gold = "COREF"
-            print(str(dm1),str(dm2)," pred:",str(pred[i]), "; gold:", str(gold))
-        exit(1)
-        '''
         # dev accuracy
         print("-----------\npredicting dev")
-        pred = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, pred, dev_labels)
-        print("dev acc:", str(self.compute_accuracy(bestProb_dev, pred, dev_labels)))
-        # return (dev_pairs, pred)
+        dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
+        bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
+        print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
         
         # clears up ram
         training_pairs = None
         training_data = None
         training_labels = None
-        dev_pairs = None
         dev_data = None
         dev_labels = None
 
         print("-----------\npredicting testing")
-        pred = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, pred, testing_labels)
-        print("test acc:", str(self.compute_accuracy(bestProb_test, pred, testing_labels)))
+        testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
+        bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
+        print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
-        return (testing_pairs, pred)
+        return (dev_pairs, dev_preds, testing_pairs, testing_preds)
         
     def euclidean_distance(self, vects):
         x, y = vects
