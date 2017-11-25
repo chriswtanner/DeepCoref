@@ -264,6 +264,7 @@ class CCNN:
                                             avgdists.append(dist)
                                         else:
                                             print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                            exit(1)
                                         if dist < closestDist:
                                             closestDist = dist
                                             closestClusterKeys = (c1,c2)  
@@ -1362,13 +1363,15 @@ class CCNN:
                 self.mentionLemmaTokenDirCounts[curDir][curLemma] += 1
                 self.mentionLemmaTokenDocCounts[curDoc][curLemma] += 1
 
+        '''
         for doc_id in self.mentionLemmaTokenDocCounts:
             print("doc_id:",str(doc_id))
             for l in self.mentionLemmaTokenDocCounts[doc_id]:
                 print("lemma:",str(l),self.mentionLemmaTokenDocCounts[doc_id][l])
+        '''
         for mentionID in mentionIDsWeCareAbout:
 
-            tmpTokenList = mentionIDToTokenList[mentionID]
+            tokenList = mentionIDToTokenList[mentionID]
 
             # just for understanding our data more
             self.mentionLengthToMentions[len(tokenList)].append(tokenList)
@@ -1381,6 +1384,7 @@ class CCNN:
             numTokensFound = 0
 
             # TMP: optionally replaces the multi-token Mention to being just the canonical mention token
+            '''
             tokenList = []
             if len(tmpTokenList) == 1:
                 tokenList.append(tmpTokenList[0])
@@ -1395,9 +1399,9 @@ class CCNN:
                     curDoc = _.doc_id
 
                     # GLOBAL
-                    curCount = self.mentionLemmaTokenCounts[curLemma]
+                    #curCount = self.mentionLemmaTokenCounts[curLemma]
                     # per dir
-                    #curCount = self.mentionLemmaTokenDirCounts[curDir][curLemma]
+                    # curCount = self.mentionLemmaTokenDirCounts[curDir][curLemma]
                     # per doc
                     #curCount = self.mentionLemmaTokenDocCounts[curDoc][curLemma]
 
@@ -1421,7 +1425,7 @@ class CCNN:
                     origTokens = [str(" " + self.helper.getBestStanToken(x.stanTokens).lemma) for x in tmpTokenList]
                     print("** we mapped:",str(origTokens),"to:",str(tokenWithMostFrequentLemma.text))
                 tokenList.append(tokenWithMostFrequentLemma)
-            
+            '''
             for token in tokenList:
 
                 cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
