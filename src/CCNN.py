@@ -45,9 +45,7 @@ class CCNN:
         self.mentionLengthToMentions = defaultdict(list)
         
         # used for mapping multi-token mentions to a canonical mention representation
-        self.mentionLemmaTokenCounts = defaultdict(int)
-        self.mentionLemmaTokenDirCounts = defaultdict(lambda : defaultdict(int))
-        self.mentionLemmaTokenDocCounts = defaultdict(lambda : defaultdict(int))
+        #self.mentionLemmaTokenCounts = defaultdict(int)
         print("-----------------------")
 
     # creates clusters for our hddcrp predictions
@@ -1353,6 +1351,7 @@ class CCNN:
         numCols = self.embeddingLength
 
         # TMP: preprocesses -- calculates frequency counts per mention tokens' lemma
+        '''
         for mentionID in mentionIDsWeCareAbout:
             tokenList = mentionIDToTokenList[mentionID]
             for _ in tokenList:
@@ -1362,8 +1361,6 @@ class CCNN:
                 self.mentionLemmaTokenCounts[curLemma] +=1
                 self.mentionLemmaTokenDirCounts[curDir][curLemma] += 1
                 self.mentionLemmaTokenDocCounts[curDoc][curLemma] += 1
-
-        '''
         for doc_id in self.mentionLemmaTokenDocCounts:
             print("doc_id:",str(doc_id))
             for l in self.mentionLemmaTokenDocCounts[doc_id]:
@@ -1383,49 +1380,6 @@ class CCNN:
             sumGloveEmbedding = [0]*self.embeddingLength
             numTokensFound = 0
 
-            # TMP: optionally replaces the multi-token Mention to being just the canonical mention token
-            '''
-            tokenList = []
-            if len(tmpTokenList) == 1:
-                tokenList.append(tmpTokenList[0])
-            else:
-                tokenWithMostFrequentLemma = None
-                highestFreqLemma = -1
-                for _ in tmpTokenList:
-                    curStan = self.helper.getBestStanToken(_.stanTokens)
-                    curLemma = curStan.lemma
-
-                    curDir = _.doc_id[0:_.doc_id.find("_")]
-                    curDoc = _.doc_id
-
-                    # GLOBAL
-                    #curCount = self.mentionLemmaTokenCounts[curLemma]
-                    # per dir
-                    # curCount = self.mentionLemmaTokenDirCounts[curDir][curLemma]
-                    # per doc
-                    #curCount = self.mentionLemmaTokenDocCounts[curDoc][curLemma]
-
-                    # if it's a stopword, only consider it if no other words have been set
-                    if _.text in self.helper.stopwords:
-                        if highestFreqLemma == -1:
-                            tokenWithMostFrequentLemma = _
-                    else:
-                        if curCount > highestFreqLemma:
-                            highestFreqLemma = curCount
-                            tokenWithMostFrequentLemma = _
-                        elif curCount == highestFreqLemma:
-                            if tokenWithMostFrequentLemma != None and len(_.text) > len(tokenWithMostFrequentLemma.text): # only if the word is longer; this breaks ties
-                                highestFreqLemma = curCount
-                                tokenWithMostFrequentLemma = _
-
-                if tokenWithMostFrequentLemma == None:
-                    print("** ERROR: didn't map multi-token mention correctly")
-                    exit(1)
-                else:
-                    origTokens = [str(" " + self.helper.getBestStanToken(x.stanTokens).lemma) for x in tmpTokenList]
-                    print("** we mapped:",str(origTokens),"to:",str(tokenWithMostFrequentLemma.text))
-                tokenList.append(tokenWithMostFrequentLemma)
-            '''
             for token in tokenList:
 
                 cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)
