@@ -606,7 +606,7 @@ class CCNN:
 
 
         #
-        exit(1)
+
 
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):

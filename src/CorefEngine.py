@@ -39,7 +39,7 @@ class CorefEngine:
 		for sp in stoppingPoints:
 			predictedClusters = corefEngine.clusterHPredictions(pairs, predictions, sp)
 			corefEngine.analyzeResults(pairs, predictions, predictedClusters)
-			exit(1)
+
 			print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 			corefEngine.writeCoNLLFile(predictedClusters, sp)
 		print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
