@@ -1403,15 +1403,16 @@ class CCNN:
 
                     # if it's a stopword, only consider it if no other words have been set
                     if _.text in self.helper.stopwords:
-                        if curCount == 0:
+                        if highestFreqLemma == -1:
                             tokenWithMostFrequentLemma = _
                     else:
                         if curCount > highestFreqLemma:
                             highestFreqLemma = curCount
                             tokenWithMostFrequentLemma = _
-                        elif curCount == highestFreqLemma and len(_.text) > len(tokenWithMostFrequentLemma.text): # only if the word is longer; this breaks ties
-                            highestFreqLemma = curCount
-                            tokenWithMostFrequentLemma = _
+                        elif curCount == highestFreqLemma:
+                            if tokenWithMostFrequentLemma != None and len(_.text) > len(tokenWithMostFrequentLemma.text): # only if the word is longer; this breaks ties
+                                highestFreqLemma = curCount
+                                tokenWithMostFrequentLemma = _
 
                 if tokenWithMostFrequentLemma == None:
                     print("** ERROR: didn't map multi-token mention correctly")

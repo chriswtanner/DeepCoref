@@ -2,28 +2,29 @@
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
-numLayers=(1) # 3) # 1 3
-numEpochs=(1) # 15 30) # 25) # 30) # 5 10 20
-windowSize=(0) # 1 2 3
-numNeg=(1) # 7) # 10) # 5 10 15
-batchSize=(128) # 128) # 64 128
-shuffle=(f) # t
-poolType=("max") # "avg") # "max" "avg")
-embeddingsBaseFile=("6B.300") # "840B.300") # "6B.300") # 50
-dropout=(0.0) # 0.2 0.4) # 0.4) # 0.2 0.3 0.4 0.5) # 0.4) # 0.0 0.1 .2 .3 .5
-clusterMethod=("min") # "avgavg") # "avg" "avgavg") # "min" "avg"
-numFilters=(4) # 64) # 64 128) # 128) # 300 600)
-filterMultiplier=(1.0) # 2.0) # 1.0 2.0) # 1.5 2.0)
-hddcrpBaseFile=("predict.ran") # "predict.ran") # "predict.ran") # "predict" predict.ran")
-featurePOS=("none") # none   onehot   emb_random   emb_glove
-posType=("none") # none  sum  avg
-lemmaType=("sum") # "sum") # "sum" "avg")
-dependencyType=("none") # "sum") # "sum") # "sum" "avg")
-charType=("none") # "none" "concat" "sum" "avg"
-SSType=("none") # "none" "sum" "avg"
-SSwindowSize=(0) #3 5 7) # 3 5 7
-SSvectorSize=(0) #100 400 800) # 100 400 800
+numLayers=(2) # 3) # 1 3                                                                                                                                            
+numEpochs=(1) # 20)                                                                                                                                                 
+windowSize=(0)
+numNeg=(7)
+batchSize=(64) # 128) # 64 128                                                                                                                                      
+shuffle=(f) # t                                                                                                                                                     
+poolType=("max") # "avg")                                                                                                                                           
+embeddingsBaseFile=("6B.300") # "840B.300")
+dropout=(0.0) # 0.2 0.4)                                                                                                                                            
+clusterMethod=("avgavg")
+numFilters=(4)
+filterMultiplier=(1.0) # 2.0)                                                                                                                                       
+hddcrpBaseFile=("predict.ran")
+featurePOS=("none") # none   onehot   emb_random   emb_glove                                                                                                        
+posType=("none") # none  sum  avg                                                                                                                                   
+lemmaType=("sum") # "sum" "avg")                                                                                                                                    
+dependencyType=("none") # # "sum" "avg")                                                                                                                            
+charType=("concat") # "none" "concat" "sum" "avg"                                                                                                                   
+SSType=("none") # "none" "sum" "avg"                                                                                                                                
+SSwindowSize=(0) # 3 5 7                                                                                                                                            
+SSvectorSize=(0) #100 400 800)                                                                                                                                      
 SSlog=("True")
+
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
