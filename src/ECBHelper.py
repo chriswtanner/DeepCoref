@@ -44,7 +44,11 @@ class ECBHelper:
 		self.SSMentionTypeToVec = {}
 		self.SSEmbLength = -1
 
+		# things are a little weird here; i wasn't originally loading the stopwords.
+		# i only was within the SemanticSpace function.  but, now i want access to
+		# stop words from the CCNN class, so i want to auto-load the stopwords, which i'm now doing
 		self.stopWordsFile = self.args.stoplistFile
+		self.stopwords = self.loadStopWords(self.stopWordsFile)
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs
@@ -881,7 +885,7 @@ class ECBHelper:
 		else:
 			print("* found a blank")
 			return ""
-	def getBestStanToken(self, stanTokens):
+	def getBestStanToken(self, stanTokens, token=None):
 		longestToken = ""
 		bestStanToken = None
 		for stanToken in stanTokens:
@@ -893,6 +897,9 @@ class ECBHelper:
 				if len(stanToken.text) > len(longestToken):
 					longestToken = stanToken.text
 					bestStanToken = stanToken
+		if len(stanTokens) > 1 and token != None:
+			print("token:",str(token.text),"=>",str(bestStanToken))
+
 		if bestStanToken == None:
 			print("* ERROR: our bestStanToken is empty!")
 			exit(1)

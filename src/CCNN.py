@@ -43,6 +43,11 @@ class CCNN:
         self.lemmas = set()
         self.OOVLemmas = set()
         self.mentionLengthToMentions = defaultdict(list)
+        
+        # used for mapping multi-token mentions to a canonical mention representation
+        self.mentionLemmaTokenCounts = defaultdict(int)
+        self.mentionLemmaTokenDirCounts = defaultdict(lambda : defaultdict(int))
+        self.mentionLemmaTokenDocCounts = defaultdict(lambda : defaultdict(int))
         print("-----------------------")
 
     # creates clusters for our hddcrp predictions
@@ -1038,12 +1043,14 @@ class CCNN:
         self.wordTypeToEmbedding["'knows"] = self.wordTypeToEmbedding["knows"]
         self.wordTypeToEmbedding["takeing"] = self.wordTypeToEmbedding["taking"]
         self.wordTypeToEmbedding["arested"] = self.wordTypeToEmbedding["arrested"]
+        self.wordTypeToEmbedding["arest"] = self.wordTypeToEmbedding["arrest"]
         self.wordTypeToEmbedding["intpo"] = self.wordTypeToEmbedding["into"]        
         self.wordTypeToEmbedding["texa"] = self.wordTypeToEmbedding["texas"]
         self.wordTypeToEmbedding["itune"] = self.wordTypeToEmbedding["itunes"]
         self.wordTypeToEmbedding["degenere"] = self.wordTypeToEmbedding["degeneres"]
         self.wordTypeToEmbedding["#oscars"] = self.wordTypeToEmbedding["oscars"]
-
+        self.wordTypeToEmbedding["microserver"] = self.wordTypeToEmbedding["server"]
+        self.wordTypeToEmbedding["microservers"] = self.wordTypeToEmbedding["servers"]
     # TEMP
     def getCosineSim(self, a, b):
         numerator = 0
@@ -1229,6 +1236,15 @@ class CCNN:
                 curEmb = self.wordTypeToEmbedding[lemma]
                 sumEmb = [x + y for x,y in zip(sumEmb, curEmb)]
 
+                # TMP: sanity chk
+                isEmpty = True
+                for _ in curEmb:
+                    if _ != 0:
+                        isEmpty = False
+                        break
+                if isEmpty:
+                    print("** WARNING: we didn't have legit emb for lemma:",str(lemma))
+
             if lemmaType == "avg":
                 avgEmb = [x / float(len(tokenList)) for x in sumEmb]
                 lemmaEmb = avgEmb
@@ -1335,9 +1351,24 @@ class CCNN:
         numRows = 1 #1 + 2*self.args.windowSize
         numCols = self.embeddingLength
 
+        # TMP: preprocesses -- calculates frequency counts per mention tokens' lemma
+        for mentionID in mentionIDsWeCareAbout:
+            tokenList = mentionIDToTokenList[mentionID]
+            for _ in tokenList:
+                curLemma = self.helper.getBestStanToken(_.stanTokens, _).lemma
+                curDir = _.doc_id[0:_.doc_id.find("_")]
+                curDoc = _.doc_id
+                self.mentionLemmaTokenCounts[curLemma] +=1
+                self.mentionLemmaTokenDirCounts[curDir][curLemma] += 1
+                self.mentionLemmaTokenDocCounts[curDoc][curLemma] += 1
+
+        for doc_id in self.mentionLemmaTokenDocCounts:
+            print("doc_id:",str(doc_id))
+            for l in self.mentionLemmaTokenDocCounts[doc_id]:
+                print("lemma:",str(l),self.mentionLemmaTokenDocCounts[doc_id][l])
         for mentionID in mentionIDsWeCareAbout:
 
-            tokenList = mentionIDToTokenList[mentionID]
+            tmpTokenList = mentionIDToTokenList[mentionID]
 
             # just for understanding our data more
             self.mentionLengthToMentions[len(tokenList)].append(tokenList)
@@ -1348,6 +1379,46 @@ class CCNN:
             # gets token indices and constructs the Mention embedding
             sumGloveEmbedding = [0]*self.embeddingLength
             numTokensFound = 0
+
+            # TMP: optionally replaces the multi-token Mention to being just the canonical mention token
+            tokenList = []
+            if len(tmpTokenList) == 1:
+                tokenList.append(tmpTokenList[0])
+            else:
+                tokenWithMostFrequentLemma = None
+                highestFreqLemma = -1
+                for _ in tmpTokenList:
+                    curStan = self.helper.getBestStanToken(_.stanTokens)
+                    curLemma = curStan.lemma
+
+                    curDir = _.doc_id[0:_.doc_id.find("_")]
+                    curDoc = _.doc_id
+
+                    # GLOBAL
+                    curCount = self.mentionLemmaTokenCounts[curLemma]
+                    # per dir
+                    #curCount = self.mentionLemmaTokenDirCounts[curDir][curLemma]
+                    # per doc
+                    #curCount = self.mentionLemmaTokenDocCounts[curDoc][curLemma]
+
+                    # if it's a stopword, only consider it if no other words have been set
+                    if _.text in self.helper.stopwords:
+                        if curCount == 0:
+                            tokenWithMostFrequentLemma = _
+                    else:
+                        if curCount > highestFreqLemma:
+                            highestFreqLemma = curCount
+                            tokenWithMostFrequentLemma = _
+                        elif curCount == highestFreqLemma: # only if the word is longer; this breaks ties
+
+                if tokenWithMostFrequentLemma == None:
+                    print("** ERROR: didn't map multi-token mention correctly")
+                    exit(1)
+                else:
+                    origTokens = [str(" " + self.helper.getBestStanToken(x.stanTokens).lemma) for x in tmpTokenList]
+                    print("** we mapped:",str(origTokens),"to:",str(tokenWithMostFrequentLemma.text))
+                tokenList.append(tokenWithMostFrequentLemma)
+            
             for token in tokenList:
 
                 cleanedStan = self.helper.removeQuotes(self.helper.getBestStanToken(token.stanTokens).text)

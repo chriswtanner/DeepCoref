@@ -152,7 +152,6 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} \
 --SSvectorSize=${SSvectorSize} \
 --SSlog=${SSlog}
 
-exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
