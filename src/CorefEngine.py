@@ -34,12 +34,12 @@ class CorefEngine:
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
 		
 		#
-		#(testing_pairs, testing_preds) = corefEngine.run()
+		(testing_pairs, testing_preds) = corefEngine.run()
 		#print("orig:")
 		#print(testing_pairs[0])
 		#print(testing_preds[0])
-		(testing_pairs, testing_preds) = corefEngine.loadPredictions("test_all.txt")
-		
+		#(testing_pairs, testing_preds) = corefEngine.loadPredictions("testall_6647.txt")
+
 		# performs agg. clustering on our predicted, testset of HMentions
 		stoppingPoints = [0.15,0.17,0.19,0.21,0.23,0.26,0.28,0.301,0.32,0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		for sp in stoppingPoints:

@@ -605,9 +605,34 @@ class CCNN:
         #
 
     def writePredictionsToFile(self, dev_pairs, dev_preds, testing_pairs, testing_preds):
-        foutdev = open("dev_" + str(self.args.devDir) + ".txt", "w")
-        fouttest = open("test_" + str(self.args.devDir) + ".txt", "w")
-
+        baseOut = str(self.args.resultsDir) + \
+            str(self.args.hddcrpBaseFile) + "_" + \
+            "nl" + str(self.args.numLayers) + "_" + \
+            "pool" + str(self.args.poolType) + "_" + \
+            "ne" + str(self.args.numEpochs) + "_" + \
+            "ws" + str(self.args.windowSize) + "_" + \
+            "neg" + str(self.args.numNegPerPos) + "_" + \
+            "bs" + str(self.args.batchSize) + "_" + \
+            "s" + str(self.args.shuffleTraining) + "_" + \
+            "e" + str(self.args.embeddingsBaseFile) + "_" + \
+            "dr" + str(self.args.dropout) + "_" + \
+            "cm" + str(self.args.clusterMethod) + "_" + \
+            "nf" + str(self.args.numFilters) + "_" + \
+            "fm" + str(self.args.filterMultiplier) + "_" + \
+            "fp" + str(self.args.featurePOS) + "_" + \
+            "pt" + str(self.args.posType) + "_" + \
+            "lt" + str(self.args.lemmaType) + "_" + \
+            "dt" + str(self.args.dependencyType) + "_" + \
+            "ct" + str(self.args.charType) + "_" + \
+            "st" + str(self.args.SSType) + "_" + \
+            "ws2" + str(self.args.SSwindowSize) + "_" + \
+            "vs" + str(self.args.SSvectorSize) + "_" + \
+            "sl" + str(self.args.SSlog) + "_" + \
+            "dev" + str(self.args.devDir)
+        foutdev = open(str(baseOut) + "_dev.txt", "w")
+        fouttest = open(str(baseOut) + "_test.txt", "w")
+        #foutdev = open("dev.txt", "w")
+        #fouttest = open("test.txt", "w")
         # sanity check
         if len(dev_pairs) != len(dev_preds) or len(testing_pairs) != len(testing_preds):
             print("* ERROR: inconsistent sizes")
@@ -845,7 +870,7 @@ class CCNN:
         print("testing size:", str(len(testing_data)))
 
         # TMP: remove this after i have tested if K-fold helps and is needed
-        # self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
+        self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
 
         return (testing_pairs, testing_preds)
         
@@ -859,15 +884,17 @@ class CCNN:
         f = open(fileIn, "r")
         #fout = open("testAvg.txt", "w")
         for line in f:
-            print("linE:",str(line.rstrip()))
             hm1,hm2,pred = line.rstrip().split(",")
             testingPredSum[(int(hm1),int(hm2))] += float(pred)
         f.close()
 
+        fout = open("testavg.txt", "w")
         for (hm1,hm2) in testingPredSum:
             avgPred = float(testingPredSum[(hm1,hm2)] / 23.0)
             testing_pairs.append((hm1,hm2))
             testing_preds.append([avgPred])
+            fout.write(str(hm1) + "," + str(hm2) + "," + str(avgPred) + "\n")
+        fout.close()
         return (testing_pairs, testing_preds)
 
     def euclidean_distance(self, vects):

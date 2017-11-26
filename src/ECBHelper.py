@@ -12,14 +12,14 @@ from random import randint
 class ECBHelper:
 
 	def __init__(self, args, corpus): # goldTruthFile, goldLegendFile, isVerbose):
-		self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
-		self.devDirs = [23,24,25]
+		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+		#self.devDirs = [23,24,25]
 
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
 		for _ in self.nonTestingDirs:
-			if _ == args.devDir:
+			if _ >= args.devDir: # e.g., pass in "23" if you want the dev dirs to be 23-25
 				self.devDirs.append(_)
 			else:
 				self.trainingDirs.append(_)
