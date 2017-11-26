@@ -620,12 +620,9 @@ class CCNN:
         foutdev.close()
         foutdev.close()
 
-        print("len of testing_pairs:",str(len(testing_pairs)))
-        for _ in testing_pairs:
-            print("te:",str(_))
         for _ in range(len(testing_pairs)):
-            ((d1,m1),(d2,m2)) = testing_pairs[_]
-            fouttest.write(str(d1) + "," + str(m1) + "," + str(d2) + "," + str(m2) + "," + str(testing_preds[_][0]) + "\n")
+            (hm1,hm2) = testing_pairs[_]
+            fouttest.write(str(hm1) + "," + str(hm2) + "," + str(testing_preds[_][0]) + "\n")
 
         fouttest.close()
 
