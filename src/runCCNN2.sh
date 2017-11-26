@@ -40,7 +40,7 @@ scriptDir=${baseDir}"src/"
 refDir=${scriptDir}"reference-coreference-scorers-8.01/"
 corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
-charEmbeddingsFile=${baseDir}"data/charRandomEmbeddings.txt"
+charEmbeddingsFile=${baseDir}"data/charGloveEmbeddings.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 
 hddcrpBaseFile=${11}
@@ -85,6 +85,7 @@ SSType=${21}
 SSwindowSize=${22}
 SSvectorSize=${23}
 SSlog=${24}
+devDir=${25}
 stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
@@ -124,6 +125,7 @@ echo "SSType:" $SSType
 echo "SSwindowSize:" $SSwindowSize
 echo "SSvectorSize:" $SSvectorSize
 echo "SSlog:" $SSlog
+echo "devDir:" $devDir
 echo "------------------------"
 
 cd $scriptDir
@@ -150,7 +152,8 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} \
 --SSType=${SSType} \
 --SSwindowSize=${SSwindowSize} \
 --SSvectorSize=${SSvectorSize} \
---SSlog=${SSlog}
+--SSlog=${SSlog} \
+--devDir=${devDir}
 
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"

@@ -1120,9 +1120,10 @@ class CCNN:
                             charEmb += curEmb
                             numCharsFound += 1
                     else:
-                        print("* WARNING: we don't have char:",str(char))   
+                        print("* ERROR: we don't have char:",str(char))
+                        exit(1)
 
-            while len(charEmb) < 400:
+            while len(charEmb) < 20*self.helper.charEmbLength:
                 charEmb.append(0.0)
 
         else: # can't be none, since we've specified featurePOS

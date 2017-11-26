@@ -72,6 +72,8 @@ def setCorefEngineParams():
 	parser.add_argument("--SSwindowSize", help="semantic space - windowSize: {0,3,5,7}", default="none", type=int)
 	parser.add_argument("--SSvectorSize", help="semantic space - vectorSize: {0,100,200,400}", default="none", type=int)
 	parser.add_argument("--SSlog", help="use log probabilities or not for semantic space prob", type=str2bool, nargs='?', default="f")
+	
+	parser.add_argument("--devDir", help="the directory to use for dev", type=int)
 	return parser.parse_args()
 
 # allows for handling boolean params
