@@ -606,6 +606,20 @@ class CCNN:
 
         #
 
+    def writePredictionsToFile(self, dev_pairs, dev_preds, testing_pairs, testing_preds):
+        foutdev = open("dev_" + str(self.args.devDir) + ".txt", "w")
+        fouttest = open("test_" + str(self.args.devDir) + ".txt", "w")
+
+        # sanity check
+        if len(dev_pairs) != len(dev_preds) or len(testing_pairs) != len(testing_preds):
+            print("* ERROR: inconsistent sizes")
+            exit(1)
+
+        for _ in range(len(dev_pairs)):
+            ((d1,m1),(d2,m2)) = dev_pairs[_]
+            foutdev.write(str(d1) + "," + str(m1) + "," + str(d2) + "," + str(m2) + "," + str(dev_preds[_][0]) + "\n")
+        foutdev.close()
+        fouttest.close()
 
     # writes CoNLL file in the same format as args.hddcrpFile
     def writeCoNLLFile(self, predictedClusters, stoppingPoint):
@@ -825,6 +839,10 @@ class CCNN:
         bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
+
+        # TMP: remove this after i have tested if K-fold helps and is needed
+        self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
+
         return (dev_pairs, dev_preds, testing_pairs, testing_preds)
         
     def euclidean_distance(self, vects):

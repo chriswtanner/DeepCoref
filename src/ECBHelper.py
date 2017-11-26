@@ -16,7 +16,6 @@ class ECBHelper:
 		self.devDirs = [23,24,25]
 
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
-		'''
 		self.trainingDirs = []
 		self.devDirs = []
 		for _ in self.nonTestingDirs:
@@ -26,8 +25,7 @@ class ECBHelper:
 				self.trainingDirs.append(_)
 		print("trainingDirs:",str(self.trainingDirs))
 		print("devDirs:",str(self.devDirs))
-		exit(1)
-		'''
+		
 		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20]
 		#self.devDirs = [21,22,23,24,25]
 		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
