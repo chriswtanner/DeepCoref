@@ -3,7 +3,7 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(1) # 20)
+numEpochs=(3) # 20)
 windowSize=(0)
 numNeg=(7)
 batchSize=(64) # 128) # 64 128
@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(1) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+devDir=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -82,7 +82,7 @@ do
 																							if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
 																							then
 																								echo "* kicking off runCCNN2 natively"
-																								./runCCNN2.sh TEST gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} # > ${fout}												
+																								./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} # > ${fout}												
 																							else
 																								qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd}
 																							fi

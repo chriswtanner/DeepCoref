@@ -623,7 +623,6 @@ class CCNN:
         for _ in range(len(testing_pairs)):
             (hm1,hm2) = testing_pairs[_]
             fouttest.write(str(hm1) + "," + str(hm2) + "," + str(testing_preds[_][0]) + "\n")
-
         fouttest.close()
 
     # writes CoNLL file in the same format as args.hddcrpFile
