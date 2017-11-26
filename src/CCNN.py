@@ -859,15 +859,15 @@ class CCNN:
         f = open(fileIn, "r")
         #fout = open("testAvg.txt", "w")
         for line in f:
-            (hm1,hm2,pred) = line.rstrip()
-            testingPredSum[(hm1,hm2)] += pred
+            print("linE:",str(line.rstrip()))
+            hm1,hm2,pred = line.rstrip().split(",")
+            testingPredSum[(int(hm1),int(hm2))] += float(pred)
         f.close()
 
         for (hm1,hm2) in testingPredSum:
             avgPred = float(testingPredSum[(hm1,hm2)] / 23.0)
             testing_pairs.append((hm1,hm2))
-            testing_preds.append((avgPred))
-        #fout.close()
+            testing_preds.append([avgPred])
         return (testing_pairs, testing_preds)
 
     def euclidean_distance(self, vects):
