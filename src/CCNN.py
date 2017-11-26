@@ -845,7 +845,7 @@ class CCNN:
         print("testing size:", str(len(testing_data)))
 
         # TMP: remove this after i have tested if K-fold helps and is needed
-        self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
+        # self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
 
         return (testing_pairs, testing_preds)
         
