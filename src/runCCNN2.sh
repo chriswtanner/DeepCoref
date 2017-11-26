@@ -40,7 +40,7 @@ scriptDir=${baseDir}"src/"
 refDir=${scriptDir}"reference-coreference-scorers-8.01/"
 corpusPath=${baseDir}"data/ECB_$1/"
 replacementsFile=${baseDir}"data/replacements.txt"
-charEmbeddingsFile=${baseDir}"data/charGloveEmbeddings.txt"
+charEmbeddingsFile=${baseDir}"data/charRandomEmbeddings.txt"
 allTokens=${baseDir}"data/allTokensFull.txt"
 
 hddcrpBaseFile=${11}

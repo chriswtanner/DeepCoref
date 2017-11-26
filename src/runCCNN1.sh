@@ -2,27 +2,27 @@
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
-numLayers=(2) # 3) # 1 3                                                                                                                                            
-numEpochs=(1) # 20)                                                                                                                                                 
+numLayers=(2) # 3) # 1 3
+numEpochs=(1) # 20)
 windowSize=(0)
 numNeg=(7)
-batchSize=(64) # 128) # 64 128                                                                                                                                      
-shuffle=(f) # t                                                                                                                                                     
-poolType=("max") # "avg")                                                                                                                                           
+batchSize=(64) # 128) # 64 128
+shuffle=(f) # t
+poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # "840B.300")
-dropout=(0.0) # 0.2 0.4)                                                                                                                                            
+dropout=(0.0) # 0.2 0.4)
 clusterMethod=("avgavg")
 numFilters=(4)
-filterMultiplier=(1.0) # 2.0)                                                                                                                                       
+filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
-featurePOS=("none") # none   onehot   emb_random   emb_glove                                                                                                        
-posType=("none") # none  sum  avg                                                                                                                                   
-lemmaType=("sum") # "sum" "avg")                                                                                                                                    
-dependencyType=("none") # # "sum" "avg")                                                                                                                            
-charType=("concat") # "none" "concat" "sum" "avg"                                                                                                                   
-SSType=("none") # "none" "sum" "avg"                                                                                                                                
-SSwindowSize=(0) # 3 5 7                                                                                                                                            
-SSvectorSize=(0) #100 400 800)                                                                                                                                      
+featurePOS=("none") # none   onehot   emb_random   emb_glove
+posType=("none") # none  sum  avg
+lemmaType=("sum") # "sum" "avg")
+dependencyType=("none") # # "sum" "avg")
+charType=("concat") # "none" "concat" "sum" "avg"
+SSType=("none") # "none" "sum" "avg"
+SSwindowSize=(0) # 3 5 7
+SSvectorSize=(0) #100 400 800)
 SSlog=("True")
 devDir=(3)
 source ~/researchcode/DeepCoref/venv/bin/activate
