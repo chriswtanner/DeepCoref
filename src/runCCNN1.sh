@@ -3,17 +3,17 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(1) # 20)
+numEpochs=(3) # 20)
 windowSize=(0)
 numNeg=(7)
 batchSize=(64) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
-embeddingsBaseFile=("6B.300") # "840B.300")
+embeddingsBaseFile=("840B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
-clusterMethod=("avgavg")
-numFilters=(4)
-filterMultiplier=(1.0) # 2.0)
+clusterMethod=("avg")
+numFilters=(32)
+filterMultiplier=(2.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(3)
+devDir=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
