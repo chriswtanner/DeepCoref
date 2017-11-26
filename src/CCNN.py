@@ -847,8 +847,29 @@ class CCNN:
         # TMP: remove this after i have tested if K-fold helps and is needed
         self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
 
-        return (dev_pairs, dev_preds, testing_pairs, testing_preds)
+        return (testing_pairs, testing_preds)
         
+    def loadPredictions(self, fileIn):
+        testing_pairs = []
+        testing_preds = []
+
+        testingPredSum = defaultdict(float)
+
+        numFiles = 23
+        f = open(fileIn, "r")
+        #fout = open("testAvg.txt", "w")
+        for line in f:
+            (hm1,hm2,pred) = line.rstrip()
+            testingPredSum[(hm1,hm2)] += pred
+        f.close()
+
+        for (hm1,hm2) in testingPredSum:
+            avgPred = float(testingPredSum[(hm1,hm2)] / 23.0)
+            testing_pairs.append((hm1,hm2))
+            testing_preds.append((avgPred))
+        #fout.close()
+        return (testing_pairs, testing_preds)
+
     def euclidean_distance(self, vects):
         x, y = vects
         return K.sqrt(K.maximum(K.sum(K.square(x - y), axis=1, keepdims=True), K.epsilon()))
