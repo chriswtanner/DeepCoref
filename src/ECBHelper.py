@@ -23,6 +23,11 @@ class ECBHelper:
 				self.devDirs.append(_)
 			else:
 				self.trainingDirs.append(_)
+
+		# if we passed in one of the k-fold cross-validate ones, then let's make dev = all, training = none
+		if len(self.devDirs) == 0:
+			self.devDirs = self.nonTestingDirs
+			self.trainingDirs = []
 		print("trainingDirs:",str(self.trainingDirs))
 		print("devDirs:",str(self.devDirs))
 		

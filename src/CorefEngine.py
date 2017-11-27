@@ -6,6 +6,7 @@ from ECBHelper import *
 from HDDCRPParser import *
 from StanParser import *
 from CCNN import *
+from FFNN import *
 from get_coref_metrics import *
 
 # parses the corpus and runs Coref Resoultion on the mentions
@@ -24,6 +25,12 @@ class CorefEngine:
 
 		if args.SSType != "none":
 			helper.createSemanticSpaceSimVectors(hddcrp_parsed) # just uses args and corpus
+		
+		# deep clustering approach
+		deepEngine = FFNN(args, corpus, helper, hddcrp_parsed) # instantiates and creates training data
+		#deepEngine.run()
+
+		exit(1)
 
 		# loads stanford's parsed version of our corpus and aligns it w/
 		# our representation -- so we can use their features
@@ -32,9 +39,8 @@ class CorefEngine:
 
 		# trains and tests the pairwise-predictions via Conjoined-CNN
 		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
-		
-		#
-		(testing_pairs, testing_preds) = corefEngine.run()
+
+		#(testing_pairs, testing_preds) = corefEngine.run()
 		#print("orig:")
 		#print(testing_pairs[0])
 		#print(testing_preds[0])

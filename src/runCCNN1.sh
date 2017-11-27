@@ -24,7 +24,10 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+devDir=(6633) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+penalty=(1) # -2 -1 1 2
+activation=("relu") # "relu" "sigmoid"
+
 source ~/researchcode/DeepCoref/venv/bin/activate
 # source ~/researchcode/DeepCoref/oldcpu/bin/activate
 # source /data/people/christanner/tfcpu/bin/activate
@@ -75,17 +78,23 @@ do
 																					for hdd in "${hddcrpBaseFile[@]}"
 																					do
 																						for dd in "${devDir[@]}"
-																						do 
-																							# qsub -pe smp 8 -l vlong -o
-																							fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}.out
-																							echo ${fout}
-																							if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
-																							then
-																								echo "* kicking off runCCNN2 natively"
-																								./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} # > ${fout}												
-																							else
-																								qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd}
-																							fi
+																						do
+																							for pen in "${penalty[@]}"
+																							do
+																								for act in "${activation[@]}"
+																								do
+																									# qsub -pe smp 8 -l vlong -o
+																									fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}_dd${dd}_p${pen}_a${act}.out
+																									echo ${fout}
+																									if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
+																									then
+																										echo "* kicking off runCCNN2 natively"
+																										./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${pen} ${act}  # > ${fout}												
+																									else
+																										qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${pen} ${act}
+																									fi
+																								done
+																							done
 																						done
 																					done
 																				done

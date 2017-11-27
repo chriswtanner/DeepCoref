@@ -48,6 +48,7 @@ hddcrpFullFile=${baseDir}"data/"${hddcrpBaseFile}".WD.semeval.txt" # MAKE SURE T
 verbose="true"
 stanfordPath="/Users/christanner/research/libraries/stanford-corenlp-full-2017-06-09/"
 stitchMentions="False"
+dataDir=${baseDir}"data/"
 resultsDir=${baseDir}"results/"
 
 # glove params
@@ -86,12 +87,15 @@ SSwindowSize=${22}
 SSvectorSize=${23}
 SSlog=${24}
 devDir=${25}
+penalty=${26}
+activation=${27}
 stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
 echo "corpus:" $1
 echo "stoplistFile:" $stoplistFile
 echo "resultsDir:" ${resultsDir}
+echo "dataDir:" ${dataDir}
 echo "device:" ${device}
 echo "numLayers:" $numLayers
 echo "poolType:" $poolType
@@ -126,11 +130,13 @@ echo "SSwindowSize:" $SSwindowSize
 echo "SSvectorSize:" $SSvectorSize
 echo "SSlog:" $SSlog
 echo "devDir:" $devDir
+echo "pen:" $penalty
+echo "act:" $activation
 echo "------------------------"
 
 cd $scriptDir
 
-python3 -u CorefEngine.py --resultsDir=${resultsDir} \
+python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --stoplistFile=${stoplistFile} \
 --device=${device} \
 --numLayers=${numLayers} --poolType=${poolType} --corpusPath=${corpusPath} \
@@ -153,7 +159,9 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} \
 --SSwindowSize=${SSwindowSize} \
 --SSvectorSize=${SSvectorSize} \
 --SSlog=${SSlog} \
---devDir=${devDir}
+--devDir=${devDir} \
+--penalty=${penalty} \
+--activation=${activation}
 
 exit 1
 cd ${refDir}

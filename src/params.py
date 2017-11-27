@@ -40,6 +40,7 @@ def setCorefEngineParams():
 
 	# CCNN
 	parser.add_argument("--resultsDir", help="the full path to /results")
+	parser.add_argument("--dataDir", help="the full path to /data")
 	parser.add_argument("--hddcrpBaseFile", help="the base filename of hddcrp file to load in (gold or predict)")
 	parser.add_argument("--hddcrpFullFile", help="the fullpath of hddcrpBaseFile")
 	parser.add_argument("--shuffleTraining", help="determines if our training will be sequentially over dirs or not", type=str2bool, nargs='?')
@@ -73,7 +74,11 @@ def setCorefEngineParams():
 	parser.add_argument("--SSvectorSize", help="semantic space - vectorSize: {0,100,200,400}", default="none", type=int)
 	parser.add_argument("--SSlog", help="use log probabilities or not for semantic space prob", type=str2bool, nargs='?', default="f")
 	
+	# for FFNN
 	parser.add_argument("--devDir", help="the directory to use for dev", type=int)
+	parser.add_argument("--penalty", help="the FFNN penalty", type=int, default=0)
+	parser.add_argument("--activation", help="activation {relu,sigmoid}", default="none")
+
 	return parser.parse_args()
 
 # allows for handling boolean params
