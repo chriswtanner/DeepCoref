@@ -11,7 +11,7 @@ from random import random
 from random import randint
 class ECBHelper:
 
-	def __init__(self, args, corpus): # goldTruthFile, goldLegendFile, isVerbose):
+	def __init__(self, args, corpus, hddcrp_parsed): # goldTruthFile, goldLegendFile, isVerbose):
 		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 		#self.devDirs = [23,24,25]
 
@@ -39,7 +39,8 @@ class ECBHelper:
 		self.corpus = corpus
 		self.isVerbose = args.verbose
 		self.args = args
-	
+		self.hddcrp_parsed = hddcrp_parsed
+
 		# filled in by loadEmbeddings(), if called, and if embeddingsType='type'
 		self.wordTypeToEmbedding = {}
 		#self.embeddingLength = 0 # filled in by loadEmbeddings()
@@ -99,7 +100,7 @@ class ECBHelper:
 		f.close()
 		return stopwords
 
-	def createSemanticSpaceSimVectors(self, hddcrp_parsed):
+	def createSemanticSpaceSimVectors(self):
 		self.SSMentionTypeToVec = {}
 		if self.args.SSType == "none":
 			return
@@ -114,7 +115,7 @@ class ECBHelper:
 		mentionTokens = set()
 		mentionTokens.update(self.getECBMentionTokens(self.trainingDirs))
 		mentionTokens.update(self.getECBMentionTokens(self.devDirs))
-		mentionTokens.update(self.getHDDCRPMentionTokens(hddcrp_parsed))
+		mentionTokens.update(self.getHDDCRPMentionTokens(self.hddcrp_parsed))
 		for t in mentionTokens:
 			if t.text not in stopwords and len(t.text) > 1:
 				mentionTypes.add(t.text)
@@ -775,6 +776,258 @@ class ECBHelper:
 				trainingLabels.append(0)
 				j+=1
 		return (trainingPairs,trainingLabels)
+
+	# writes CoNLL file in the same format as args.hddcrpFile
+	def writeCoNLLFile(self, predictedClusters, stoppingPoint):
+		hm_idToClusterID = {}
+		for c_id in predictedClusters.keys():
+			for hm_id in predictedClusters[c_id]:
+				hm_idToClusterID[hm_id] = c_id
+
+		print("# hm_ids:",str(len(hm_idToClusterID.keys())))
+
+		# sanity check
+		for hm_id in self.hddcrp_parsed.hm_idToHMention.keys():
+			if hm_id not in hm_idToClusterID.keys():
+				print("ERROR: hm_id:",str(hm_id),"NOT FOUND within our clusters, but it's parsed!")
+				exit(1)
+
+		# constructs output file
+		fileOut = str(self.args.resultsDir) + \
+			str(self.args.hddcrpBaseFile) + "_" + \
+			"nl" + str(self.args.numLayers) + "_" + \
+			"pool" + str(self.args.poolType) + "_" + \
+			"ne" + str(self.args.numEpochs) + "_" + \
+			"ws" + str(self.args.windowSize) + "_" + \
+			"neg" + str(self.args.numNegPerPos) + "_" + \
+			"bs" + str(self.args.batchSize) + "_" + \
+			"s" + str(self.args.shuffleTraining) + "_" + \
+			"e" + str(self.args.embeddingsBaseFile) + "_" + \
+			"dr" + str(self.args.dropout) + "_" + \
+			"co" + str(self.args.CCNNOpt) + "_" + \
+			"cm" + str(self.args.clusterMethod) + "_" + \
+			"nf" + str(self.args.numFilters) + "_" + \
+			"fm" + str(self.args.filterMultiplier) + "_" + \
+			"fp" + str(self.args.featurePOS) + "_" + \
+			"pt" + str(self.args.posType) + "_" + \
+			"lt" + str(self.args.lemmaType) + "_" + \
+			"dt" + str(self.args.dependencyType) + "_" + \
+			"ct" + str(self.args.charType) + "_" + \
+			"st" + str(self.args.SSType) + "_" + \
+			"ws2" + str(self.args.SSwindowSize) + "_" + \
+			"vs" + str(self.args.SSvectorSize) + "_" + \
+			"sl" + str(self.args.SSlog) + "_" + \
+			"dd" + str(self.args.devDir) + "_" + \
+			"fn" + str(self.args.FFNNnumEpochs) + "_" + \
+			"fp" + str(self.args.FFNNPosRatio) + "_" + \
+			"fo" + str(self.args.FFNNOpt) + "_" + \
+			"sp" + str(stoppingPoint) + \
+			".txt"
+
+		print("writing out:",str(fileOut))
+		fout = open(fileOut, 'w')
+
+		# reads the original CoNLL, while writing each line
+		f = open(self.args.hddcrpFullFile, 'r')
+		tokenIndex = 0
+		REFToStartTuple = defaultdict(list)
+		for line in f:
+			line = line.rstrip()
+			tokens = line.split("\t")
+			if line.startswith("#") and "document" in line:
+				sentenceNum = 0
+				fout.write(line + "\n")
+			elif line == "":
+				sentenceNum += 1
+				fout.write(line + "\n")
+			elif len(tokens) == 5:
+				doc, _, tokenNum, text, ref_ = tokens   
+				UID = str(doc) + ";" + str(sentenceNum) + ";" + str(tokenNum)
+
+				# reconstructs the HMention(s) that exist on this line, for the
+				# sake of being able to now look up what cluster assignent it/they belong to
+				htoken = self.hddcrp_parsed.UIDToToken[UID]
+				hmentions = set()
+				for hm_id in htoken.hm_ids:
+					hmentions.add(self.hddcrp_parsed.hm_idToHMention[hm_id])
+
+				refs = []
+				if ref_.find("|") == -1:
+					refs.append(ref_)
+				else: # we at most have 1 "|""
+					refs.append(ref_[0:ref_.find("|")])
+					refs.append(ref_[ref_.find("|")+1:])
+					#print("***** FOUND 2:",str(line))
+
+				if (len(refs) == 1 and refs[0] == "-"):
+					fout.write(line + "\n") # just output it, since we want to keep the same mention going
+				else:
+					ref_section = ""
+					isFirst = True
+					for ref in refs:
+						if ref[0] == "(" and ref[-1] != ")": # i.e. (ref_id
+							ref_id = int(ref[1:])
+							REFToStartTuple[ref_id].append((tokenIndex,isFirst))
+							startTuple=(tokenIndex,isFirst)
+							foundMention = False
+							for hmention in hmentions:
+								if hmention.ref_id == ref_id and hmention.startTuple == startTuple: # we found the exact mention
+									foundMention = True
+									hm_id = hmention.hm_id
+									clusterID = hm_idToClusterID[hm_id]
+									ref_section += "(" + str(clusterID)
+									break
+							if not foundMention:
+								print("* ERROR #1, we never found the mention for this line:",str(line))
+								exit(1)
+
+						# represents we are ending a mention
+						elif ref[-1] == ")": # i.e., ref_id) or (ref_id)
+							ref_id = -1
+
+							endTuple=(tokenIndex,isFirst)
+							startTuple = ()
+							# we set ref_if, tokens, UID
+							if ref[0] != "(": # ref_id)
+								ref_id = int(ref[:-1])
+								startTuple = REFToStartTuple[ref_id].pop()
+							else: # (ref_id)
+								ref_id = int(ref[1:-1])
+								startTuple = (tokenIndex,isFirst)
+								ref_section += "("
+
+							#print("starttuple:",str(startTuple))
+							#print("endTuple:",str(endTuple))
+
+							foundMention = False
+							for hmention in hmentions:
+								# print("looking at hmention:",str(hmention))
+								if hmention.ref_id == ref_id and hmention.startTuple == startTuple and hmention.endTuple == endTuple: # we found the exact mention
+									foundMention = True
+									hm_id = hmention.hm_id
+									clusterID = hm_idToClusterID[hm_id]
+									ref_section += str(clusterID) + ")"
+									break
+							if not foundMention:
+								print("* ERROR #2, we never found the mention for this line:",str(line))
+								exit(1)
+
+						if len(refs) == 2 and isFirst:
+							ref_section += "|"
+						isFirst = False
+					fout.write(str(doc) + "\t" + str(_) + "\t" + str(tokenNum) + \
+						"\t" + str(text) + "\t" + str(ref_section) + "\n")
+					# end of current token line
+				tokenIndex += 1 # this always increases whenever we see a token
+
+		f.close()
+		fout.close()
+
+	# creates clusters for our hddcrp predictions
+	def clusterHPredictions(self, pairs, predictions, stoppingPoint):
+		clusters = {}
+		print("in clusterPredictions()")
+		
+		# stores predictions
+		docToHMPredictions = defaultdict(lambda : defaultdict(float))
+		docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+		
+		uniqueHMs = set()
+		for i in range(len(pairs)):
+			(hm1,hm2) = pairs[i]
+
+			prediction = predictions[i][0]
+			doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+			doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+			if doc_id != doc_id2:
+				print("ERROR: pairs are from diff docs")
+				exit(1)
+
+			if hm1 not in docToHMs[doc_id]:
+				docToHMs[doc_id].append(hm1)
+			if hm2 not in docToHMs[doc_id]:
+				docToHMs[doc_id].append(hm2)
+
+			docToHMPredictions[doc_id][(hm1,hm2)] = prediction
+			uniqueHMs.add(hm1)
+			uniqueHMs.add(hm2)
+		ourClusterID = 0
+		ourClusterSuperSet = {}
+		
+		stoppingPoints = []
+
+		for doc_id in docToHMPredictions.keys():
+			# constructs our base clusters (singletons)
+			ourDirClusters = {} 
+			for i in range(len(docToHMs[doc_id])):
+				hm = docToHMs[doc_id][i]
+				a = set()
+				a.add(hm)
+				ourDirClusters[i] = a
+
+			# the following keeps merging until our shortest distance > stopping threshold,
+			# or we have 1 cluster, whichever happens first
+			while len(ourDirClusters.keys()) > 1:
+				# find best merge
+				closestDist = 999999
+				closestClusterKeys = (-1,-1)
+
+				closestAvgDist = 999999
+				closestAvgClusterKeys = (-1,-1)
+
+				#print("ourDirClusters:",str(ourDirClusters.keys()))
+				# looks at all combinations of pairs
+				i = 0
+				for c1 in ourDirClusters.keys():
+					
+					#print("c1:",str(c1))
+					j = 0
+					for c2 in ourDirClusters.keys():
+						if j > i:
+							dists = []
+							for dm1 in ourDirClusters[c1]:
+								for dm2 in ourDirClusters[c2]:
+									dist = 99999
+									if (dm1,dm2) in docToHMPredictions[doc_id]:
+										dist = docToHMPredictions[doc_id][(dm1,dm2)]
+										dists.append(dist)
+									elif (dm2,dm1) in docToHMPredictions[doc_id]:
+										dist = docToHMPredictions[doc_id][(dm2,dm1)]
+										dists.append(dist)
+									else:
+										print("* error, why don't we have either dm1 or dm2 in doc_id")
+									if dist < closestDist:
+										closestDist = dist
+										closestClusterKeys = (c1,c2)
+
+							avgDist = float(sum(dists)) / float(len(dists))
+							#print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
+							if avgDist < closestAvgDist:
+								closestAvgDist = avgDist
+								closestAvgClusterKeys = (c1,c2)
+
+						j += 1
+					i += 1
+
+				if closestAvgDist > stoppingPoint:
+					break
+
+				newCluster = set()
+				(c1,c2) = closestClusterKeys
+				for _ in ourDirClusters[c1]:
+					newCluster.add(_)
+				for _ in ourDirClusters[c2]:
+					newCluster.add(_)
+				ourDirClusters.pop(c1, None)
+				ourDirClusters.pop(c2, None)
+				ourDirClusters[c1] = newCluster
+			# end of current doc
+			for i in ourDirClusters.keys():
+				ourClusterSuperSet[ourClusterID] = ourDirClusters[i]
+				ourClusterID += 1
+		# end of going through every doc
+		#print("# our clusters:",str(len(ourClusterSuperSet)))
+		return ourClusterSuperSet
 
 ##################################################
 #     CoNLL output files

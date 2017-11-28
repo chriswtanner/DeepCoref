@@ -56,6 +56,7 @@ def setCorefEngineParams():
 	parser.add_argument("--clusterMethod", help="min, avg, or avgavg")	
 	parser.add_argument("--device", help="gpu or cpu")
 	parser.add_argument("--dropout", help="initial dropout rate", type=float)
+	parser.add_argument("--CCNNOpt", help="CCNN's optimizer {rms,adagrad,adam}")
 	parser.add_argument("--numFilters", help="num CNN filters", type=int)
 	parser.add_argument("--filterMultiplier", help="the \% of how many filters to use at each successive layer", type=float)
 	# optionally added features to the CCNN
@@ -76,8 +77,9 @@ def setCorefEngineParams():
 	
 	# for FFNN
 	parser.add_argument("--devDir", help="the directory to use for dev", type=int)
-	parser.add_argument("--penalty", help="the FFNN penalty", type=int, default=0)
-	parser.add_argument("--activation", help="activation {relu,sigmoid}", default="none")
+	parser.add_argument("--FFNNnumEpochs", help="FFNN's # of epochs", default="none", type=int)
+	parser.add_argument("--FFNNPosRatio", help="the FFNN's \% of pos examples", type=float, default=0)
+	parser.add_argument("--FFNNOpt", help="optimizer for FFNNs {rms,adagrad,adam}", default="adam")
 
 	return parser.parse_args()
 

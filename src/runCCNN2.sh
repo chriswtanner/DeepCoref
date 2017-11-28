@@ -8,7 +8,8 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.15 0.17 0.19 0.21 0.23 0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
+stoppingPoints=(0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.54 0.55 0.56 0.57 0.58 0.59 0.601 0.61 0.62 0.63)
+#stoppingPoints=(0.15 0.17 0.19 0.21 0.23 0.26 0.28 0.301 0.32 0.34 0.37 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
 
 if [ ${me} = "ctanner" ]
 then
@@ -72,23 +73,26 @@ numNegPerPos=$7
 batchSize=$8
 shuffleTraining=$9
 dropout=${12}
-clusterMethod=${13}
-numFilters=${14}
-filterMultiplier=${15}
+CCNNOpt=${13}
+clusterMethod=${14}
+numFilters=${15}
+filterMultiplier=${16}
 # features
-featurePOS=${16}
-posType=${17}
+featurePOS=${17}
+posType=${18}
 posEmbeddingsFile=${baseDir}"data/posEmbeddings100.txt"
-lemmaType=${18}
-dependencyType=${19}
-charType=${20}
-SSType=${21}
-SSwindowSize=${22}
-SSvectorSize=${23}
-SSlog=${24}
-devDir=${25}
-penalty=${26}
-activation=${27}
+lemmaType=${19}
+dependencyType=${20}
+charType=${21}
+SSType=${22}
+SSwindowSize=${23}
+SSvectorSize=${24}
+SSlog=${25}
+devDir=${26}
+FFNNnumEpochs=${27}
+FFNNPosRatio=${28}
+FFNNOpt=${29}
+
 stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
@@ -114,6 +118,7 @@ echo "batchSize:" $batchSize
 echo "hddcrpBaseFile:" $hddcrpBaseFile
 echo "hddcrpFullFile:" $hddcrpFullFile
 echo "dropout:" $dropout
+echo "CCNNOpt:" $CCNNOpt
 echo "clusterMethod:" $clusterMethod
 echo "numFilters:" $numFilters
 echo "filterMultiplier:" $filterMultiplier
@@ -130,8 +135,9 @@ echo "SSwindowSize:" $SSwindowSize
 echo "SSvectorSize:" $SSvectorSize
 echo "SSlog:" $SSlog
 echo "devDir:" $devDir
-echo "pen:" $penalty
-echo "act:" $activation
+echo "FFNNnumEpochs:" $FFNNnumEpochs
+echo "FFNNPosRatio:" $FFNNPosRatio
+echo "FFNNOpt:" $FFNNOpt
 echo "------------------------"
 
 cd $scriptDir
@@ -147,7 +153,9 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --windowSize=${windowSize} --shuffleTraining=${shuffleTraining} --numNegPerPos=${numNegPerPos} \
 --batchSize=${batchSize} \
 --hddcrpBaseFile=${hddcrpBaseFile} --hddcrpFullFile=${hddcrpFullFile} \
---dropout=${dropout} --clusterMethod=${clusterMethod} \
+--dropout=${dropout} \
+--CCNNOpt=${CCNNOpt} \
+--clusterMethod=${clusterMethod} \
 --numFilters=${numFilters} --filterMultiplier=${filterMultiplier} \
 --stanOutputDir=${stanOutputDir} \
 --featurePOS=${featurePOS} --posType=${posType} --posEmbeddingsFile=${posEmbeddingsFile} \
@@ -160,17 +168,17 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --SSvectorSize=${SSvectorSize} \
 --SSlog=${SSlog} \
 --devDir=${devDir} \
---penalty=${penalty} \
---activation=${activation}
+--FFNNnumEpochs=${FFNNnumEpochs} \
+--FFNNPosRatio=${FFNNPosRatio} \
+--FFNNOpt=${FFNNOpt}
 
-exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
 do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_sp"${sp}".txt"
+	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_co"${CCNNOpt}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_dd"${devDir}"_fn"${FFNNnumEpochs}"_fp"${FFNNPosRatio}"_fo"${FFNNOpt}"_sp"${sp}".txt"
 	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 	ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`

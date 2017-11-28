@@ -13,6 +13,8 @@ from get_coref_metrics import *
 class CorefEngine:
 	if __name__ == "__main__":
 
+		runFFNN = True
+
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -21,39 +23,37 @@ class CorefEngine:
 
 		# parses the real, actual corpus (ECB's XML files)
 		corpus = ECBParser(args)
-		helper = ECBHelper(args, corpus)
+		helper = ECBHelper(args, corpus, hddcrp_parsed)
 
 		if args.SSType != "none":
-			helper.createSemanticSpaceSimVectors(hddcrp_parsed) # just uses args and corpus
+			helper.createSemanticSpaceSimVectors() # just uses args and corpus
 		
-		# deep clustering approach
-		deepEngine = FFNN(args, corpus, helper, hddcrp_parsed) # instantiates and creates training data
-		#deepEngine.run()
+		if runFFNN: # deep clustering approach
+			
+			corefEngine = FFNN(args, corpus, helper, hddcrp_parsed) # instantiates and creates training data
+			(testing_pairs, testing_preds, golden_truth) = corefEngine.run()
 
-		exit(1)
+			#predictedClusters = corefEngine.clusterHPredictions(testing_pairs, testing_preds, sp)
+		else:
+			# loads stanford's parsed version of our corpus and aligns it w/
+			# our representation -- so we can use their features
+			stan = StanParser(args, corpus) 
+			helper.addStanfordAnnotations(stan)
 
-		# loads stanford's parsed version of our corpus and aligns it w/
-		# our representation -- so we can use their features
-		stan = StanParser(args, corpus) 
-		helper.addStanfordAnnotations(stan)
-
-		# trains and tests the pairwise-predictions via Conjoined-CNN
-		corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
-
-		#(testing_pairs, testing_preds) = corefEngine.run()
-		#print("orig:")
-		#print(testing_pairs[0])
-		#print(testing_preds[0])
-		#(testing_pairs, testing_preds) = corefEngine.loadPredictions("testall_6647.txt")
-
+			# trains and tests the pairwise-predictions via Conjoined-CNN
+			corefEngine = CCNN(args, corpus, helper, hddcrp_parsed)
+			(dev_pairs, dev_preds, testing_pairs, testing_preds) = corefEngine.run()
+			#(testing_pairs, testing_preds) = corefEngine.loadPredictions("testall_6647.txt")
+		
 		# performs agg. clustering on our predicted, testset of HMentions
-		stoppingPoints = [0.15,0.17,0.19,0.21,0.23,0.26,0.28,0.301,0.32,0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
+		stoppingPoints = [0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.54,0.55,0.56,0.57,0.58,0.59,0.601,0.61,0.62,0.63]
+		#stoppingPoints = [0.15,0.17,0.19,0.21,0.23,0.26,0.28,0.301,0.32,0.34,0.37,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		for sp in stoppingPoints:
-			predictedClusters = corefEngine.clusterHPredictions(testing_pairs, testing_preds, sp)
-			corefEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
+			predictedClusters = helper.clusterHPredictions(testing_pairs, testing_preds, sp)
+			#corefEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
 
 			print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
-			corefEngine.writeCoNLLFile(predictedClusters, sp)
+			helper.writeCoNLLFile(predictedClusters, sp)
 		print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
 
 

@@ -123,3 +123,43 @@ class FFNNTF:
 				curY = [1,0]
 			self.testX.append(curX)
 			self.testY.append(curY)
+
+
+
+	# ---- TEH FOLLOWING WORKS, IF I PASTE IT INTO FFNN
+	# however, to save space (since i'm doing the keras model), i'm just pasting it here
+	
+	def testTF(self):
+
+		X = tf.placeholder("float", shape=[None, self.dataDim])
+		y = tf.placeholder("float", shape=[None, self.outputDim])
+
+		w_1 = self.init_weights((self.dataDim, self.hidden_size))
+		w_2 = self.init_weights((self.hidden_size, self.outputDim))
+
+		b_1 = self.init_weights((1, self.hidden_size))
+		b_2 = self.init_weights((1, self.outputDim))
+
+		yhat = self.forwardprop(X, w_1, w_2, b_1, b_2)
+		predict = tf.argmax(yhat, axis=1)
+
+		cost = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(logits=yhat, targets=y, pos_weight=self.penalty))
+		updates = tf.train.AdamOptimizer(self.lr).minimize(cost)
+
+		sess = tf.Session()
+		init = tf.global_variables_initializer()
+		sess.run(init)
+
+		num_batches = math.ceil(len(self.trainX) / self.batch_size)
+
+		for epoch in range(self.num_epochs):
+			for batch_num in range(num_batches):
+				lb = batch_num * self.batch_size
+				ub = min(lb + self.batch_size-1, len(self.trainX)-1)
+				sess.run(updates, feed_dict={X: self.trainX[lb:ub], y: self.trainY[lb:ub]})
+			trainPreds = sess.run(predict, feed_dict={X: self.trainX, y: self.trainY})
+			testPreds = sess.run(predict, feed_dict={X: self.testX, y: self.testY})
+			if 1 in testPreds:
+				print("* we found at least 1 1!")
+			print("* epoch:",str(epoch),"test acc:",str(self.getAccuracy2(testPreds, self.testY)))
+		print("f1:",str(self.calculateF12(testPreds)))

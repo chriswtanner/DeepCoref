@@ -31,80 +31,40 @@ class FFNN:
 		self.helper = helper
 		self.hddcrp_parsed = hddcrp_parsed
 
-		self.createTraining()
+		# to be filled in via createTraining()
+		self.testingPairs = ""
+		self.testX = ""
+		self.testY = ""
+
+		self.createTraining() # loads training/test data
 
 		# params
 		self.hidden_size = 50
 		self.dataDim = len(self.trainX[0])
 		self.outputDim = 2
-		self.num_epochs = 20
 		self.batch_size = 5
-		self.lr=0.001
-		self.penalty = 10
-		pos_ratio = 0.8
+		# the passed-in params
+		self.num_epochs = int(self.args.FFNNnumEpochs)
+		self.FFNNOpt = self.args.FFNNOpt
+		pos_ratio = float(self.args.FFNNPosRatio) # 0.8
 		neg_ratio = 1. - pos_ratio
 		self.pos_ratio = tf.constant(pos_ratio, tf.float32)
 		self.weights = tf.constant(neg_ratio / pos_ratio, tf.float32)
-		self.__name__ = "weighted_binary_crossentropy({0})".format(pos_ratio)
 
-		self.testKeras()
-		#self.testTF()
-
-	def testTF(self):
-
-		X = tf.placeholder("float", shape=[None, self.dataDim])
-		y = tf.placeholder("float", shape=[None, self.outputDim])
-
-		w_1 = self.init_weights((self.dataDim, self.hidden_size))
-		w_2 = self.init_weights((self.hidden_size, self.outputDim))
-
-		b_1 = self.init_weights((1, self.hidden_size))
-		b_2 = self.init_weights((1, self.outputDim))
-
-		yhat = self.forwardprop(X, w_1, w_2, b_1, b_2)
-		predict = tf.argmax(yhat, axis=1)
-
-		cost = tf.reduce_mean(tf.nn.weighted_cross_entropy_with_logits(logits=yhat, targets=y, pos_weight=self.penalty))
-		#cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=yhat))
-		updates = tf.train.AdamOptimizer(self.lr).minimize(cost)
-
-		sess = tf.Session()
-		init = tf.global_variables_initializer()
-		sess.run(init)
-
-		num_batches = math.ceil(len(self.trainX) / self.batch_size)
-
-		for epoch in range(self.num_epochs):
-			for batch_num in range(num_batches):
-				lb = batch_num * self.batch_size
-				ub = min(lb + self.batch_size-1, len(self.trainX)-1)
-				sess.run(updates, feed_dict={X: self.trainX[lb:ub], y: self.trainY[lb:ub]})
-			trainPreds = sess.run(predict, feed_dict={X: self.trainX, y: self.trainY})
-			testPreds = sess.run(predict, feed_dict={X: self.testX, y: self.testY})
-			if 1 in testPreds:
-				print("* we found at least 1 1!")
-			print("* epoch:",str(epoch),"test acc:",str(self.getAccuracy2(testPreds, self.testY)))
-		print("f1:",str(self.calculateF12(testPreds)))
-
-	def testKeras(self):
-		wcc = self.w2_categorical_crossentropy([1.0,5.0])
-		ncce = self.wrapped_partial(self.w_binary_crossentropy, weights=0.01) # where weight is the ratio of positive/negatives 
-		#ncce = functools.partial(self.w1_categorical_crossentropy, weights=np.ones((self.outputDim,self.outputDim)))
+	def run(self):
 		model = Sequential()
 		model.add(Dense(units=self.hidden_size, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
 		model.add(Activation('sigmoid'))
 		model.add(Dense(units=self.outputDim, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
 		model.add(Activation('softmax'))
 		model.compile(loss=self.weighted_binary_crossentropy,optimizer=Adam(lr=0.001),metrics=['accuracy'])
-		#model.compile(loss=ncce,optimizer=Adam(lr=0.001),metrics=['accuracy'])
-		#model.compile(loss=self.weighted_binary_crossentropy,optimizer=Adam(lr=0.001),metrics=['accuracy'])
-		#model.compile(loss='categorical_crossentropy',optimizer='rmsprop',metrics=['accuracy'])
 		model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
 		evaluation = model.evaluate(self.testX, self.testY, verbose=1)
 		preds = model.predict(self.testX, verbose=1)
-		print("evaluation:",str(evaluation))
+		print("\nevaluation:",str(evaluation))
 		print("test acc:",str(self.getAccuracy(preds, self.testY)))
 		print("f1:",str(self.calculateF1(preds)))
+		return (self.testingPairs, preds, self.testY)
 
 	def calculateF12(self, preds):
 		num_correct = 0
@@ -162,17 +122,6 @@ class FFNN:
 		cost = tf.nn.weighted_cross_entropy_with_logits(y_true, y_pred, self.weights)
 		#return K.mean(cost, axis=-1)
 		return K.mean(cost * self.pos_ratio, axis=-1)
-
-	def w_binary_crossentropy(output, target, weights):
-		output = tf.clip_by_value(output, tf.cast(_EPSILON, dtype=_FLOATX),tf.cast(1.-_EPSILON, dtype=_FLOATX))
-		output = tf.log(output / (1 - output))
-		return tf.nn.weighted_cross_entropy_with_logits(output, target, weights)
-
-
-	def wrapped_partial(self, func, *args, **kwargs):
-		partial_func = functools.partial(func, *args, **kwargs)
-		functools.update_wrapper(partial_func, func)
-		return partial_func
 
 	def createTraining(self):
 		print("* in createTraining")
@@ -236,30 +185,8 @@ class FFNN:
 		print("# parsed:",str(len(parsedDevDMs)))
 		print("# pred:",str(len(predDevDMs)))
 
-		self.trainX, self.trainY = self.loadData(docToPredDevDMs, devPredictions, False)
-		self.testX, self.testY = self.loadData(docToPredTestDMs, testPredictions, True)
-
-	def w1_categorical_crossentropy(self, y_true, y_pred, weights):
-		nb_cl = len(weights)
-		final_mask = K.zeros_like(y_pred[:, 0])
-		y_pred_max = K.max(y_pred, axis=1)
-		y_pred_max = K.expand_dims(y_pred_max, 1)
-		y_pred_max_mat = K.equal(y_pred, y_pred_max)
-		for c_p, c_t in product(range(nb_cl), range(nb_cl)):
-			final_mask += (K.cast(weights[c_t, c_p],K.floatx()) * K.cast(y_pred_max_mat[:, c_p] ,K.floatx())* K.cast(y_true[:, c_t],K.floatx()))
-		return K.categorical_crossentropy(y_pred, y_true) * final_mask
-
-
-	def w2_categorical_crossentropy(self, weights):
-		def loss(y_true, y_pred):
-			nb_cl = len(weights)
-			final_mask = K.zeros_like(y_pred[:, 0])
-			y_pred_max = K.max(y_pred, axis=1, keepdims=True)
-			y_pred_max_mat = K.equal(y_pred, y_pred_max)
-			for c_p, c_t in product(range(nb_cl), range(nb_cl)):
-				final_mask += (weights[c_t, c_p] * y_pred_max_mat[:, c_p] * y_true[:, c_t])
-			return K.categorical_crossentropy(y_pred, y_true) * final_mask
-		return loss
+		_, self.trainX, self.trainY = self.loadData(docToPredDevDMs, devPredictions, False)
+		self.testingPairs, self.testX, self.testY = self.loadData(docToPredTestDMs, testPredictions, True)
 
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
@@ -276,6 +203,7 @@ class FFNN:
 
 	def loadData(self, docToPredDMs, predictions, isHDDCRP):
 		addedPairs = set()
+		pairs = []
 		X = []
 		Y = []
 		numP = 0
@@ -285,12 +213,15 @@ class FFNN:
 				positivePairs = set()
 				negativePairs = set()
 				for dm2 in docToPredDMs[doc]:
-					if dm1 == dm2:
+
+					# if we have a singleton, let's use it
+					if len(docToPredDMs[doc]) > 1 and dm1 == dm2:
 						continue
 					# we haven't yet added it to then positive or negative examples
 					# (don't want duplicate training pairs)
 					if (dm1,dm2) not in addedPairs and (dm2,dm1) not in addedPairs:				
 						curX = []
+						addExample = True # will only become False if the # of neg devs is greater than our param
 						if (dm1,dm2) in predictions:
 							curX.append(predictions[(dm1,dm2)])
 						elif (dm2,dm1) in predictions:
@@ -316,24 +247,22 @@ class FFNN:
 								curY = [0,1]
 								numP += 1
 							else:
-								curY = [1,0]
-								numN += 1
+								if numN >= self.args.numNegPerPos * numP:
+									addExample = False
+								else:
+									curY = [1,0]
+									numN += 1
 
-						# adds training
-						X.append(curX)
-						Y.append(curY)
+						if addExample:
+							# adds training
+							X.append(curX)
+							Y.append(curY)
 
-						# just ensures we don't add the same training (pos or neg) twice
-						addedPairs.add((dm1,dm2))
-						addedPairs.add((dm2,dm1))
+							# just ensures we don't add the same training (pos or neg) twice
+							addedPairs.add((dm1,dm2))
+							addedPairs.add((dm2,dm1))
+
+							pairs.append((dm1,dm2))
 		print("numP:",str(numP))
 		print("numN:",str(numN))
-		return (X, Y)
-
-		'''
-		TODO: 
-			X- make a separate FFNN class, which works on fake data
-			X- compare it to keras model
-			X- incorporate it in this class; ensure it works
-			- make our training/test data that format
-		'''
+		return (pairs, X, Y)
