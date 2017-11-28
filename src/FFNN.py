@@ -1,7 +1,7 @@
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
-from keras.optimizers import RMSprop, Adam
+from keras.optimizers import RMSprop, Adam, Adagrad
 from keras.utils import np_utils
 from collections import defaultdict
 from tensorflow.python.client import device_lib
