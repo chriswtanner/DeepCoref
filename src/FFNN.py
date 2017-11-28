@@ -57,7 +57,17 @@ class FFNN:
 		model.add(Activation('sigmoid'))
 		model.add(Dense(units=self.outputDim, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
 		model.add(Activation('softmax'))
-		model.compile(loss=self.weighted_binary_crossentropy,optimizer=Adam(lr=0.001),metrics=['accuracy'])
+
+		if self.FFNNOpt == "rms":
+			opt = RMSprop()
+		elif self.FFNNOpt == "adam":
+			opt = Adam(lr=0.001)
+		elif self.FFNNOpt == "adagrad":
+			opt = Adagrad()
+		else:
+			print("* ERROR: invalid CCNN optimizer")
+			exit(1)
+		model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
 		model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
 		evaluation = model.evaluate(self.testX, self.testY, verbose=1)
 		preds = model.predict(self.testX, verbose=1)
