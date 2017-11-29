@@ -469,9 +469,21 @@ class CCNN:
                 sentNum = hm.tokens[0].sentenceNum
                 sent = ' '.join(self.hddcrp_parsed.docSentences[doc_id][sentNum])
 
-                fout2.write("\nHMENTION:" + str(hm_id1) + " (" + str(hm.getMentionText()) + ") -- " + str(sent) + "\n")
+                lemma1 = ""
+                for htoken in hm.tokens:
+                    token = self.corpus.UIDToToken[htoken.UID]
+                    lemma1 += self.helper.getBestStanToken(token.stanTokens).lemma + " "
+                    
+
+                fout2.write("\nHMENTION:" + str(hm_id1) + " (" + str(hm.getMentionText()) + "lem:" + str(lemma1) + ") -- " + str(sent) + "\n")
                 for (hm_id2,pred) in sorted_distances:
                     hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
+
+                    lemma2 = ""
+                    for htoken in hmention2.tokens:
+                        token = self.corpus.UIDToToken[htoken.UID]
+                        lemma2 += self.helper.getBestStanToken(token.stanTokens).lemma + " "
+
                     gold_ref2 = self.hddcrp_parsed.hm_idToHMention[hm_id2].ref_id
                     pred_ref2 = hm_idToPredictedClusterID[hm_id2]
                     prefix = "  "
@@ -483,7 +495,7 @@ class CCNN:
                         prefix += "+"
 
                     sent = ' '.join(self.hddcrp_parsed.docSentences[hmention2.doc_id][hmention2.tokens[0].sentenceNum])
-                    fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + ") = " + str(pred) + " -- " + str(sent) + "\n")
+                    fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + "lem:" + str(lemma1) + ") = " + str(pred) + " -- " + str(sent) + "\n")
         fout1.close()
         fout2.close()
         fout3.close()
