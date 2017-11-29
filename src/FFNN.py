@@ -275,7 +275,7 @@ class FFNN:
 							print("* ERROR: dm1,dm2 or reverse aren't in predictions")
 							exit(1)
 
-						curX += dmToLinkDistribution[dm1]
+						curX += docToListDistribution[doc]#dmToLinkDistribution[dm1]
 
 						curY = []
 						if isHDDCRP:
