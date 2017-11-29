@@ -63,11 +63,12 @@ class FFNN:
 		elif self.FFNNOpt == "adam":
 			opt = Adam(lr=0.001)
 		elif self.FFNNOpt == "adagrad":
-			opt = Adagrad()
+			opt = Adagrad(lr=0.001)
 		else:
 			print("* ERROR: invalid CCNN optimizer")
 			exit(1)
 		model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
+		model.summary()
 		model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
 		evaluation = model.evaluate(self.testX, self.testY, verbose=1)
 		preds = model.predict(self.testX, verbose=1)
@@ -218,6 +219,40 @@ class FFNN:
 		Y = []
 		numP = 0
 		numN = 0
+
+		# pre-processes; constructs the distribution of all links from a given m
+		dmToLinkDistribution = defaultdict(lambda: [0] * 10)
+		docToListDistribution = defaultdict(lambda: [0] * 10)
+		for p in predictions:
+			(dm1,dm2) = p
+			pred = predictions[p]
+			binNum = math.floor(min(0.9999,pred)*10)
+
+			if isHDDCRP: # meaning testset
+				doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+			else:
+				(doc_id,m_id) = dm1
+
+			dmToLinkDistribution[dm1][binNum] += 1
+			dmToLinkDistribution[dm2][binNum] += 1
+			docToListDistribution[doc_id][binNum] += 1
+
+		# normalizes mention weights into a distribution
+		for m in dmToLinkDistribution:
+			mSum = sum(dmToLinkDistribution[m])
+			li = []
+			for _ in dmToLinkDistribution[m]:
+				li.append(float(_/mSum))
+			dmToLinkDistribution[m] = li
+
+		# normalizes doc weights into a distribution
+		for doc_id in docToListDistribution:
+			docSum = sum(docToListDistribution[doc_id])
+			li = []
+			for _ in docToListDistribution[doc_id]:
+				li.append(float(_/docSum))
+			docToListDistribution[doc_id] = li
+
 		for doc in docToPredDMs:
 			for dm1 in docToPredDMs[doc]:
 				positivePairs = set()
@@ -239,6 +274,8 @@ class FFNN:
 						else:
 							print("* ERROR: dm1,dm2 or reverse aren't in predictions")
 							exit(1)
+
+						curX += dmToLinkDistribution[dm1]
 
 						curY = []
 						if isHDDCRP:
