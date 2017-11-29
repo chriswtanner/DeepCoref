@@ -12,9 +12,8 @@ import copy
 from collections import OrderedDict
 from operator import itemgetter
 from keras.datasets import mnist
-from keras import losses
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
+from keras.layers import Dense, Dropout, merge, Merge, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
 from keras.optimizers import RMSprop, Adagrad, Adam
 from keras import backend as K
 from tensorflow.python.client import device_lib
@@ -381,10 +380,10 @@ class CCNN:
             docToGoldenREF[doc_id][ref_id].add(hm_id)
 
         # goes through each doc
-        fout1 = open("tmp_goldenClusters.txt",'w')
-        fout2 = open("tmp_preds.txt", "w")
-        fout3 = open("tmp_allpreds.txt", "w")
-        fout4 = open("tmp_predClusters.txt", "w")
+        fout1 = open(str(self.args.resultsDir) + "tmp_goldenClusters.txt",'w')
+        fout2 = open(str(self.args.resultsDir) + "tmp_preds.txt", "w")
+        fout3 = open(str(self.args.resultsDir) + "tmp_allpreds.txt", "w")
+        fout4 = open(str(self.args.resultsDir) + "tmp_predClusters.txt", "w")
         
         # computes accuracy
         docToF1 = {}
@@ -589,6 +588,19 @@ class CCNN:
 
         distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
+        '''
+        injected = Input(shape=(1,))
+        processed_a = base_network(input_a)
+        processed_b = base_network(input_b)
+        
+        sym_distance = Input(shape=(1,))(distance)
+        distance = merge([injected,sym_distance])
+
+        # new stuff
+        model = Model(inputs=[input_a, input_b, injected], outputs=distance)
+        '''
+
+        # original
         model = Model([input_a, input_b], distance)
 
         # train
@@ -601,9 +613,10 @@ class CCNN:
         else:
             print("* ERROR: invalid CCNN optimizer")
             exit(1)
-        model.compile(loss='hinge', optimizer=opt)
-        #model.compile(loss=self.contrastive_loss, optimizer=opt)
+        
+        model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
+
         model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
@@ -1353,10 +1366,24 @@ class CCNN:
                             print("\t\t\t",str(_), str(self.corpus.dmToMention[dm3].text))
         '''
         # constructs final 5D matrix
+        # BELOW IS MY ATTEMPT TO HAVE AN INJECTED LAYER
+        X = []
+        #Z = []
+        for _ in range(len(mentionIDPairs)):
+            (mentionID1,mentionID2) = mentionIDPairs[_]
+            pair = np.asarray([mentionIDToMatrix[mentionID1],mentionIDToMatrix[mentionID2]])
+            X.append(pair)
+            #Z.append(labels[_])
+            #Z.append(np.asarray([labels[_]]))
+        Y = np.asarray(labels)
+        X = np.asarray(X)
+        #Z = np.asarray(Z)
+        ''' ORIGINAL WAY WHICH WORKS
         X = []
         for (mentionID1,mentionID2) in mentionIDPairs:
             pair = np.asarray([mentionIDToMatrix[mentionID1],mentionIDToMatrix[mentionID2]])
             X.append(pair)
         Y = np.asarray(labels)
         X = np.asarray(X)
+        '''
         return (mentionIDPairs, X,Y)

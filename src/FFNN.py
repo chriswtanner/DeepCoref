@@ -202,9 +202,9 @@ class FFNN:
 		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
 		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
 
-		_, self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions, False)
-
-
+		self.loadDynamicData(docToPredDevDMs, devPredictions, False)
+		self.loadDynamicData(docToPredTestDMs, testPredictions, True)
+		exit(1)
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
 
@@ -219,7 +219,24 @@ class FFNN:
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
 	def loadDynamicData(self, docToPredDMs, predictions, isHDDCRP):
-		a = 1
+		# constructs a mapping of DOC -> {REF -> DM}
+		docToREFDms = defaultdict(lambda : defaultdict(set))
+		for doc_id in docToPredDMs:
+			for dm in docToPredDMs[doc_id]:
+				if doc_id == "25_5ecbplus.xml":
+					print("25_5ecbplus.xml dm:",str(dm))
+				if isHDDCRP: # meaning testset
+					ref_id = self.hddcrp_parsed.hm_idToHMention[dm].ref_id
+				else: # ECB corpus
+					ref_id = self.corpus.dmToREF[dm]
+				docToREFDms[doc_id][ref_id].add(dm)
+
+		# sanity check: ensures we've included singletons in the test set
+		for doc_id in docToREFDms:
+			if len(docToREFDms[doc_id]) == 1 and isHDDCRP:
+				print("* DOC:",str(doc_id),"HAS SINGLETON:",str(docToREFDms[doc_id]))
+
+		
 
 	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
 		addedPairs = set()
