@@ -591,11 +591,11 @@ class CCNN:
         model = Model([input_a, input_b], distance)
 
         # train
-        if args.CCNNOpt == "rms":
+        if self.args.CCNNOpt == "rms":
             opt = RMSprop()
-        elif args.CCNNOpt == "adam":
+        elif self.args.CCNNOpt == "adam":
             opt = Adam()
-        elif args.CCNNOpt == "adagrad":
+        elif self.args.CCNNOpt == "adagrad":
             opt = Adagrad()
         else:
             print("* ERROR: invalid CCNN optimizer")

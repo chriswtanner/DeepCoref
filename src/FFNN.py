@@ -196,8 +196,14 @@ class FFNN:
 		print("# parsed:",str(len(parsedDevDMs)))
 		print("# pred:",str(len(predDevDMs)))
 
-		_, self.trainX, self.trainY = self.loadData(docToPredDevDMs, devPredictions, False)
-		self.testingPairs, self.testX, self.testY = self.loadData(docToPredTestDMs, testPredictions, True)
+		# the following is for the static-clustering; that is, we make predictions before
+		# any clustering is done.  we don't make FFNN clustering decisions.
+		# instead, we just make weights which will use agglomerative to decide
+		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
+		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
+
+		_, self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions, False)
+
 
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
@@ -212,7 +218,10 @@ class FFNN:
 	def init_weights(self, shape):
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
-	def loadData(self, docToPredDMs, predictions, isHDDCRP):
+	def loadDynamicData(self, docToPredDMs, predictions, isHDDCRP):
+		a = 1
+
+	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
 		addedPairs = set()
 		pairs = []
 		X = []
