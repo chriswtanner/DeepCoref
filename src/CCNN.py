@@ -449,6 +449,8 @@ class CCNN:
                 gold_ref2 = hmention2.ref_id
                 pred_ref2 = hm_idToPredictedClusterID[hm_id2]
                 prefix = "  "
+                if len(hmention1.tokens) > 1 or len(hmention2.tokens):
+                    prefix += "@"
                 if gold_ref1 == gold_ref2 and pred_ref1 == pred_ref2: # we got it
                     prefix += "**"
                 elif gold_ref1 == gold_ref2 and pred_ref1 != pred_ref2: # we missed it
