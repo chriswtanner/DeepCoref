@@ -12,6 +12,7 @@ import copy
 from collections import OrderedDict
 from operator import itemgetter
 from keras.datasets import mnist
+from keras import losses
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
 from keras.optimizers import RMSprop, Adagrad, Adam
@@ -600,7 +601,8 @@ class CCNN:
         else:
             print("* ERROR: invalid CCNN optimizer")
             exit(1)
-        model.compile(loss=self.contrastive_loss, optimizer=opt)
+        model.compile(loss='hinge', optimizer=opt)
+        #model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
         model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
                   batch_size=self.args.batchSize,
