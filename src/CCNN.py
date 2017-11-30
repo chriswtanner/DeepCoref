@@ -423,7 +423,7 @@ class CCNN:
             docToF1[doc_id] = f1
 
         dmPairsAnalyzed = set() # used for making the prec/recall tables to ensure we don't double count mentions
-        tokenTables = docToPredictions = defaultdict(lambda : defaultdict(int))
+        tokenTables = defaultdict(lambda : defaultdict(int))
         # prints in order of best performing to worst (per pairwise accuracy)
         for (doc_id,f1) in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
             numREFs = len(docToGoldenREF[doc_id])
