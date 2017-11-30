@@ -551,7 +551,7 @@ class CCNN:
                     fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + " lem:" + str(lemma1) + ") = " + str(pred) + " -- " + str(sent) + "\n")
         
         for k in tokenTables:
-            fout3.write("key:",str(k) + ":" + str(tokenTables[k]) + "\n")
+            fout3.write("key:" + str(k) + ":" + str(tokenTables[k]) + "\n")
         fout1.close()
         fout2.close()
         fout3.close()
