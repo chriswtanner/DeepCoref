@@ -385,6 +385,7 @@ class CCNN:
         fout3 = open(str(self.args.resultsDir) + "tmp_allpreds.txt", "w")
         fout4 = open(str(self.args.resultsDir) + "tmp_predClusters.txt", "w")
         
+
         # computes accuracy
         docToF1 = {}
         docToRecall = {}
@@ -421,7 +422,8 @@ class CCNN:
                 f1 = 2*(recall*prec) / float(denom)
             docToF1[doc_id] = f1
 
-
+        dmPairsAnalyzed = set() # used for making the prec/recall tables to ensure we don't double count mentions
+        tokenTables = docToPredictions = defaultdict(lambda : defaultdict(int))
         # prints in order of best performing to worst (per pairwise accuracy)
         for (doc_id,f1) in sorted(docToF1.items(), key=operator.itemgetter(1), reverse=True):
             numREFs = len(docToGoldenREF[doc_id])
@@ -434,29 +436,67 @@ class CCNN:
                 hmention1 = self.hddcrp_parsed.hm_idToHMention[hm_id1]
                 hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
 
+                tableKey = ""
+                if len(hmention1.tokens) > 1 or len(hmention2.tokens) > 1:
+                    prefix += "@"
+                    tableKey = "M" # represents multiple tokens
+                else: # both are single-token mentions
+                    tableKey = "S"
+
                 lemma1 = ""
+                lemma1Tokens = []
                 for htoken in hmention1.tokens:
                     token = self.corpus.UIDToToken[htoken.UID]
-                    lemma1 += self.helper.getBestStanToken(token.stanTokens).lemma + " "
+                    curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                    lemma1Tokens.append(curLemma)
+                    lemma1 += curLemma + " "
 
                 lemma2 = ""
+                lemma2Tokens = []
                 for htoken in hmention2.tokens:
                     token = self.corpus.UIDToToken[htoken.UID]
-                    lemma2 += self.helper.getBestStanToken(token.stanTokens).lemma + " "
+                    curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                    lemma2Tokens.append(curLemma)
+                    lemma2 += curLemma + " "
+
+                containsSubString = False
+                for t in lemma1Tokens:
+                    if t in lemma2:
+                        containsSubString = True
+                        break
+                for t in lemma2Tokens:
+                    if t in lemma1:
+                        containsSubString = True
+                        break
+                if containsSubString:
+                    tableKey += "SL"
+                else:
+                    tableKey += "NL"
 
                 gold_ref1 = hmention1.ref_id
                 pred_ref1 = hm_idToPredictedClusterID[hm_id1]
                 gold_ref2 = hmention2.ref_id
                 pred_ref2 = hm_idToPredictedClusterID[hm_id2]
                 prefix = "  "
-                if len(hmention1.tokens) > 1 or len(hmention2.tokens) > 1:
-                    prefix += "@"
+
+                ans = ""
                 if gold_ref1 == gold_ref2 and pred_ref1 == pred_ref2: # we got it
                     prefix += "**"
+                    ans = "TP"
                 elif gold_ref1 == gold_ref2 and pred_ref1 != pred_ref2: # we missed it
                     prefix += "-"
+                    ans = "FN"
                 elif gold_ref1 != gold_ref2 and pred_ref1 == pred_ref2: # false positive
                     prefix += "+"
+                    ans = "FP"
+                else:
+                    ans = "TN"
+
+                if (hm1,hm2) not in dmPairsAnalyzed and (hm2,hm1) not in dmPairsAnalyzed:
+                    tokenTables[tableKey][ans] += 1
+
+                    dmPairsAnalyzed.add((hm1,hm2))
+                    dmPairsAnalyzed.add((hm2,hm1))
                 fout3.write(str(prefix) + " " + str(hm_id1) + " (" + str(hmention1.getMentionText()) + " lem:" + str(lemma1) + ") and " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + " lem:" + str(lemma2) + ") = " + str(pred) + "\n")
 
             for c_id in docToClusterIDs[doc_id]:
@@ -509,6 +549,9 @@ class CCNN:
 
                     sent = ' '.join(self.hddcrp_parsed.docSentences[hmention2.doc_id][hmention2.tokens[0].sentenceNum])
                     fout2.write(str(prefix) + " " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + " lem:" + str(lemma1) + ") = " + str(pred) + " -- " + str(sent) + "\n")
+        
+        for k in tokenTables:
+            fout3.write("key:",str(k) + ":" + str(tokenTables[k]) + "\n")
         fout1.close()
         fout2.close()
         fout3.close()
