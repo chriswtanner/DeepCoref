@@ -492,11 +492,11 @@ class CCNN:
                 else:
                     ans = "TN"
 
-                if (hm1,hm2) not in dmPairsAnalyzed and (hm2,hm1) not in dmPairsAnalyzed:
+                if (hm_id1,hm_id2) not in dmPairsAnalyzed and (hm_id2,hm_id1) not in dmPairsAnalyzed:
                     tokenTables[tableKey][ans] += 1
 
-                    dmPairsAnalyzed.add((hm1,hm2))
-                    dmPairsAnalyzed.add((hm2,hm1))
+                    dmPairsAnalyzed.add((hm_id1,hm_id2))
+                    dmPairsAnalyzed.add((hm_id2,hm_id1))
                 fout3.write(str(prefix) + " " + str(hm_id1) + " (" + str(hmention1.getMentionText()) + " lem:" + str(lemma1) + ") and " + str(hm_id2) + " (" + str(hmention2.getMentionText()) + " lem:" + str(lemma2) + ") = " + str(pred) + "\n")
 
             for c_id in docToClusterIDs[doc_id]:
