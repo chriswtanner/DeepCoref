@@ -1485,6 +1485,8 @@ class CCNN:
                     containsSubString = True
                     break
 
+            curRelational = []
+            
             # feature 1
             if len(lemma1Tokens) == 1 and len(lemma1Tokens) == 1: # both are singletons
                 curRelational.append(0)
@@ -1492,7 +1494,6 @@ class CCNN:
                 curRelational.append(1)
 
             # feature 2
-            curRelational = []
             if containsSubString:
                 curRelational.append(1)
             else:
