@@ -996,6 +996,7 @@ class ECBHelper:
 										dists.append(dist)
 									else:
 										print("* error, why don't we have either dm1 or dm2 in doc_id")
+										exit(1)
 									if dist < closestDist:
 										closestDist = dist
 										closestClusterKeys = (c1,c2)
