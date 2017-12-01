@@ -658,7 +658,8 @@ class CCNN:
 
         auxiliary_input = Input(shape=(1,), name='auxiliary_input')
         combined_layer = keras.layers.concatenate([distance, auxiliary_input])
-        main_output = Dense(1, activation='sigmoid', name='main_output')(combined_layer)
+        x = Dense(4, activation='relu')(combined_layer)
+        main_output = Dense(1, activation='sigmoid', name='main_output')(x)
 
         # new way
         model = Model([input_a, input_b, auxiliary_input], main_output)

@@ -3,7 +3,7 @@ cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
 numLayers=(2) # 3) # 1 3
-numEpochs=(3) # 20)
+numEpochs=(5) # 20)
 windowSize=(0)
 numNeg=(6)
 batchSize=(64) # 128) # 64 128
@@ -12,7 +12,7 @@ poolType=("max") # "avg")
 embeddingsBaseFile=("840B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("rms") # "rms" "adam" "adagrad"
-clusterMethod=("avg")
+clusterMethod=("min")
 numFilters=(32)
 filterMultiplier=(2.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
@@ -20,7 +20,7 @@ featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("sum") # "sum" "avg")
 dependencyType=("none") # # "sum" "avg")
-charType=("concat") # "none" "concat" "sum" "avg"
+charType=("none") # "none" "concat" "sum" "avg"
 SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
