@@ -706,7 +706,7 @@ class CCNN:
         dev_labels = None
 
         print("-----------\npredicting testing")
-        testing_preds = model.predict({'input_a': np.asarray(test_data[:, 0]), 'input_b': np.asarray(test_data[:, 1]), 'auxiliary_input': np.asarray(test_labels)})
+        testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_labels)})
         bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
