@@ -20,6 +20,7 @@ from tensorflow.python.client import device_lib
 from ECBHelper import *
 from ECBParser import *
 from get_coref_metrics import *
+from array import array
 
 class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
@@ -676,7 +677,7 @@ class CCNN:
         #model = Model(inputs=[input_a, input_b], outputs=distance)
 
         # relational, merged layer way
-        auxiliary_input = Input(shape=(2,), name='auxiliary_input')
+        auxiliary_input = Input(shape=(len(training_rel[0]),), name='auxiliary_input')
         combined_layer = keras.layers.concatenate([distance, auxiliary_input])
         x = Dense(4, activation='relu')(combined_layer)
         main_output = Dense(1, activation='sigmoid', name='main_output')(x)
@@ -1465,6 +1466,7 @@ class CCNN:
                 curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
                 mention1Lemmas += curLemma + " "
                 lemma1Tokens.append(curLemma)
+            mention1Texts = mention1Texts.rstrip()
 
             mention2Texts = ""
             mention2Lemmas = ""
@@ -1474,6 +1476,7 @@ class CCNN:
                 curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
                 mention2Lemmas += curLemma + " "
                 lemma2Tokens.append(curLemma)
+            mention2Texts = mention2Texts.rstrip()
 
             containsSubString = False
             for t in lemma1Tokens:
@@ -1486,8 +1489,9 @@ class CCNN:
                     break
 
             curRelational = []
-            
+
             # feature 1
+            '''
             if len(lemma1Tokens) == 1 and len(lemma1Tokens) == 1: # both are singletons
                 curRelational.append(0)
             else: # at least one is multi-token
@@ -1498,10 +1502,15 @@ class CCNN:
                 curRelational.append(1)
             else:
                 curRelational.append(0)
+            '''
 
+            # feature 4
+            sed = self.levenshtein(mention1Texts,mention2Texts)
+            curRelational.append(sed)
             # features:
             # 1: both are single-token (0) or at least one mention is multi-token (1)
             # 2: is the lemma of any word in either mention a substring of the lemma concat of the other (0 or 1)
+            # 4: string edit distance of the mentions' texts
             relational_features.append(np.asarray(curRelational))
 
         Y = np.asarray(labels)
@@ -1517,3 +1526,35 @@ class CCNN:
         X = np.asarray(X)
         '''
         return (mentionIDPairs, X, relational_features, Y)
+
+    def levenshtein(self, seq1, seq2, max_dist=-1):
+        if seq1 == seq2:
+            return 0
+        len1, len2 = len(seq1), len(seq2)
+        if max_dist >= 0 and abs(len1 - len2) > max_dist:
+            return -1
+        if len1 == 0:
+            return len2
+        if len2 == 0:
+            return len1
+        if len1 < len2:
+            len1, len2 = len2, len1
+            seq1, seq2 = seq2, seq1
+        
+        column = array('L', range(len2 + 1))
+        
+        for x in range(1, len1 + 1):
+            column[0] = x
+            last = x - 1
+            for y in range(1, len2 + 1):
+                old = column[y]
+                cost = int(seq1[x - 1] != seq2[y - 1])
+                column[y] = min(column[y] + 1, column[y - 1] + 1, last + cost)
+                last = old
+            if max_dist >= 0 and min(column) > max_dist:
+                return -1
+        
+        if max_dist >= 0 and column[len2] > max_dist:
+            # stay consistent, even if we have the exact distance
+            return -1
+        return column[len2]
