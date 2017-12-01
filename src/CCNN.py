@@ -627,14 +627,25 @@ class CCNN:
     # trains and tests the model
     def run(self):
 
+        # train
+        if self.args.CCNNOpt == "rms":
+            opt = RMSprop()
+        elif self.args.CCNNOpt == "adam":
+            opt = Adam()
+        elif self.args.CCNNOpt == "adagrad":
+            opt = Adagrad()
+        else:
+            print("* ERROR: invalid CCNN optimizer")
+            exit(1)
+
         # loads embeddings for each word type
         self.loadEmbeddings(self.args.embeddingsFile, self.args.embeddingsType)
         print("# embeddings loaded:",str(len(self.wordTypeToEmbedding.keys())))
         # constructs the training and dev files
-        training_pairs, training_data, training_labels = self.createData("train", self.helper.trainingDirs)
-        dev_pairs, dev_data, dev_labels = self.createData("dev", self.helper.devDirs)
+        training_pairs, training_data, training_rel, training_labels = self.createData("train", self.helper.trainingDirs)
+        dev_pairs, dev_data, dev_rel, dev_labels = self.createData("dev", self.helper.devDirs)
         #testing_pairs, testing_data, testing_labels = self.createData("test", self.helper.testingDirs)
-        testing_pairs, testing_data, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
+        testing_pairs, testing_data, testing_rel, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
 
         print("* training data shape:",str(training_data.shape))
         print("* dev data shape:",str(dev_data.shape))
@@ -648,66 +659,61 @@ class CCNN:
         input_shape = training_data.shape[2:]
         base_network = self.create_base_network(input_shape)
 
-        input_a = Input(shape=input_shape)
-        input_b = Input(shape=input_shape)
-        #input_a = Input(shape=input_shape, name='input_a')
-        #input_b = Input(shape=input_shape, name='input_b')
+        # original way
+        #input_a = Input(shape=input_shape)
+        #input_b = Input(shape=input_shape)
+        
+        # relational, merged layer way
+        input_a = Input(shape=input_shape, name='input_a')
+        input_b = Input(shape=input_shape, name='input_b')
 
         processed_a = base_network(input_a)
         processed_b = base_network(input_b)
 
         distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        '''
-        auxiliary_input = Input(shape=(1,), name='auxiliary_input')
+        # original
+        #model = Model(inputs=[input_a, input_b], outputs=distance)
+
+        # relational, merged layer way
+        auxiliary_input = Input(shape=(4,), name='auxiliary_input')
         combined_layer = keras.layers.concatenate([distance, auxiliary_input])
         x = Dense(4, activation='relu')(combined_layer)
-        '''
-        #main_output = Dense(1, activation='sigmoid', name='main_output')(x)
+        main_output = Dense(1, activation='sigmoid', name='main_output')(x)
+        model = Model([input_a, input_b, auxiliary_input], main_output)
 
-        # new way
-        #model = Model([input_a, input_b, auxiliary_input], main_output)
-        # original
-        model = Model(inputs=[input_a, input_b], outputs=distance)
 
-        # train
-        if self.args.CCNNOpt == "rms":
-            opt = RMSprop()
-        elif self.args.CCNNOpt == "adam":
-            opt = Adam()
-        elif self.args.CCNNOpt == "adagrad":
-            opt = Adagrad()
-        else:
-            print("* ERROR: invalid CCNN optimizer")
-            exit(1)
-        
         model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
 
+        # original
+        '''
         model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
                   validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
 
         '''
-        model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_labels)},
+        
+        # relational, merged layer way
+        model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)},
                   {'main_output': training_labels}, 
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
-                  validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_labels)}, {'main_output': np.asarray(dev_labels)}))
-        '''
+                  validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)}, {'main_output': np.asarray(dev_labels)}))
+        
         # train accuracy
         print("-----------\npredicting training")
-        training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
-        #training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_labels)})
+        #training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
+        training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)})
         sys.stdout.flush()
         bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
         print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
 
         # dev accuracy
         print("-----------\npredicting dev")
-        dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        #dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_labels)})
+        #dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
+        dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)})
         bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
         
@@ -719,8 +725,8 @@ class CCNN:
         dev_labels = None
 
         print("-----------\npredicting testing")
-        testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        #testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_labels)})
+        #testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
+        testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_rel)})
         bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
@@ -1443,17 +1449,23 @@ class CCNN:
                             print("\t\t\t",str(_), str(self.corpus.dmToMention[dm3].text))
         '''
         # constructs final 5D matrix
-        # BELOW IS MY ATTEMPT TO HAVE AN INJECTED LAYER
         X = []
-        #Z = []
+        relational_features = []
         for _ in range(len(mentionIDPairs)):
             (mentionID1,mentionID2) = mentionIDPairs[_]
             pair = np.asarray([mentionIDToMatrix[mentionID1],mentionIDToMatrix[mentionID2]])
             X.append(pair)
-            #Z.append(labels[_])
-            #Z.append(np.asarray([labels[_]]))
+
+            curRelational = []
+            curRelational.append(labels[_])
+            curRelational.append(labels[_])
+            curRelational.append(labels[_])
+            curRelational.append(labels[_])
+            relational_features.append(np.asarray(curRelational))
+
         Y = np.asarray(labels)
         X = np.asarray(X)
+        relational_features = np.asarray(relational_features)
         #Z = np.asarray(Z)
         ''' ORIGINAL WAY WHICH WORKS
         X = []
@@ -1463,4 +1475,4 @@ class CCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
         '''
-        return (mentionIDPairs, X,Y)
+        return (mentionIDPairs, X, relational_features, Y)
