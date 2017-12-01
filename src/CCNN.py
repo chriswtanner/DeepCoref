@@ -687,14 +687,14 @@ class CCNN:
 
         # train accuracy
         print("-----------\npredicting training")
-        training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
+        training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_labels)})
         sys.stdout.flush()
         bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
         print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
 
         # dev accuracy
         print("-----------\npredicting dev")
-        dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
+        dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_labels)})
         bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
         
@@ -706,7 +706,7 @@ class CCNN:
         dev_labels = None
 
         print("-----------\npredicting testing")
-        testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
+        testing_preds = model.predict({'input_a': np.asarray(test_data[:, 0]), 'input_b': np.asarray(test_data[:, 1]), 'auxiliary_input': np.asarray(test_labels)})
         bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
