@@ -676,7 +676,7 @@ class CCNN:
         #model = Model(inputs=[input_a, input_b], outputs=distance)
 
         # relational, merged layer way
-        auxiliary_input = Input(shape=(4,), name='auxiliary_input')
+        auxiliary_input = Input(shape=(2,), name='auxiliary_input')
         combined_layer = keras.layers.concatenate([distance, auxiliary_input])
         x = Dense(4, activation='relu')(combined_layer)
         main_output = Dense(1, activation='sigmoid', name='main_output')(x)
@@ -1456,11 +1456,51 @@ class CCNN:
             pair = np.asarray([mentionIDToMatrix[mentionID1],mentionIDToMatrix[mentionID2]])
             X.append(pair)
 
+            # makes 'contains a shared lemma substring' feature
+            mention1Texts = ""
+            mention1Lemmas = ""
+            lemma1Tokens = []
+            for token in mentionIDToTokenList[mentionID1]:
+                mention1Texts += token.text + " "
+                curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                mention1Lemmas += curLemma + " "
+                lemma1Tokens.append(curLemma)
+
+            mention2Texts = ""
+            mention2Lemmas = ""
+            lemma2Tokens = []
+            for token in mentionIDToTokenList[mentionID2]:
+                mention2Texts += token.text + " "
+                curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                mention2Lemmas += curLemma + " "
+                lemma2Tokens.append(curLemma)
+
+            containsSubString = False
+            for t in lemma1Tokens:
+                if t in mention2Lemmas:
+                    containsSubString = True
+                    break
+            for t in lemma2Tokens:
+                if t in mention1Lemmas:
+                    containsSubString = True
+                    break
+
+            # feature 1
+            if len(lemma1Tokens) == 1 and len(lemma1Tokens) == 1: # both are singletons
+                curRelational.append(0)
+            else: # at least one is multi-token
+                curRelational.append(1)
+
+            # feature 2
             curRelational = []
-            curRelational.append(labels[_])
-            curRelational.append(labels[_])
-            curRelational.append(labels[_])
-            curRelational.append(labels[_])
+            if containsSubString:
+                curRelational.append(1)
+            else:
+                curRelational.append(0)
+
+            # features:
+            # 1: both are single-token (0) or at least one mention is multi-token (1)
+            # 2: is the lemma of any word in either mention a substring of the lemma concat of the other (0 or 1)
             relational_features.append(np.asarray(curRelational))
 
         Y = np.asarray(labels)
