@@ -435,7 +435,7 @@ class CCNN:
                 (hm_id1,hm_id2) = pair
                 hmention1 = self.hddcrp_parsed.hm_idToHMention[hm_id1]
                 hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
-
+                prefix = "  "
                 tableKey = ""
                 if len(hmention1.tokens) > 1 or len(hmention2.tokens) > 1:
                     prefix += "@"
@@ -477,7 +477,7 @@ class CCNN:
                 pred_ref1 = hm_idToPredictedClusterID[hm_id1]
                 gold_ref2 = hmention2.ref_id
                 pred_ref2 = hm_idToPredictedClusterID[hm_id2]
-                prefix = "  "
+
 
                 ans = ""
                 if gold_ref1 == gold_ref2 and pred_ref1 == pred_ref2: # we got it
