@@ -974,6 +974,9 @@ class ECBHelper:
 
 				closestAvgDist = 999999
 				closestAvgClusterKeys = (-1,-1)
+				
+				closestAvgAvgDist = 999999
+				closestAvgAvgClusterKeys = (-1,-1)
 
 				#print("ourDirClusters:",str(ourDirClusters.keys()))
 				# looks at all combinations of pairs
@@ -1024,7 +1027,7 @@ class ECBHelper:
 					(c1,c2) = closestAvgClusterKeys
 				elif self.args.clusterMethod == "avgavg":
 					(c1,c2) = closestAvgAvgClusterKeys
-					
+
 				for _ in ourDirClusters[c1]:
 					newCluster.add(_)
 				for _ in ourDirClusters[c2]:
