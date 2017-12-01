@@ -174,7 +174,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --FFNNOpt=${FFNNOpt}
 
 cd ${refDir}
-goldFile=${baseDir}"data/gold.WD.semeval.txt"
+goldFile=${baseDir}"data/predict.ran.WD.semeval.txt"
 shopt -s nullglob
 
 for sp in "${stoppingPoints[@]}"
