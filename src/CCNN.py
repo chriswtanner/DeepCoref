@@ -648,15 +648,15 @@ class CCNN:
         input_shape = training_data.shape[2:]
         base_network = self.create_base_network(input_shape)
 
-        input_a = Input(shape=input_shape)
-        input_b = Input(shape=input_shape)
+        input_a = Input(shape=input_shape, name='input_a')
+        input_b = Input(shape=input_shape, name='input_b')
 
         processed_a = base_network(input_a)
         processed_b = base_network(input_b)
 
         distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        auxiliary_input = Input(shape=(1,))        
+        auxiliary_input = Input(shape=(1,), name='auxiliary_input')
         combined_layer = keras.layers.concatenate([distance, auxiliary_input])
         main_output = Dense(1, activation='sigmoid', name='main_output')(combined_layer)
 
@@ -679,11 +679,11 @@ class CCNN:
         model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
 
-        model.fit({'input_a': training_data[:, 0], 'input_b': training_data[:, 1], 'auxilary_input': training_labels},
+        model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_labels)},
                   {'main_output': training_labels}, 
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
-                  validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
+                  validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_labels)}, {'main_output': np.asarray(dev_labels)}))
 
         # train accuracy
         print("-----------\npredicting training")
