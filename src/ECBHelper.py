@@ -1010,7 +1010,7 @@ class ECBHelper:
 						j += 1
 					i += 1
 
-				if closestAvgDist > stoppingPoint:
+				if closestDist > stoppingPoint:
 					break
 
 				newCluster = set()
