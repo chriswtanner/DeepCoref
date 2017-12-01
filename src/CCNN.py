@@ -662,9 +662,9 @@ class CCNN:
         main_output = Dense(1, activation='sigmoid', name='main_output')(x)
 
         # new way
-        model = Model([input_a, input_b, auxiliary_input], main_output)
+        #model = Model([input_a, input_b, auxiliary_input], main_output)
         # original
-        #model = Model([input_a, input_b], distance)
+        model = Model([input_a, input_b], distance)
 
         # train
         if self.args.CCNNOpt == "rms":
