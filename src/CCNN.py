@@ -165,7 +165,7 @@ class CCNN:
                                         closestAvgClusterKeys = (c1,c2)
                                 avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
                                 if avgavgDist < closestAvgAvgDist:
-                                    closestAvgDist = avgavgDist
+                                    closestAvgAvgDist = avgavgDist
                                     closestAvgAvgClusterKeys = (c1,c2)
                             j += 1
                         i += 1

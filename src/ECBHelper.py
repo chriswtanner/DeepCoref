@@ -1,7 +1,7 @@
 try:
-    import xml.etree.cElementTree as ET
+	import xml.etree.cElementTree as ET
 except ImportError:
-    import xml.etree.ElementTree as ET
+	import xml.etree.ElementTree as ET
 import numpy as np
 import operator
 import math
@@ -339,7 +339,7 @@ class ECBHelper:
 
 		for dirNum in sorted(self.corpus.dirToREFs.keys()):
 
-		    # only process the training dirs
+			# only process the training dirs
 			if dirNum not in dirs:
 				continue
 
@@ -594,7 +594,7 @@ class ECBHelper:
 
 		for dirNum in sorted(self.corpus.dirToREFs.keys()):
 
-		    # only process the training dirs
+			# only process the training dirs
 			if dirNum not in dirs:
 				continue
 
@@ -669,9 +669,9 @@ class ECBHelper:
 			trainingPairs.append(trainingPositives[i])
 			trainingLabels.append(1)
 			for _ in range(self.args.numNegPerPos):
-			    trainingPairs.append(trainingNegatives[j])
-			    trainingLabels.append(0)
-			    j+=1
+				trainingPairs.append(trainingNegatives[j])
+				trainingLabels.append(0)
+				j+=1
 		return (trainingPairs,trainingLabels)
 	'''
 #### CROSS-DOC (aka all pairs) #####
@@ -742,17 +742,17 @@ class ECBHelper:
 								trainingNegatives.append((dm1,dm3))
 								numNegsAdded += 1
 								j += 1
-		                        
+								
 		# shuffle training
 		if self.args.shuffleTraining:
 			numPositives = len(trainingPositives)
 			for i in range(numPositives):
-			    # pick 2 to change in place
-			    a = randint(0,numPositives-1)
-			    b = randint(0,numPositives-1)
-			    swap = trainingPositives[a]
-			    trainingPositives[a] = trainingPositives[b]
-			    trainingPositives[b] = swap
+				# pick 2 to change in place
+				a = randint(0,numPositives-1)
+				b = randint(0,numPositives-1)
+				swap = trainingPositives[a]
+				trainingPositives[a] = trainingPositives[b]
+				trainingPositives[b] = swap
 
 			numNegatives = len(trainingNegatives)
 			for i in range(numNegatives):
@@ -984,37 +984,47 @@ class ECBHelper:
 					j = 0
 					for c2 in ourDirClusters.keys():
 						if j > i:
-							dists = []
+							avgavgdists = []
 							for dm1 in ourDirClusters[c1]:
+								avgdists = []
 								for dm2 in ourDirClusters[c2]:
 									dist = 99999
 									if (dm1,dm2) in docToHMPredictions[doc_id]:
 										dist = docToHMPredictions[doc_id][(dm1,dm2)]
-										dists.append(dist)
 									elif (dm2,dm1) in docToHMPredictions[doc_id]:
 										dist = docToHMPredictions[doc_id][(dm2,dm1)]
-										dists.append(dist)
 									else:
 										print("* error, why don't we have either dm1 or dm2 in doc_id")
 										exit(1)
+									avgavgdists.append(dist)
+									avgdists.append(dist)
 									if dist < closestDist:
 										closestDist = dist
 										closestClusterKeys = (c1,c2)
-
-							avgDist = float(sum(dists)) / float(len(dists))
-							#print("sum:",str(sum(dists)), "avgDist:",str(avgDist))
-							if avgDist < closestAvgDist:
-								closestAvgDist = avgDist
-								closestAvgClusterKeys = (c1,c2)
-
+								avgDist = float(sum(avgdists)) / float(len(avgdists))
+								if avgDist < closestAvgDist:
+									closestAvgDist = avgDist
+									closestAvgClusterKeys = (c1,c2)
+							avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+							if avgavgDist < closestAvgAvgDist:
+								closestAvgAvgDist = avgavgDist
+								closestAvgAvgClusterKeys = (c1,c2)
 						j += 1
 					i += 1
-
-				if closestDist > stoppingPoint:
+				if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+					break
+				elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+					break
+				elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
 					break
 
 				newCluster = set()
 				(c1,c2) = closestClusterKeys
+				if self.args.clusterMethod == "avg":
+					(c1,c2) = closestAvgClusterKeys
+				elif self.args.clusterMethod == "avgavg":
+					(c1,c2) = closestAvgAvgClusterKeys
+					
 				for _ in ourDirClusters[c1]:
 					newCluster.add(_)
 				for _ in ourDirClusters[c2]:
