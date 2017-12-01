@@ -656,20 +656,14 @@ class CCNN:
 
         distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        '''
-        injected = Input(shape=(1,))
-        processed_a = base_network(input_a)
-        processed_b = base_network(input_b)
-        
-        sym_distance = Input(shape=(1,))(distance)
-        distance = merge([injected,sym_distance])
+        auxiliary_input = Input(shape=(1,))        
+        combined_layer = keras.layers.concatenate([distance, auxiliary_input])
+        main_output = Dense(1, activation='sigmoid', name='main_output')(combined_layer)
 
-        # new stuff
-        model = Model(inputs=[input_a, input_b, injected], outputs=distance)
-        '''
-
+        # new way
+        model = Model([input_a, input_b, auxiliary_input], main_output)
         # original
-        model = Model([input_a, input_b], distance)
+        #model = Model([input_a, input_b], distance)
 
         # train
         if self.args.CCNNOpt == "rms":
@@ -685,7 +679,8 @@ class CCNN:
         model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
 
-        model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
+        model.fit({'input_a': training_data[:, 0], 'input_b': training_data[:, 1], 'auxilary_input': training_labels},
+                  {'main_output': training_labels}, 
                   batch_size=self.args.batchSize,
                   epochs=self.args.numEpochs,
                   validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))

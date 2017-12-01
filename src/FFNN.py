@@ -166,8 +166,8 @@ class FFNN:
 			if dm not in parsedDevDMs:
 				print("we dont have",str(dm),"in parsed")
 			else: # we have the DM parsed, so we can look up its doc
-				(d1,m1) = dm
-				docToPredDevDMs[d1].add(dm)
+				(doc_id,m_id) = dm
+				docToPredDevDMs[doc_id].add(dm)
 
 		# loads test predictions
 		testPredictions = {}
@@ -202,8 +202,8 @@ class FFNN:
 		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
 		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
 
-		self.loadDynamicData(docToPredDevDMs, devPredictions, False)
-		self.loadDynamicData(docToPredTestDMs, testPredictions, True)
+		self.loadDynamicData(docToPredDevDMs, devPredictions)
+		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
 		exit(1)
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
@@ -218,25 +218,44 @@ class FFNN:
 	def init_weights(self, shape):
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
-	def loadDynamicData(self, docToPredDMs, predictions, isHDDCRP):
+	def loadDynamicData(self, docToPredDMs, predictions):
 		# constructs a mapping of DOC -> {REF -> DM}
 		docToREFDms = defaultdict(lambda : defaultdict(set))
+		docToDMs = defaultdict(set)
 		for doc_id in docToPredDMs:
 			for dm in docToPredDMs[doc_id]:
-				if doc_id == "25_5ecbplus.xml":
-					print("25_5ecbplus.xml dm:",str(dm))
-				if isHDDCRP: # meaning testset
-					ref_id = self.hddcrp_parsed.hm_idToHMention[dm].ref_id
-				else: # ECB corpus
-					ref_id = self.corpus.dmToREF[dm]
+				ref_id = self.corpus.dmToREF[dm]
 				docToREFDms[doc_id][ref_id].add(dm)
+				docToDMs[doc_id].add(dm)
 
-		# sanity check: ensures we've included singletons in the test set
 		for doc_id in docToREFDms:
-			if len(docToREFDms[doc_id]) == 1 and isHDDCRP:
-				print("* DOC:",str(doc_id),"HAS SINGLETON:",str(docToREFDms[doc_id]))
+			if len(docToDMs[doc_id]) == 1:
+				print("* DOC:",str(doc_id),"HAS SINGLETON:",str(docToDMs[doc_id]))
+				continue
+			# here's a given cluster
+			for ref_id in docToREFDms[doc_id]:
+				# can't model merging 1 item with nothing
+				if len(docToREFDms[doc_id][ref_id]) == 1:
+					continue
 
-		
+				minPred = 999
+				preds = []
+				# compute the average distance
+				for dm1 in docToREFDms[doc_id][ref_id]:
+					for dm2 in docToREFDms[doc_id][ref_id]:
+						# TODO: figure out if i'm going to do singletons or clusters
+						if (dm1,dm2) in predictions:
+							pred = predictions[(dm1,dm2)]
+						elif (dm2,dm1) in predictions:
+							pred = predictions[(dm2,dm1)]
+						else:
+							print("* ERROR: prediction doesn't exist")
+							exit(1)
+						if pred < minPred:
+							minPred = pred
+						preds.append(pred)
+				avgPreds = sum(preds) / len(preds)
+
 
 	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
 		addedPairs = set()
