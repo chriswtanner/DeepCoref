@@ -202,7 +202,7 @@ class FFNN:
 		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
 		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
 
-		self.loadDynamicData(docToPredDevDMs, devPredictions)
+		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions)
 		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
 		exit(1)
 	def getAccuracy(self, preds, golds):
@@ -220,42 +220,99 @@ class FFNN:
 
 	def loadDynamicData(self, docToPredDMs, predictions):
 		# constructs a mapping of DOC -> {REF -> DM}
-		docToREFDms = defaultdict(lambda : defaultdict(set))
+		docToREFDMs = defaultdict(lambda : defaultdict(set))
 		docToDMs = defaultdict(set)
 		for doc_id in docToPredDMs:
 			for dm in docToPredDMs[doc_id]:
 				ref_id = self.corpus.dmToREF[dm]
-				docToREFDms[doc_id][ref_id].add(dm)
+				docToREFDMs[doc_id][ref_id].add(dm)
 				docToDMs[doc_id].add(dm)
 
-		for doc_id in docToREFDms:
+		positiveData = []
+		negativeData = []
+		X = []
+		Y = []
+		for doc_id in docToREFDMs:
 			if len(docToDMs[doc_id]) == 1:
 				print("* DOC:",str(doc_id),"HAS SINGLETON:",str(docToDMs[doc_id]))
 				continue
-			# here's a given cluster
-			for ref_id in docToREFDms[doc_id]:
-				# can't model merging 1 item with nothing
-				if len(docToREFDms[doc_id][ref_id]) == 1:
-					continue
 
-				minPred = 999
-				preds = []
-				# compute the average distance
-				for dm1 in docToREFDms[doc_id][ref_id]:
-					for dm2 in docToREFDms[doc_id][ref_id]:
-						# TODO: figure out if i'm going to do singletons or clusters
-						if (dm1,dm2) in predictions:
-							pred = predictions[(dm1,dm2)]
-						elif (dm2,dm1) in predictions:
-							pred = predictions[(dm2,dm1)]
-						else:
-							print("* ERROR: prediction doesn't exist")
-							exit(1)
-						if pred < minPred:
-							minPred = pred
-						preds.append(pred)
-				avgPreds = sum(preds) / len(preds)
 
+			# pre-processes: makes a sorted list of all predictions (non-dupes) in the doc
+			allDocPreds = []
+			added = set()
+			for dm1 in docToPredDMs[doc_id]:
+				for dm2 in docToPredDMs[doc_id]:
+					if dm1 == dm2:
+						continue
+					pair = None
+					if (dm1,dm2) in predictions:
+						pair = (dm1,dm2)
+					elif (dm2,dm1) in predictions:
+						pair = (dm2,dm1)
+					else:
+						print(len(added))
+						print("* ERROR: we dont have dm1-dm2")
+						exit(1)
+					if pair not in added:
+						allDocPreds.append(predictions[pair])
+						added.add(pair)
+			sorted_preds = sorted(allDocPreds)
+			
+			# pick a DM
+			for dm1 in docToDMs[doc_id]:
+				gold_ref_id = self.corpus.dmToREF[dm1]
+				# we can only pick a positive if there are other items in the cluster
+				if len(docToREFDMs[doc_id][gold_ref_id]) > 1:
+					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, predictions)
+					positiveData.append(featureVec)
+					X.append(featureVec)
+					Y.append([0,1])
+				# looks for other clusters to compare DM1 to
+				for other_ref_id in docToREFDMs[doc_id].keys():
+					if other_ref_id == gold_ref_id:
+						continue
+					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
+						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, predictions)
+						negativeData.append(featureVec)
+						X.append(featureVec)
+						Y.append([1,0])
+		return (X,Y)
+	# gets the features we care about -- how a DM relates to the passed-in cluster
+	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions):
+		minPred = 999
+		preds = []
+		for dm2 in allDMsInCluster:
+			if dm1 == dm2:
+				continue
+			if (dm1,dm2) in predictions:
+				pred = predictions[(dm1,dm2)]
+			elif (dm2,dm1) in predictions:
+				pred = predictions[(dm2,dm1)]
+			else:
+				print("* ERROR: prediction doesn't exist")
+				exit(1)
+			if pred < minPred:
+				minPred = pred
+			preds.append(pred)
+
+		avgPred = sum(preds) / len(preds)
+		numItems = len(preds)
+		indexAboveMin = 0
+		indexAboveAvg = 0
+		for _ in range(len(sorted_preds)):
+			if sorted_preds[_] < minPred:
+				indexAboveMin += 1
+			if sorted_preds[_] < avgPred:
+				indexAboveAvg += 1
+		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
+		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
+		featureVec = [minPred, avgPred] # A 
+		#featureVec = [minPred, avgPred, numItems] # B
+		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
+		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
+		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
+		return featureVec
 
 	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
 		addedPairs = set()

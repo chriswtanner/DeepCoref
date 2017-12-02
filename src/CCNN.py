@@ -25,6 +25,7 @@ from array import array
 class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
+        self.useRelationalFeatures = False
         self.args = args
 
         print("args:", str(args))
@@ -660,61 +661,60 @@ class CCNN:
         input_shape = training_data.shape[2:]
         base_network = self.create_base_network(input_shape)
 
-        # original way
-        #input_a = Input(shape=input_shape)
-        #input_b = Input(shape=input_shape)
+        if self.useRelationalFeatures: # relational, merged layer way
+            input_a = Input(shape=input_shape, name='input_a')
+            input_b = Input(shape=input_shape, name='input_b')
+        else: # original way
+            input_a = Input(shape=input_shape)
+            input_b = Input(shape=input_shape)
         
-        # relational, merged layer way
-        input_a = Input(shape=input_shape, name='input_a')
-        input_b = Input(shape=input_shape, name='input_b')
-
         processed_a = base_network(input_a)
         processed_b = base_network(input_b)
 
         distance = Lambda(self.euclidean_distance, output_shape=self.eucl_dist_output_shape)([processed_a, processed_b])
 
-        # original
-        #model = Model(inputs=[input_a, input_b], outputs=distance)
-
         # relational, merged layer way
-        auxiliary_input = Input(shape=(len(training_rel[0]),), name='auxiliary_input')
-        combined_layer = keras.layers.concatenate([distance, auxiliary_input])
-        x = Dense(4, activation='relu')(combined_layer)
-        main_output = Dense(1, activation='sigmoid', name='main_output')(x)
-        model = Model([input_a, input_b, auxiliary_input], main_output)
-
+        if self.useRelationalFeatures:
+            auxiliary_input = Input(shape=(len(training_rel[0]),), name='auxiliary_input')
+            combined_layer = keras.layers.concatenate([distance, auxiliary_input])
+            x = Dense(4, activation='relu')(combined_layer)
+            main_output = Dense(1, activation='sigmoid', name='main_output')(x)
+            model = Model([input_a, input_b, auxiliary_input], main_output)
+        else: # original
+            model = Model(inputs=[input_a, input_b], outputs=distance)
 
         model.compile(loss=self.contrastive_loss, optimizer=opt)
         print(model.summary())
 
-        # original
-        '''
-        model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
-                  batch_size=self.args.batchSize,
-                  epochs=self.args.numEpochs,
-                  validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
 
-        '''
-        
-        # relational, merged layer way
-        model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)},
-                  {'main_output': training_labels}, 
-                  batch_size=self.args.batchSize,
-                  epochs=self.args.numEpochs,
-                  validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)}, {'main_output': np.asarray(dev_labels)}))
-        
+        if self.useRelationalFeatures: # relational, merged layer way
+            model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)},
+                      {'main_output': training_labels}, 
+                      batch_size=self.args.batchSize,
+                      epochs=self.args.numEpochs,
+                      validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)}, {'main_output': np.asarray(dev_labels)}))
+        else: # original
+            model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
+                      batch_size=self.args.batchSize,
+                      epochs=self.args.numEpochs,
+                      validation_data=([dev_data[:, 0], dev_data[:, 1]], dev_labels))
         # train accuracy
         print("-----------\npredicting training")
-        #training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
-        training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)})
+        
+        if self.useRelationalFeatures:
+            training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)})
+        else:
+            training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
         sys.stdout.flush()
         bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
         print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
 
         # dev accuracy
         print("-----------\npredicting dev")
-        #dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)})
+        if self.useRelationalFeatures:
+            dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)})
+        else:
+            dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
         bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
         print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
         
@@ -726,11 +726,16 @@ class CCNN:
         dev_labels = None
 
         print("-----------\npredicting testing")
-        #testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_rel)})
+
+        if self.useRelationalFeatures:
+            testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_rel)})
+        else:
+            testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
         bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
+
+        self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
 
         # TMP: remove this after i have tested if K-fold helps and is needed
         #self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
@@ -858,9 +863,82 @@ class CCNN:
         seq.add(Dense(curNumFilters, activation='relu'))
         return seq
 
+    # prints the stats for hte table which tells us how many T,F pairs we had
+    # wrt to single-tokens and multi-token and containing sublemmas
+    def printSubstringTable(self, testing_pairs, testing_preds, threshold):
+        print("threshold:",str(threshold))
+        dmPairsAnalyzed = set() # used for making the prec/recall tables to ensure we don't double count mentions
+        tokenTables = defaultdict(lambda : defaultdict(int))        
+        for _ in range(len(testing_pairs)):
+            pair = testing_pairs[_]
+            (hm_id1,hm_id2) = pair
+            
+            hmention1 = self.hddcrp_parsed.hm_idToHMention[hm_id1]
+            hmention2 = self.hddcrp_parsed.hm_idToHMention[hm_id2]
+            prefix = "  "
+            tableKey = ""
+            if len(hmention1.tokens) > 1 or len(hmention2.tokens) > 1:
+                tableKey = "M" # represents multiple tokens
+            else: # both are single-token mentions
+                tableKey = "S"
+
+            lemma1 = ""
+            lemma1Tokens = []
+            for htoken in hmention1.tokens:
+                token = self.corpus.UIDToToken[htoken.UID]
+                curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                lemma1Tokens.append(curLemma)
+                lemma1 += curLemma + " "
+
+            lemma2 = ""
+            lemma2Tokens = []
+            for htoken in hmention2.tokens:
+                token = self.corpus.UIDToToken[htoken.UID]
+                curLemma = self.helper.getBestStanToken(token.stanTokens).lemma
+                lemma2Tokens.append(curLemma)
+                lemma2 += curLemma + " "
+
+            containsSubString = False
+            for t in lemma1Tokens:
+                if t in lemma2:
+                    containsSubString = True
+                    break
+            for t in lemma2Tokens:
+                if t in lemma1:
+                    containsSubString = True
+                    break
+            if containsSubString:
+                tableKey += "SL"
+            else:
+                tableKey += "NL"
+
+            gold_ref1 = hmention1.ref_id
+            gold_ref2 = hmention2.ref_id
+
+            wePredict = False
+            pred = testing_preds[_]
+            if pred < threshold:
+                wePredict = True
+
+            ans = ""
+            if gold_ref1 == gold_ref2 and wePredict: # we got it
+                ans = "TP"
+            elif gold_ref1 == gold_ref2 and not wePredict: # we missed it
+                ans = "FN"
+            elif gold_ref1 != gold_ref2 and wePredict: # false positive
+                ans = "FP"
+            else:
+                ans = "TN"
+
+            if (hm_id1,hm_id2) not in dmPairsAnalyzed and (hm_id2,hm_id1) not in dmPairsAnalyzed:
+                tokenTables[tableKey][ans] += 1
+        for tableKey in tokenTables:
+            for ans in tokenTables[tableKey]:
+                print("tokenTables:",str(tableKey),str(ans),str(tokenTables[tableKey][ans]))
+
     # from a list of predictions, find the optimal f1 point
     def compute_optimal_f1(self, label, startingProb, predictions, golds):
-        print("* in compute_optimal_f1!!!()")
+        #print("* in compute_optimal_f1!!!()")
         sys.stdout.flush()
         #print("# preds:",str(len(predictions)))
         # sorts the predictions from smallest to largest
@@ -879,7 +957,7 @@ class CCNN:
         bestProb = startingProb
         bestF1 = given
         
-        lowestProb = 0.2
+        lowestProb = 0.1
         highestProb = 1.1
         numTried = 0
         #for p in sorted(preds):
@@ -1516,7 +1594,7 @@ class CCNN:
         Y = np.asarray(labels)
         X = np.asarray(X)
         relational_features = np.asarray(relational_features)
-        #Z = np.asarray(Z)
+
         ''' ORIGINAL WAY WHICH WORKS
         X = []
         for (mentionID1,mentionID2) in mentionIDPairs:
