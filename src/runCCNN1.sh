@@ -28,7 +28,7 @@ SSlog=("True")
 devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
 # FFNN params
-FFNNnumEpochs=(20) # 5 20
+FFNNnumEpochs=(5) # 5 20
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate

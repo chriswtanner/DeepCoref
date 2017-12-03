@@ -15,7 +15,7 @@ import functools
 import math
 from itertools import product
 class FFNN:
-	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None):
+	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		# print stuff
 		print("args:", str(args))
@@ -32,13 +32,15 @@ class FFNN:
 		self.hddcrp_parsed = hddcrp_parsed
 
 		# to be filled in via createTraining()
-		self.testingPairs = ""
 		self.testX = ""
 		self.testY = ""
 
 		self.model = None # filled in via train()
 
 		self.createTraining(dev_pairs, dev_preds) # loads training/test data
+
+		self.testingPairs = testing_pairs
+		self.testingPreds = testing_preds
 
 		# params
 		self.hidden_size = 50
@@ -176,26 +178,6 @@ class FFNN:
 				(doc_id,m_id) = dm
 				docToPredDevDMs[doc_id].add(dm)
 
-		'''
-		# loads test predictions
-		testPredictions = {}
-		predTestDMs = set()
-		f = open(self.args.dataDir + "test_" + str(self.args.devDir) + ".txt")
-		for line in f:
-			hm1,hm2,pred = line.rstrip().split(",")
-			hm1 = int(hm1)
-			hm2 = int(hm2)
-			pred = float(pred)
-			testPredictions[(hm1,hm2)] = pred
-			predTestDMs.add(hm1)
-			predTestDMs.add(hm2)
-		f.close()
-		# makes testing Doc->DMs
-		docToPredTestDMs = defaultdict(set)
-		for hm in predTestDMs:
-			doc_id = self.hddcrp_parsed.hm_idToHMention[hm].doc_id
-			docToPredTestDMs[doc_id].add(hm)
-		'''
 		for dm in parsedDevDMs:
 			if dm not in predDevDMs:
 				ref = self.corpus.dmToREF[dm]
@@ -212,6 +194,171 @@ class FFNN:
 
 		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions)
 		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
+
+	def cluster(self, stoppingPoint):
+		# loads test predictions
+		predTestDMs = set()
+
+		# stores predictions
+		docToHMPredictions = defaultdict(lambda : defaultdict(float))
+		docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+
+		if self.testingPairs == None and self.testingPreds == None: # read the file
+			# sanity check:
+			if self.args.useECBTest:
+				print("* ERROR: we want to use ECBTest data, but we aren't passing it to FFNN")
+				exit(1)
+
+			# we know we are reading from HDDCRP predicted test mentions
+			f = open(self.args.dataDir + "test_" + str(self.args.devDir) + ".txt")
+			for line in f:
+				hm1,hm2,pred = line.rstrip().split(",")
+				hm1 = int(hm1)
+				hm2 = int(hm2)
+				pred = float(pred)
+				doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+				doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+				if doc_id != doc_id2:
+					print("ERROR: pairs are from diff docs")
+					exit(1)
+				if hm1 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(hm1)
+				if hm2 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(hm2)
+				docToHMPredictions[doc_id][(hm1,hm2)] = pred
+				predTestDMs.add(hm1)
+				predTestDMs.add(hm2)
+			f.close()
+		else: # use the passed-in Mentions (which could be ECB or HDDCRP format)
+			for _ in range(len(self.testingPairs)):
+				(dm1,dm2) = self.testingPairs[_]
+				predTestDMs.add(dm1)
+				predTestDMs.add(dm2)
+				pred = self.testingPreds[_][0]
+				doc_id = 0
+				doc_id2 = 0
+				if self.args.useECBTest:
+					doc_id = dm1[0]
+					doc_id2 = dm2[0]
+				else:
+					doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+					doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
+				if doc_id != doc_id2:
+					print("ERROR: pairs are from diff docs")
+					exit(1)
+
+				if dm1 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(dm1)
+				if dm2 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(dm2)
+				docToHMPredictions[doc_id][(dm1,dm2)] = pred
+				predTestDMs.add(dm1)
+				predTestDMs.add(dm2) 
+
+		# sanity check: ensures we are working w/ all of the DMs
+		if self.args.useECBTest:
+			for d in self.helper.testingDirs:
+				for doc in self.corpus.dirToDocs[d]:
+					for dm in self.corpus.docToDMs[doc]:
+						if dm not in predTestDMs:
+							print("* ERROR: did not have the dm:",str(dm),"which was in our parsed ECB Test")
+							exit(1)
+		else: # hddcrp
+			for hm in self.hddcrp_parsed.hm_idToHMention:
+				if hm not in predTestDMs:
+					print("* ERROR: hddcrp is missing some hms")
+					exit(1)
+		print("# dms in test:",str(len(predTestDMs)))
+
+		# now, the magic actually happens: time to cluster!
+		ourClusterID = 0
+		ourClusterSuperSet = {}
+
+		goldenClusterID = 0
+		goldenSuperSet = {}
+		if self.args.useECBTest: # construct golden clusters
+			for doc_id in docToHMPredictions.keys():
+				
+				# ensures we have all DMs
+				if len(docToHMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
+					print("mismatch in DMs!!")
+					exit(1)
+
+				# construct the golden truth for the current doc
+				goldenTruthDirClusters = {}
+				for i in range(len(self.corpus.docToREFs[doc_id])):
+					tmp = set()
+					curREF = self.corpus.docToREFs[doc_id][i]
+					for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:						
+						tmp.add(dm)
+					goldenTruthDirClusters[i] = tmp
+					goldenSuperSet[goldenClusterID] = tmp
+					goldenClusterID += 1
+
+
+		for doc_id in docToHMPredictions.keys():			
+			# sorts all preds for the current doc
+			docPreds = []
+			for pair in docToHMPredictions[doc_id]:
+				docPreds.append(docToHMPredictions[doc_id][pair])
+			sorted_preds = sorted(docPreds)
+
+			# constructs our base clusters (singletons)
+			ourDocClusters = {} 
+			for i in range(len(docToHMs[doc_id])):
+				hm = docToHMs[doc_id][i]
+				a = set()
+				a.add(hm)
+				ourDocClusters[i] = a
+
+			if len(docToHMs[doc_id]) == 1:
+				print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
+
+			# the following keeps merging until our shortest distance > stopping threshold,
+			# or we have 1 cluster, whichever happens first
+			while len(ourDocClusters.keys()) > 1:
+				# find best merge
+				closestDist = 999999
+				closestClusterKeys = (-1,-1)
+				i = 0
+				for c1 in ourDocClusters.keys():
+					for dm1 in ourDocClusters[c1]:
+						j = 0
+						for c2 in ourDocClusters.keys():
+							if j > i:
+								X = []
+								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id])
+								X.append(np.asarray(featureVec))
+								X = np.asarray(X)
+								# the first [0] is required to get into the surrounding array
+								# the second [0] is to access the probability of not-match
+								# so the lower it is means the higher the prob. of 'is-match' [1]
+								dist = self.model.predict(X)[0][0]
+								if dist < closestDist:
+									closestDist = dist
+									closestClusterKeys = (c1,c2)
+							j += 1
+					i += 1
+				if closestDist > stoppingPoint:
+					break
+				newCluster = set()
+				#print("* merging:",ourDocClusters[c1],"and",ourDocClusters[c2],"dist:",closestDist)
+				(c1,c2) = closestClusterKeys
+				for _ in ourDocClusters[c1]:
+					newCluster.add(_)
+				for _ in ourDocClusters[c2]:
+					newCluster.add(_)
+				ourDocClusters.pop(c1, None)
+				ourDocClusters.pop(c2, None)
+				ourDocClusters[c1] = newCluster
+			# end of current doc
+			for i in ourDocClusters.keys():
+				ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+				ourClusterID += 1
+
+		# end of going through every doc
+		#print("# our clusters:",str(len(ourClusterSuperSet)))
+		return (ourClusterSuperSet, goldenSuperSet)
 
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
@@ -286,7 +433,7 @@ class FFNN:
 						X.append(featureVec)
 						Y.append([1,0])
 		return (X,Y)
-	# gets the features we care about -- how a DM relates to the passed-in cluster
+	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
 	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions):
 		minPred = 999
 		preds = []
@@ -315,7 +462,7 @@ class FFNN:
 				indexAboveAvg += 1
 		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
-		featureVec = [minPred, avgPred] # A 
+		featureVec = [minPred, avgPred] # A
 		#featureVec = [minPred, avgPred, numItems] # B
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D

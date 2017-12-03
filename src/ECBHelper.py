@@ -254,7 +254,7 @@ class ECBHelper:
 			self.posToGloveEmbedding[pos] = emb
 		f.close()
 
-	def constructECBDev(self, dirs):
+	def constructECBDev(self, dirs, isTest=False): # the last param determins if we're working on ECBTest
 		print("* in constructECBDev()")
 		devTokenListPairs = []
 		mentionIDPairs = []
@@ -273,37 +273,45 @@ class ECBHelper:
 						if dm not in docDMs:
 							docDMs.append(dm)
 
-				added = set()
-				for dm1 in docDMs:
-					for dm2 in docDMs:
-						if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
-							continue
+				# we only have 1 DM in the doc, but we want to add it if we're w/ the test set
+				if isTest and len(docDMs) == 1:
+					dm1 = docDMs[0]
+					tokenList1 = self.corpus.dmToMention[dm1].tokens
+					devTokenListPairs.append((tokenList1,tokenList1))
+					mentionIDPairs.append((dm1,dm1))
+					labels.append(1)
+				else:
+					added = set()
+					for dm1 in docDMs:
+						for dm2 in docDMs:
+							if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+								continue
 
-						# sets dm1's
-						tokenList1 = []
-						if dm1 in DMToTokenLists.keys():
-							tokenList1 = DMToTokenLists[dm1]
-						else:
-							tokenList1 = self.corpus.dmToMention[dm1].tokens
-							DMToTokenLists[dm1] = tokenList1
-						
-						# sets dm2's
-						tokenList2 = []
-						if dm2 in DMToTokenLists.keys():
-							tokenList2 = DMToTokenLists[dm2]
-						else:
-							tokenList2 = self.corpus.dmToMention[dm2].tokens
-							DMToTokenLists[dm2] = tokenList2
+							# sets dm1's
+							tokenList1 = []
+							if dm1 in DMToTokenLists.keys():
+								tokenList1 = DMToTokenLists[dm1]
+							else:
+								tokenList1 = self.corpus.dmToMention[dm1].tokens
+								DMToTokenLists[dm1] = tokenList1
+							
+							# sets dm2's
+							tokenList2 = []
+							if dm2 in DMToTokenLists.keys():
+								tokenList2 = DMToTokenLists[dm2]
+							else:
+								tokenList2 = self.corpus.dmToMention[dm2].tokens
+								DMToTokenLists[dm2] = tokenList2
 
-						devTokenListPairs.append((tokenList1,tokenList2))
-						mentionIDPairs.append((dm1,dm2))
-						if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
-							labels.append(1)
-						else:
-							labels.append(0)
+							devTokenListPairs.append((tokenList1,tokenList2))
+							mentionIDPairs.append((dm1,dm2))
+							if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+								labels.append(1)
+							else:
+								labels.append(0)
 
-						added.add((dm1,dm2))
-						added.add((dm2,dm1))
+							added.add((dm1,dm2))
+							added.add((dm2,dm1))
 		return (devTokenListPairs,mentionIDPairs,labels)
 
 	# returns the Tokens (belonging to Mentions) within the hddcrp_parsed file
@@ -951,46 +959,44 @@ class ECBHelper:
 			docToHMPredictions[doc_id][(hm1,hm2)] = prediction
 			uniqueHMs.add(hm1)
 			uniqueHMs.add(hm2)
+		
 		ourClusterID = 0
 		ourClusterSuperSet = {}
-		
-		stoppingPoints = []
-
 		for doc_id in docToHMPredictions.keys():
 			# constructs our base clusters (singletons)
-			ourDirClusters = {} 
+			ourDocClusters = {} 
 			for i in range(len(docToHMs[doc_id])):
 				hm = docToHMs[doc_id][i]
 				a = set()
 				a.add(hm)
-				ourDirClusters[i] = a
+				ourDocClusters[i] = a
 
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
-			while len(ourDirClusters.keys()) > 1:
+			while len(ourDocClusters.keys()) > 1:
 				# find best merge
 				closestDist = 999999
 				closestClusterKeys = (-1,-1)
 
 				closestAvgDist = 999999
 				closestAvgClusterKeys = (-1,-1)
-				
+
 				closestAvgAvgDist = 999999
 				closestAvgAvgClusterKeys = (-1,-1)
 
-				#print("ourDirClusters:",str(ourDirClusters.keys()))
+				#print("ourDocClusters:",str(ourDocClusters.keys()))
 				# looks at all combinations of pairs
 				i = 0
-				for c1 in ourDirClusters.keys():
+				for c1 in ourDocClusters.keys():
 					
 					#print("c1:",str(c1))
 					j = 0
-					for c2 in ourDirClusters.keys():
+					for c2 in ourDocClusters.keys():
 						if j > i:
 							avgavgdists = []
-							for dm1 in ourDirClusters[c1]:
+							for dm1 in ourDocClusters[c1]:
 								avgdists = []
-								for dm2 in ourDirClusters[c2]:
+								for dm2 in ourDocClusters[c2]:
 									dist = 99999
 									if (dm1,dm2) in docToHMPredictions[doc_id]:
 										dist = docToHMPredictions[doc_id][(dm1,dm2)]
@@ -1028,16 +1034,16 @@ class ECBHelper:
 				elif self.args.clusterMethod == "avgavg":
 					(c1,c2) = closestAvgAvgClusterKeys
 
-				for _ in ourDirClusters[c1]:
+				for _ in ourDocClusters[c1]:
 					newCluster.add(_)
-				for _ in ourDirClusters[c2]:
+				for _ in ourDocClusters[c2]:
 					newCluster.add(_)
-				ourDirClusters.pop(c1, None)
-				ourDirClusters.pop(c2, None)
-				ourDirClusters[c1] = newCluster
+				ourDocClusters.pop(c1, None)
+				ourDocClusters.pop(c2, None)
+				ourDocClusters[c1] = newCluster
 			# end of current doc
-			for i in ourDirClusters.keys():
-				ourClusterSuperSet[ourClusterID] = ourDirClusters[i]
+			for i in ourDocClusters.keys():
+				ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
 				ourClusterID += 1
 		# end of going through every doc
 		#print("# our clusters:",str(len(ourClusterSuperSet)))
