@@ -646,8 +646,11 @@ class CCNN:
         # constructs the training and dev files
         training_pairs, training_data, training_rel, training_labels = self.createData("train", self.helper.trainingDirs)
         dev_pairs, dev_data, dev_rel, dev_labels = self.createData("dev", self.helper.devDirs)
-        testing_pairs, testing_data, testing_rel, testing_labels = self.createData("test", self.helper.testingDirs)
-        #testing_pairs, testing_data, testing_rel, testing_labels = self.createData("hddcrp") # self.createDataFromHDDCRP()
+        
+        if self.args.useECBTest:
+            testing_pairs, testing_data, testing_rel, testing_labels = self.createData("test", self.helper.testingDirs)
+        else:
+            testing_pairs, testing_data, testing_rel, testing_labels = self.createData("hddcrp")
 
         print("* training data shape:",str(training_data.shape))
         print("* dev data shape:",str(dev_data.shape))
@@ -735,7 +738,8 @@ class CCNN:
         print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
         print("testing size:", str(len(testing_data)))
 
-        #self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
+        if not self.args.useECBTest:
+            self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
 
         # TMP: remove this after i have tested if K-fold helps and is needed
         #self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)

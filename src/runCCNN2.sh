@@ -66,6 +66,7 @@ stoplistFile=${baseDir}"data/stopwords.txt"
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
+useECBTest=true
 device=$2
 numLayers=$3
 poolType=$4
@@ -99,6 +100,7 @@ stanOutputDir=${baseDir}"data/stanford_output/"
 
 echo "-------- params --------"
 echo "corpus:" $1
+echo "useECBTest:" ${useECBTest}
 echo "stoplistFile:" $stoplistFile
 echo "resultsDir:" ${resultsDir}
 echo "dataDir:" ${dataDir}
@@ -145,6 +147,7 @@ echo "------------------------"
 cd $scriptDir
 
 python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
+--useECBTest=${useECBTest} \
 --stoplistFile=${stoplistFile} \
 --device=${device} \
 --numLayers=${numLayers} --poolType=${poolType} --corpusPath=${corpusPath} \
@@ -173,22 +176,24 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --FFNNnumEpochs=${FFNNnumEpochs} \
 --FFNNPosRatio=${FFNNPosRatio} \
 --FFNNOpt=${FFNNOpt}
-exit 1
-cd ${refDir}
-goldFile=${baseDir}"data/gold.WD.semeval.txt"
-shopt -s nullglob
 
-for sp in "${stoppingPoints[@]}"
-do
-	f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_co"${CCNNOpt}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_dd"${devDir}"_fn"${FFNNnumEpochs}"_fp"${FFNNPosRatio}"_fo"${FFNNOpt}"_sp"${sp}".txt"
-	muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-	bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-	ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-	sum=`echo ${muc}+${bcub}+${ceafe} | bc`
-	avg=`echo "scale=2;$sum/3.0" | bc`
-	echo "CoNLLF1:" ${f} ${avg}
-	rm -rf ${f}
-done
+if [ "$useECBTest" = false ] ; then
+	cd ${refDir}
+	goldFile=${baseDir}"data/gold.WD.semeval.txt"
+	shopt -s nullglob
+
+	for sp in "${stoppingPoints[@]}"
+	do
+		f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_co"${CCNNOpt}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_dd"${devDir}"_fn"${FFNNnumEpochs}"_fp"${FFNNPosRatio}"_fo"${FFNNOpt}"_sp"${sp}".txt"
+		muc=`./scorer.pl muc ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+		bcub=`./scorer.pl bcub ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+		ceafe=`./scorer.pl ceafe ${goldFile} ${f} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+		sum=`echo ${muc}+${bcub}+${ceafe} | bc`
+		avg=`echo "scale=2;$sum/3.0" | bc`
+		echo "CoNLLF1:" ${f} ${avg}
+		rm -rf ${f}
+	done
+fi
 
 # writes GloVe embeddings from the parsed corpus' output ($allTokens)
 # cd "/Users/christanner/research/libraries/GloVe-master"
