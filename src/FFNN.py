@@ -311,8 +311,8 @@ class FFNN:
 				a.add(hm)
 				ourDocClusters[i] = a
 
-			if len(docToHMs[doc_id]) == 1:
-				print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
+			#if len(docToHMs[doc_id]) == 1:
+			#	print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
 
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
@@ -462,9 +462,9 @@ class FFNN:
 				indexAboveAvg += 1
 		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
-		featureVec = [minPred, avgPred] # A
+		#featureVec = [minPred, avgPred] # A
 		#featureVec = [minPred, avgPred, numItems] # B
-		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
+		featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
 		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
 		return featureVec
