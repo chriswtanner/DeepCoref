@@ -173,7 +173,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --FFNNnumEpochs=${FFNNnumEpochs} \
 --FFNNPosRatio=${FFNNPosRatio} \
 --FFNNOpt=${FFNNOpt}
-
+exit 1
 cd ${refDir}
 goldFile=${baseDir}"data/gold.WD.semeval.txt"
 shopt -s nullglob

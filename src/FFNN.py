@@ -15,7 +15,7 @@ import functools
 import math
 from itertools import product
 class FFNN:
-	def __init__(self, args, corpus, helper, hddcrp_parsed):
+	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None):
 
 		# print stuff
 		print("args:", str(args))
@@ -36,13 +36,16 @@ class FFNN:
 		self.testX = ""
 		self.testY = ""
 
-		self.createTraining() # loads training/test data
+		self.model = None # filled in via train()
+
+		self.createTraining(dev_pairs, dev_preds) # loads training/test data
 
 		# params
 		self.hidden_size = 50
 		self.dataDim = len(self.trainX[0])
 		self.outputDim = 2
 		self.batch_size = 5
+
 		# the passed-in params
 		self.num_epochs = int(self.args.FFNNnumEpochs)
 		self.FFNNOpt = self.args.FFNNOpt
@@ -51,12 +54,12 @@ class FFNN:
 		self.pos_ratio = tf.constant(pos_ratio, tf.float32)
 		self.weights = tf.constant(neg_ratio / pos_ratio, tf.float32)
 
-	def run(self):
-		model = Sequential()
-		model.add(Dense(units=self.hidden_size, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
-		model.add(Activation('sigmoid'))
-		model.add(Dense(units=self.outputDim, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
-		model.add(Activation('softmax'))
+	def train(self):
+		self.model = Sequential()
+		self.model.add(Dense(units=self.hidden_size, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
+		self.model.add(Activation('sigmoid'))
+		self.model.add(Dense(units=self.outputDim, input_shape=(self.dataDim,), use_bias=True, kernel_initializer='normal'))
+		self.model.add(Activation('softmax'))
 
 		if self.FFNNOpt == "rms":
 			opt = RMSprop()
@@ -67,15 +70,11 @@ class FFNN:
 		else:
 			print("* ERROR: invalid CCNN optimizer")
 			exit(1)
-		model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
-		model.summary()
-		model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
-		evaluation = model.evaluate(self.testX, self.testY, verbose=1)
-		preds = model.predict(self.testX, verbose=1)
-		print("\nevaluation:",str(evaluation))
-		print("test acc:",str(self.getAccuracy(preds, self.testY)))
-		print("f1:",str(self.calculateF1(preds)))
-		return (self.testingPairs, preds, self.testY)
+		self.model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
+		self.model.summary()
+		self.model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
+		#evaluation = self.model.evaluate(self.testX, self.testY, verbose=1)
+		#return (self.testingPairs, preds, self.testY)
 
 	def calculateF12(self, preds):
 		num_correct = 0
@@ -134,7 +133,7 @@ class FFNN:
 		#return K.mean(cost, axis=-1)
 		return K.mean(cost * self.pos_ratio, axis=-1)
 
-	def createTraining(self):
+	def createTraining(self, dev_pairs, dev_preds):
 		print("* in createTraining")
 
 		# sanity check part 1: ensure all dev DMs are accounted for (that we have prediction values for all)
@@ -144,23 +143,31 @@ class FFNN:
 				for dm in self.corpus.docToDMs[doc]:
 					parsedDevDMs.add(dm)
 
-		# loads dev predictions
+		# loads dev predictions via CCNN's pairwise predictions, or a saved file
 		devPredictions = {}
 		predDevDMs = set()
-		f = open(self.args.dataDir + "dev_" + str(self.args.devDir) + ".txt")
-		for line in f:
-			d1,m1,d2,m2,pred = line.rstrip().split(",")
-			m1 = int(m1)
-			m2 = int(m2)
-			dm1 = (d1,m1)
-			dm2 = (d2,m2)
-			pred = float(pred)
-			devPredictions[(dm1,dm2)] = pred
-			predDevDMs.add(dm1)
-			predDevDMs.add(dm2)
-		f.close()
+		if dev_pairs == None and dev_preds == None: # read the file
+			f = open(self.args.dataDir + "dev_" + str(self.args.devDir) + ".txt")
+			for line in f:
+				d1,m1,d2,m2,pred = line.rstrip().split(",")
+				m1 = int(m1)
+				m2 = int(m2)
+				dm1 = (d1,m1)
+				dm2 = (d2,m2)
+				pred = float(pred)
+				devPredictions[(dm1,dm2)] = pred
+				predDevDMs.add(dm1)
+				predDevDMs.add(dm2)
+			f.close()		
+		else: # read the CCNN predictions
+			for _ in range(len(dev_pairs)):
+				(dm1,dm2) = dev_pairs[_]
+				predDevDMs.add(dm1)
+				predDevDMs.add(dm2)
+				devPredictions[dev_pairs[_]] = dev_preds[_][0]
 
 		# sanity check part 2: ensure all dev DMs are accounted for (that we have prediction values for all)
+		# AND it maps DMs to a per-doc access
 		docToPredDevDMs = defaultdict(set)
 		for dm in predDevDMs:
 			if dm not in parsedDevDMs:
@@ -169,6 +176,7 @@ class FFNN:
 				(doc_id,m_id) = dm
 				docToPredDevDMs[doc_id].add(dm)
 
+		'''
 		# loads test predictions
 		testPredictions = {}
 		predTestDMs = set()
@@ -187,7 +195,7 @@ class FFNN:
 		for hm in predTestDMs:
 			doc_id = self.hddcrp_parsed.hm_idToHMention[hm].doc_id
 			docToPredTestDMs[doc_id].add(hm)
-
+		'''
 		for dm in parsedDevDMs:
 			if dm not in predDevDMs:
 				ref = self.corpus.dmToREF[dm]
@@ -204,7 +212,7 @@ class FFNN:
 
 		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions)
 		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
-		exit(1)
+
 	def getAccuracy(self, preds, golds):
 		return np.mean(np.argmax(golds, axis=1) == np.argmax(preds, axis=1))
 

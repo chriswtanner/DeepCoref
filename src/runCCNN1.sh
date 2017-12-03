@@ -2,18 +2,18 @@
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
 
-numLayers=(2) # 3) # 1 3
-numEpochs=(5) # 20)
+numLayers=(1) # 3) # 1 3
+numEpochs=(1) # 20)
 windowSize=(0)
-numNeg=(6)
-batchSize=(64) # 128) # 64 128
+numNeg=(1)
+batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("840B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("rms") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(4)
+numFilters=(2)
 filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
