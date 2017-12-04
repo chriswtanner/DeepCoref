@@ -454,7 +454,8 @@ class FFNN:
 
 		minPredIn = maxPred
 		minPredOut = maxPred
-		
+		maxPredIn = -1
+		maxPredOut = -1
 		for dm2 in allDMsInDoc:
 			if dm1 == dm2:
 				continue
@@ -469,10 +470,14 @@ class FFNN:
 			if dm2 in allDMsInCluster:
 				if pred < minPredIn:
 					minPredIn = pred
+				if pred > maxPredIn:
+					maxPredIn = pred
 				predsIn.append(pred)
 			else: # pred is outside of candidate cluster
 				if pred < minPredOut:
 					minPredOut = pred
+				if pred > maxPredOut:
+					maxPredOut = pred
 				predsOut.append(pred)
 
 		avgPredIn = sum(predsIn) / len(predsIn)
@@ -494,9 +499,9 @@ class FFNN:
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
 		minDiff = float(minPredOut - minPredIn)
 		avgDiff = float(avgPredOut - avgPredIn)
-
-		#featureVec = [minPredIn, avgPredIn] # A
-		featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
+		maxDiff = float(maxPredOut - maxPredIn)
+		featureVec = [minPredIn, avgPredIn, maxPredIn] # A
+		#featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
 		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
