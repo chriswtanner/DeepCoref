@@ -147,6 +147,7 @@ class FFNN:
 
 		# loads dev predictions via CCNN's pairwise predictions, or a saved file
 		devPredictions = {}
+		docDMPredictions = defaultdict(lambda : defaultdict(float))
 		predDevDMs = set()
 		if dev_pairs == None and dev_preds == None: # read the file
 			f = open(self.args.dataDir + "dev_" + str(self.args.devDir) + ".txt")
@@ -158,6 +159,7 @@ class FFNN:
 				dm2 = (d2,m2)
 				pred = float(pred)
 				devPredictions[(dm1,dm2)] = pred
+				docDMPredictions[d1][(dm1,dm2)] = pred
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
 			f.close()		
@@ -167,6 +169,12 @@ class FFNN:
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
 				devPredictions[dev_pairs[_]] = dev_preds[_][0]
+				doc_id = ""
+				if self.args.useECBTest:
+					doc_id = dm1[0]
+				else:
+					doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+				docDMPredictions[doc_id][(dm1,dm2)] = pred
 
 		# sanity check part 2: ensure all dev DMs are accounted for (that we have prediction values for all)
 		# AND it maps DMs to a per-doc access
@@ -192,7 +200,7 @@ class FFNN:
 		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
 		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
 
-		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions)
+		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions, docDMPredictions)
 		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
 
 	def cluster(self, stoppingPoint):
@@ -327,7 +335,7 @@ class FFNN:
 						for c2 in ourDocClusters.keys():
 							if j > i:
 								X = []
-								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id])
+								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id], len(docToHMs[doc_id]))
 								X.append(np.asarray(featureVec))
 								X = np.asarray(X)
 								# the first [0] is required to get into the surrounding array
@@ -373,7 +381,7 @@ class FFNN:
 	def init_weights(self, shape):
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
-	def loadDynamicData(self, docToPredDMs, predictions):
+	def loadDynamicData(self, docToPredDMs, allPredictions, docDMPredictions):
 		# constructs a mapping of DOC -> {REF -> DM}
 		docToREFDMs = defaultdict(lambda : defaultdict(set))
 		docToDMs = defaultdict(set)
@@ -401,16 +409,16 @@ class FFNN:
 					if dm1 == dm2:
 						continue
 					pair = None
-					if (dm1,dm2) in predictions:
+					if (dm1,dm2) in allPredictions:
 						pair = (dm1,dm2)
-					elif (dm2,dm1) in predictions:
+					elif (dm2,dm1) in allPredictions:
 						pair = (dm2,dm1)
 					else:
 						print(len(added))
 						print("* ERROR: we dont have dm1-dm2")
 						exit(1)
 					if pair not in added:
-						allDocPreds.append(predictions[pair])
+						allDocPreds.append(allPredictions[pair])
 						added.add(pair)
 			sorted_preds = sorted(allDocPreds)
 			
@@ -419,7 +427,7 @@ class FFNN:
 				gold_ref_id = self.corpus.dmToREF[dm1]
 				# we can only pick a positive if there are other items in the cluster
 				if len(docToREFDMs[doc_id][gold_ref_id]) > 1:
-					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, predictions)
+					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, docDMPredictions[doc_id], len(docToDMs[doc_id]))
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
@@ -428,13 +436,14 @@ class FFNN:
 					if other_ref_id == gold_ref_id:
 						continue
 					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, predictions)
+						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, docDMPredictions[doc_id], len(docToDMs[doc_id]))
 						negativeData.append(featureVec)
 						X.append(featureVec)
 						Y.append([1,0])
 		return (X,Y)
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions):
+	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, numMentionsInDoc):
+
 		minPred = 999
 		preds = []
 		for dm2 in allDMsInCluster:
@@ -453,6 +462,7 @@ class FFNN:
 
 		avgPred = sum(preds) / len(preds)
 		numItems = len(preds)
+		clusterSizePercentage = float(numItems) / float(numMentionsInDoc)
 		indexAboveMin = 0
 		indexAboveAvg = 0
 		for _ in range(len(sorted_preds)):
@@ -463,10 +473,11 @@ class FFNN:
 		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
 		#featureVec = [minPred, avgPred] # A
-		#featureVec = [minPred, avgPred, numItems] # B
-		featureVec = [percentageBelowMin, percentageBelowAvg] # C
+		featureVec = [minPred, avgPred, clusterSizePercentage] # B
+		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
 		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
+		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg]
 		return featureVec
 
 	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
