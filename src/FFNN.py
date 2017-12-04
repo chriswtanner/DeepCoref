@@ -473,7 +473,7 @@ class FFNN:
 		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
 		#featureVec = [minPred, avgPred] # A
-		featureVec = [minPred, avgPred, clusterSizePercentage] # B
+		featureVec = [minPred, avgPred, numItems] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
 		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
