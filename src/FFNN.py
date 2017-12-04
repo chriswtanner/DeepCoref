@@ -444,7 +444,7 @@ class FFNN:
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
 	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, allDMsInDoc):
 
-		dmToLinkDistribution = [0] * 15
+		dmToLinkDistribution = [0] * 5
 
 		predsIn = []
 		predsOut = []
@@ -468,7 +468,7 @@ class FFNN:
 				print("* ERROR: prediction doesn't exist")
 				exit(1)
 
-			binNum = math.floor(min(1.49,pred)*10)
+			binNum = math.floor(min(1.49,pred)*10/3.0)
 			dmToLinkDistribution[binNum] += 1
 
 			if dm2 in allDMsInCluster:
