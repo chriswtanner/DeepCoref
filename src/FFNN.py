@@ -511,7 +511,7 @@ class FFNN:
 		minDiff = float(minPredOut - minPredIn)
 		avgDiff = float(avgPredOut - avgPredIn)
 		maxDiff = float(maxPredOut - maxPredIn)
-		featureVec = [minPredIn, avgPredIn, maxPredIn] # A
+		featureVec = [minPredIn, avgPredIn, maxPredIn, clusterSizePercentage] # A
 		featureVec += dmToLinkDistribution
 		#featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
