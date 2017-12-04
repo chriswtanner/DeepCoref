@@ -444,6 +444,7 @@ class FFNN:
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
 	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, allDMsInDoc):
 
+		dmToLinkDistribution = [0] * 15
 
 		predsIn = []
 		predsOut = []
@@ -467,6 +468,9 @@ class FFNN:
 				print("* ERROR: prediction doesn't exist")
 				exit(1)
 
+			binNum = math.floor(min(1.49,pred)*10)
+			dmToLinkDistribution[binNum] += 1
+
 			if dm2 in allDMsInCluster:
 				if pred < minPredIn:
 					minPredIn = pred
@@ -479,6 +483,13 @@ class FFNN:
 				if pred > maxPredOut:
 					maxPredOut = pred
 				predsOut.append(pred)
+		
+		# normalizes mention weights into a distribution
+		sumCounts = sum(dmToLinkDistribution)
+		li = []
+		for _ in range(len(dmToLinkDistribution)):
+			li.append(float(dmToLinkDistribution[_]/sumCounts))
+		dmToLinkDistribution = li
 
 		avgPredIn = sum(predsIn) / len(predsIn)
 		avgPredOut = maxPred
@@ -501,6 +512,7 @@ class FFNN:
 		avgDiff = float(avgPredOut - avgPredIn)
 		maxDiff = float(maxPredOut - maxPredIn)
 		featureVec = [minPredIn, avgPredIn, maxPredIn] # A
+		featureVec += dmToLinkDistribution
 		#featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
