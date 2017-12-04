@@ -444,16 +444,17 @@ class FFNN:
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
 	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, allDMsInDoc):
 
-		minPredIn = 1
-		minPredOut = 1
+
 		predsIn = []
 		predsOut = []
 		maxPred = 0
-
 		for k in predictions:
 			if predictions[k] > maxPred:
-				maxPred = predictions[k] 
+				maxPred = predictions[k]
 
+		minPredIn = maxPred
+		minPredOut = maxPred
+		
 		for dm2 in allDMsInDoc:
 			if dm1 == dm2:
 				continue
@@ -476,6 +477,7 @@ class FFNN:
 
 		avgPredIn = sum(predsIn) / len(predsIn)
 		avgPredOut = maxPred
+
 		if len(predsOut) > 0:
 			avgPredOut = sum(predsOut) / len(predsOut)
 
@@ -492,6 +494,7 @@ class FFNN:
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
 		minDiff = float(minPredOut - minPredIn)
 		avgDiff = float(avgPredOut - avgPredIn)
+
 		#featureVec = [minPredIn, avgPredIn] # A
 		featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C

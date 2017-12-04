@@ -20,12 +20,12 @@ featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("sum") # "sum" "avg")
 dependencyType=("none") # # "sum" "avg")
-charType=("none") # "none" "concat" "sum" "avg"
+charType=("concat") # "none" "concat" "sum" "avg"
 SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(0) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
 # FFNN params
 FFNNnumEpochs=(5) # 5 20
