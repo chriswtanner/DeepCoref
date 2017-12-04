@@ -335,7 +335,7 @@ class FFNN:
 						for c2 in ourDocClusters.keys():
 							if j > i:
 								X = []
-								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id], len(docToHMs[doc_id]))
+								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id], docToHMs[doc_id])
 								X.append(np.asarray(featureVec))
 								X = np.asarray(X)
 								# the first [0] is required to get into the surrounding array
@@ -427,7 +427,7 @@ class FFNN:
 				gold_ref_id = self.corpus.dmToREF[dm1]
 				# we can only pick a positive if there are other items in the cluster
 				if len(docToREFDMs[doc_id][gold_ref_id]) > 1:
-					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, docDMPredictions[doc_id], len(docToDMs[doc_id]))
+					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, docDMPredictions[doc_id], docToDMs[doc_id])
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
@@ -436,17 +436,25 @@ class FFNN:
 					if other_ref_id == gold_ref_id:
 						continue
 					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, docDMPredictions[doc_id], len(docToDMs[doc_id]))
+						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, docDMPredictions[doc_id], docToDMs[doc_id])
 						negativeData.append(featureVec)
 						X.append(featureVec)
 						Y.append([1,0])
 		return (X,Y)
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, numMentionsInDoc):
+	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, allDMsInDoc):
 
-		minPred = 999
-		preds = []
-		for dm2 in allDMsInCluster:
+		minPredIn = 1
+		minPredOut = 1
+		predsIn = []
+		predsOut = []
+		maxPred = 0
+
+		for k in predictions:
+			if predictions[k] > maxPred:
+				maxPred = predictions[k] 
+
+		for dm2 in allDMsInDoc:
 			if dm1 == dm2:
 				continue
 			if (dm1,dm2) in predictions:
@@ -456,28 +464,40 @@ class FFNN:
 			else:
 				print("* ERROR: prediction doesn't exist")
 				exit(1)
-			if pred < minPred:
-				minPred = pred
-			preds.append(pred)
 
-		avgPred = sum(preds) / len(preds)
-		numItems = len(preds)
-		clusterSizePercentage = float(numItems) / float(numMentionsInDoc)
+			if dm2 in allDMsInCluster:
+				if pred < minPredIn:
+					minPredIn = pred
+				predsIn.append(pred)
+			else: # pred is outside of candidate cluster
+				if pred < minPredOut:
+					minPredOut = pred
+				predsOut.append(pred)
+
+		avgPredIn = sum(predsIn) / len(predsIn)
+		avgPredOut = maxPred
+		if len(predsOut) > 0:
+			avgPredOut = sum(predsOut) / len(predsOut)
+
+		numItems = len(predsIn)
+		clusterSizePercentage = float(numItems) / float(len(allDMsInDoc))
 		indexAboveMin = 0
 		indexAboveAvg = 0
 		for _ in range(len(sorted_preds)):
-			if sorted_preds[_] < minPred:
+			if sorted_preds[_] < minPredIn:
 				indexAboveMin += 1
-			if sorted_preds[_] < avgPred:
+			if sorted_preds[_] < avgPredIn:
 				indexAboveAvg += 1
 		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
 		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
-		#featureVec = [minPred, avgPred] # A
-		featureVec = [minPred, avgPred, numItems] # B clusterSizePercentage
+		minDiff = float(minPredOut - minPredIn)
+		avgDiff = float(avgPredOut - avgPredIn)
+		#featureVec = [minPredIn, avgPredIn] # A
+		featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
 		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
 		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
-		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
-		#featureVec = [minPred, avgPred, percentageBelowMin, percentageBelowAvg]
+		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
+		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg]
 		return featureVec
 
 	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
