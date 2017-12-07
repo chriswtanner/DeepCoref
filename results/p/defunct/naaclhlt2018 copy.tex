@@ -57,24 +57,24 @@ Coreference resolution is the task of trying to identify -- within a single text
 % motivation
 Coreference Resolution has always been one of the fundamental tasks within NLP, and with the ever-increasing amount of textual, digital data that is generated and consumed in present-day, it remains both important and challenging.
 
-% others' work
+% problem definition
 Specifically, coreference systems aim to find a globally-optimal fit of mentions to clusters, whereby every mention $m$ in the corpus is assigned to exactly one cluster $C$, the membership of which constitutes that every ${m_i,m_j} \in C_k$ is co-referent with each other.  If a given $m_i$ is not anaphoric with any other $m_j$, then it should belong to its own $C_k$ with a membership of one.  Further, the number of distinct clusters is not known apriori but is bounded by the number of mentions and is part of the system's inference.  Finding such a globally-optimal assignment is NP-Hard and thus computationally intractable.  In attempt to avoid this, systems typically perform pairwise-mention predictions, then use those predictions to build up clusters. The specific modelling strategies for such approximately fall into two categories: (1) mention-ranking / mention-pairs; and (2) entity-centric.
 
 \textbf{Mention-ranking} models define a scoring a function $f(m_i,m_j)$ which operates on any $m_j$ and possible antecedent $m_i$, where $m_i$ occurs earlier in the document and could be null (represented by $\epsilon$ and denoting that $m_j$ is non-anaphoric).  Although these models are by definition less expressive than entity-based models, their inference can be relatively simple and effective, allowing them to be fast and scalable.  As a consequence, they have often been the approach used by many state-of-the-art systems \cite{Soon:2001:MLA:972597.972602,DBLP:conf/emnlp/DurrettK13,DBLP:journals/corr/WisemanRS16}.
 
-\textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756}.
+\textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756, Soon:2001:MLA:972597.972602}.
 
-\textbf{Entity-centric} models differ in that they focus on building a global representation of each underlying entity, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,conf/acl/ClarkM16}.
+\textbf{Entity-centric} models differ in that they focus on building a global representation of each underlying entity, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,clark2016improving}.
 
-In this work, we use a novel and powerfully simple mention-ranking model that is designed solely to discriminate between input pairs of features: Siamese Convolutional Neural Networks, which, for political reasons, we will henceforth refer to as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace the main weakness of mention-ranking models with an approach resembling the main strength of entity-centric models.  Specifically, we aim to combine all linked mention pairs into a cluster via a simple neural, easy-first, clustering approach which factors in a small, but effective, notion of the entire cluster at large.
+In this work, we use a novel and powerfully simple mention-ranking model that is designed solely to discriminate between pairs of input features: Siamese Convolutional Neural Networks, which, for political reasons, we will henceforth refer to as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace the main weakness of mention-ranking models with an approach resembling the main strength of entity-centric models.  Specifically, we aim to combine all linked mention pairs into a cluster via a simple neural, easy-first, clustering approach which factors in a small, but effective, notion of the entire cluster at large.
 %instead of combining all linked pairs of mentions into a cluster, independent of how they relate to the other mentions in the cluster
 %in lieu of sim
 %maintaining a true entity-level representation against which all candidate mentions will be compared and added, we  
 
 
-Additionally, regardless of the modelling approach, most research typically uses a plethora of relatively-expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, part-of-speech, etc.  Although some research includes a listing of the learned feature weights of a system (corresponding to each feature's importance) \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalistic approach and illustrates the effects of using few features.  We aim to address this by starting with the widely-accepted strong baseline of \textit{SameLemma} -- two objects are co-referent if, and only if, they have the same lemmatization -- and then evaluate the effectiveness of slowly adding other commonly used features.
+Additionally, a common theme of coreference research is that systems typically use a plethora of relatively-expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, part-of-speech, etc.  Although some research includes a listing of the learned feature weights of a system (corresponding to each feature's importance) \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalistic approach and illustrates the effects of using few features.  We aim to address this by starting with the widely-accepted strong baseline of \textit{SameLemma} -- two objects are co-referent if, and only if, they have the same lemmatization -- and then evaluate the effectiveness of slowly adding other commonly used features.
 
-Finally, in general, entity coreference resolution has received drastically more attention than event coreference.  This lack of research could in part be due to events' often involving more complex nature: a single underlying event may be described via multiple lexicographically-differing mentions, yet different underlying events may also be represented by mentions that lexicographically look the same.  This latter case is less common in entity coreference; other than pronouns, usually mentions' having the same text is a strong indication that the mentions are co-referent.  In this paper, we are exclusively interested in event coreference.
+Finally, in general, \textit{entity} coreference resolution has received drastically more attention than \textit{event} coreference.  This lack of research could in part be due to events' often involving more complex nature: a single underlying event may be described via multiple lexicographically-differing mentions, yet different underlying events may also be represented by mentions that lexicographically look the same.  This latter case is less common in entity coreference; other than pronouns, usually mentions' having the same text is a strong indication that the mentions are co-referent.  In this paper, we are exclusively interested in event coreference.
 
 In summary, we introduce a novel approach to event coreference resolution by performing mention-ranking with a Conjoined Convolutional Neural Network and unusually few features.  We contribute a detailed performance analysis of other commonly used features.  And last, we combine our predicted mention pairs into a cluster via a simple, neural approach which attempts to represent each cluster as a whole, yielding us with state-of-the-art results on the ECB+ corpus.
 
@@ -86,9 +86,37 @@ In summary, we introduce a novel approach to event coreference resolution by per
 % explain subsequent chapters
 
 \section{Related Work}
+% initial start
+Event coreference resolution has received significantly less attention than its entity-based counterpart.  The seminal research on event-based coreference can be traced back to the DARPA-initiated MUC conferences, whereby the focus was on limited scenarios involving terrorist attacks, plane crashes, management succession, resignation, etc.  Most notable from this period were the works by Humphreys et al. \shortcite{Humphreys:1997} and Bagga and Baldwin \shortcite{Bagga:1999:CEC:1608810.1608812}, which applied event coreference to the tasks of information extraction, topic detection and tracking.
 
+% continued efforts
+The successor of MUC was the annual ACE program, which occurred from 1999 to 2008 and furthered researched by including corpora containing more fine-grained events.  This addressed the aforementioned challenge whereby events may be an overloaded term in that multiple, uniquely distinct underlying events may use textually-identical mention representation.  One of the most notable papers from this period, which also illustrates the varied modelling approaches, is the graph-based system by Chen and Ji \shortcite{Chen:2010:GCC:1870490.1870491}.  This is an example of a mention-pair model, as they constructed a graph from the fully-complete weight matrix that corresponds to all mention pairs.
 
+In general, although Deep Learning has had an undeniable, ubiquitous impact on Natural Language Processing, there are 
 
+FINISH THIS
+
+% most related
+For our research, we make use of the ECB+ corpus \cite{ECB+}, an extension of EventCorefBank (ECB) \cite{Bejan:2010:UEC:1858681.1858824}, which we further describe in Section \ref{sec:corpus}.  In short, this rich corpus provides annotations for both entities and events, yet most research chooses to focus on using \textit{either} events or entities, not both.  To the best of our knowledge, there are only two papers which focus on the event mentions of ECB+: The Hierarchical Distance-dependent Chinese Restaurant Process (HDDCRP) model by Yang, et. al. \shortcite{journals/tacl/YangCF15} and Choubey's and Huang's Iterative-Unfolding approach \shortcite{Choubey2017EventCR}.   Consequently both are highly relevant to our work.
+
+% HDDCRP
+Yang, et. al's HDDCRP model \shortcite{journals/tacl/YangCF15} uses a clever and inspiring mention-pair approach, whereby they first use logistic regression to train the set of parameters $\theta$ for the similarity function in Equation \ref{eq:hddcrp}.  
+\begin{equation}
+\label{eq:hddcrp}
+f_{\theta}(x_i,x_j) \propto \textnormal{exp\{} \theta^T\psi(m_i,m_j)\textnormal{\}}
+\end{equation}
+Then, the crux of their system is that in a Chinese-restaurant-process fashion, they probabilistically assign links between mentions purely based on the scores provided by this similarity function.  That is, the value emitted by $f(m_i,m_j)$ is directly correlated with the probability of $(m_i,m_j)$ being chosen as a linked pair.  However, identical to Bengtson's and Roth's work \cite{Bengtson:2008:UVF:1613715.1613756}, the HDDCRP model then automatically forms clusters purely based on tracing through all linked pairs; all mentions that are reachable by a continuous path become assigned the same cluster.  This hinges on the transitive property holding true for coreference.  For example, if ${(m_1,m_3),(m_3,m_5)}$ and $(m_5,m_6)$ are each individually linked via the scoring function, then a cluster $C_i$ is formed, where $C_i = \{m_1,m_3,m_5,m_6\}$, even though $(m_1,m_5)$ or $(m_3,m_6)$ may have had very low similarity scores.  After these initial clusters are formed for both within-doc (WD) and cross-document (CD) mentions, their system continues to perform Gibbs sampling until convergence, allowing mentions to freely shift between other clusters according to the similarity function.  We aim to improve this shortcoming, as detailed in Section \ref{sec:clustering}.
+
+% Choubey
+Most recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model that is exclusive for event coreference.  Their system also fits into the pairwise-mention model, whereby mention pairs are predicted by a feed-forward neural network. For within-doc predictions, their network features are primarily based on the cosine similarity and euclidean distance of input-pair embeddings.  The cross-document model is identical, other than adding context features, too.  This was an important finding, for they assert that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context.  That is, the mention words themselves were sufficient.  Similar to the HDDCRP model, they form clusters based on local mention-pair predictions, independent of its relevance with the cluster at large.
+
+\section{System Overview}
+\subsection{Models}
+\subsection{Corpus}
+\label{sec:corpus}
+\section{Conjoined Convolutional Networks}
+\section{Neural Clustering}
+\label{sec:clustering}
 \section{General Instructions}
 
 Manuscripts must be in two-column format.  Exceptions to the
@@ -433,90 +461,7 @@ symbols.\footnote{This is how a footnote should appear.} Footnotes
 should be separated from the text by a line.\footnote{Note the line
 separating the footnotes from the text.}
 
-\subsection{Graphics}
 
-{\bf Illustrations}: Place figures, tables, and photographs in the
-paper near where they are first discussed, rather than at the end, if
-possible.  Wide illustrations may run across both columns.  Color
-illustrations are discouraged, unless you have verified that  
-they will be understandable when printed in black ink.
-
-{\bf Captions}: Provide a caption for every illustration; number each one
-sequentially in the form:  ``Figure 1. Caption of the Figure.'' ``Table 1.
-Caption of the Table.''  Type the captions of the figures and 
-tables below the body, using 11 point text.
-
-
-\subsection{Accessibility}
-\label{ssec:accessibility}
-
-In an effort to accommodate people who are color-blind (as well as those printing
-to paper), grayscale readability for all accepted papers will be
-encouraged.  Color is not forbidden, but authors should ensure that
-tables and figures do not rely solely on color to convey critical
-distinctions. A simple criterion: All curves and points in your figures should be clearly distinguishable without color.
-
-% Min: no longer used as of NAACL-HLT 2018, following ACL exec's decision to
-% remove this extra workflow that was not executed much.
-% BEGIN: remove
-%% \section{XML conversion and supported \LaTeX\ packages}
-
-%% Following ACL 2014 we will also we will attempt to automatically convert 
-%% your \LaTeX\ source files to publish papers in machine-readable 
-%% XML with semantic markup in the ACL Anthology, in addition to the 
-%% traditional PDF format.  This will allow us to create, over the next 
-%% few years, a growing corpus of scientific text for our own future research, 
-%% and picks up on recent initiatives on converting ACL papers from earlier 
-%% years to XML. 
-
-%% We encourage you to submit a ZIP file of your \LaTeX\ sources along
-%% with the camera-ready version of your paper. We will then convert them
-%% to XML automatically, using the LaTeXML tool
-%% (\url{http://dlmf.nist.gov/LaTeXML}). LaTeXML has \emph{bindings} for
-%% a number of \LaTeX\ packages, including the NAACL-HLT 2018 stylefile. These
-%% bindings allow LaTeXML to render the commands from these packages
-%% correctly in XML. For best results, we encourage you to use the
-%% packages that are officially supported by LaTeXML, listed at
-%% \url{http://dlmf.nist.gov/LaTeXML/manual/included.bindings}
-% END: remove
-
-\section{Translation of non-English Terms}
-
-It is also advised to supplement non-English characters and terms
-with appropriate transliterations and/or translations
-since not all readers understand all such characters and terms.
-Inline transliteration or translation can be represented in
-the order of: original-form transliteration ``translation''.
-
-\section{Length of Submission}
-\label{sec:length}
-
-The NAACL-HLT 2018 main conference accepts submissions of long papers and
-short papers.
- Long papers may consist of up to eight (8) pages of
-content plus unlimited pages for references. Upon acceptance, final
-versions of long papers will be given one additional page -- up to nine (9)
-pages of content plus unlimited pages for references -- so that reviewers' comments
-can be taken into account. Short papers may consist of up to four (4)
-pages of content, plus unlimited pages for references. Upon
-acceptance, short papers will be given five (5) pages in the
-proceedings and unlimited pages for references. 
-
-For both long and short papers, all illustrations and tables that are part
-of the main text must be accommodated within these page limits, observing
-the formatting instructions given in the present document. Supplementary
-material in the form of appendices does not count towards the page limit; see appendix A for further information.
-
-However, note that supplementary material should be supplementary
-(rather than central) to the paper, and that reviewers may ignore
-supplementary material when reviewing the paper (see Appendix
-\ref{sec:supplemental}). Papers that do not conform to the specified
-length and formatting requirements are subject to be rejected without
-review.
-
-Workshop chairs may have different rules for allowed length and
-whether supplemental material is welcome. As always, the respective
-call for papers is the authoritative source.
 
 \section*{Acknowledgments}
 
