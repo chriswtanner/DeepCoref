@@ -29,56 +29,65 @@
 
 \newcommand\BibTeX{B{\sc ib}\TeX}
 
-\title{Towards Featureless Event Cross-Document Coreference Resolution via Conjoined Convolutional Networks}
+\title{Towards Featureless Event Coreference Resolution via Conjoined Convolutional Networks}
 
-\author{Chris Tanner \\
+\author{Chris Tanner \textnormal{and} Eugene Charniak\\
+Brown Linguistic Laboratory of Information Processing \\
   Brown University \\
-  115 Waterman St. \\
   Providence, RI  02912 \\
-  {\tt christanner@cs.brown.edu} \\\And
-  Eugene Charniak \\
-  Brown University \\
-  115 Waterman St. \\
-  Providence, RI  02912 \\
-  {\tt ec@cs.brown.edu} \\}
+  {\tt christanner@cs.brown.edu} \\}
 
 \date{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-Coreference resolution systems for entities and/or events almost invariably make use of many linguistic features which concern the mention words (i.e., entities and/or events) and their contexts.  These features typically include the part-of-speech, dependency parse information, string edit distance, lemmatization, word embeddings, WordNet hypernyms/synonyms, etc.  In contrast, we introduce a new state-of-the-art event coreference resolution system for both within-document and cross-document which uses just one feature: lemmatization.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Siamese Convolutional Neural Network, which, for political correctness, we will henceforth refer to as our newly-coined term: Conjoined Convolutional Neural Network (or CCNN).  Next, we cluster the event mentions with a simple, but novel, feed-forward neural approach.
+% motivation / others' weaknesses
+Coreference resolution systems for entities and/or events almost invariably make use of many linguistic, parsing-based features which concern both the mention words (i.e., the entities and/or events) and their contexts.
+% our novelty and contributions
+In contrast, we (1) introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word-/char- embeddings; and (2) exhaustively illustrate the performance of other commonly-used features.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Siamese Convolutional Neural Network (henceforth referred to as Conjoined Convolutional Neural Network or CCNN).  Next, we cluster the event mentions with a simple, but novel, neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made from exclusively min-pairwise decision.
+% These features typically include part-of-speech, dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, etc.
 \end{abstract}
 
-\section{Credits}
-
-This document has been adapted from the instructions
-for earlier ACL and NAACL proceedings,
-including those for ACL 2017 by Dan Gildea
-and Min-Yen Kan, NAACL 2017 by Margaret
-Mitchell, ACL 2012 by Maggie Li and Michael
-White, those from ACL 2010 by Jing-Shing Chang
-and Philipp Koehn, those for ACL 2008 by Johanna
-D. Moore, Simone Teufel, James Allan, and
-Sadaoki Furui, those for ACL 2005 by Hwee Tou
-Ng and Kemal Oflazer, those for ACL 2002 by Eugene
-Charniak and Dekang Lin, and earlier ACL
-and EACL formats.
-Those versions were written by several
-people, including John Chen, Henry S. Thompson and Donald
-Walker. Additional elements were taken from the formatting
-instructions of the {\em International Joint Conference on Artificial
-  Intelligence} and the \emph{Conference on Computer Vision and
-  Pattern Recognition}.
-
 \section{Introduction}
+%An entity is typically defined as being a person, location, organization, or time, whereas an event is an action or occurrence.  And, a mention is a specific instance of an entity or event (e.g., \textit{she} or \textit{announced}).
 
-The following instructions are directed to authors of papers submitted
-to NAACL-HLT 2018 or accepted for publication in its proceedings. All
-authors are required to adhere to these specifications. Authors are
-required to provide a Portable Document Format (PDF) version of their
-papers. \textbf{The proceedings are designed for printing on A4
-paper.}
+% problem definition/statement
+Coreference resolution is the task of trying to identify -- within a single text or across multiple documents -- which \textit{mentions} refer to the same underlying discourse \textit{entity} or \textit{event}.  Naturally, one may be solely interesting in determining if two given entities co-refer to the same object (e.g., a pairwise prediction of \textit{she} and \textit{Mary} co-referring); however, ultimately, coreference resolution is a clustering task, whereby we wish to group all like-mentions together.  Successfully doing so can be useful for several other core NLP tasks that concern natural language understanding, such as information extraction \cite{Humphreys:1997}, topic detection \cite{Allan:1998}, text summarization \cite{Daniel:2003}, knowledge base population \cite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}, question answering \cite{Narayanan:2004:QAB:1220355.1220455}, etc.
+% motivation
+Coreference Resolution has always been one of the fundamental tasks within NLP, and with the ever-increasing amount of textual, digital data that is generated and consumed in present-day, it remains both important and challenging.
+
+% others' work
+Specifically, coreference systems aim to find a globally-optimal fit of mentions to clusters, whereby every mention $m$ in the corpus is assigned to exactly one cluster $C$, the membership of which constitutes that every ${m_i,m_j} \in C_k$ is co-referent with each other.  If a given $m_i$ is not anaphoric with any other $m_j$, then it should belong to its own $C_k$ with a membership of one.  Further, the number of distinct clusters is not known apriori but is bounded by the number of mentions and is part of the system's inference.  Finding such a globally-optimal assignment is NP-Hard and thus computationally intractable.  In attempt to avoid this, systems typically perform pairwise-mention predictions, then use those predictions to build up clusters. The specific modelling strategies for such approximately fall into two categories: (1) mention-ranking / mention-pairs; and (2) entity-centric.
+
+\textbf{Mention-ranking} models define a scoring a function $f(m_i,m_j)$ which operates on any $m_j$ and possible antecedent $m_i$, where $m_i$ occurs earlier in the document and could be null (represented by $\epsilon$ and denoting that $m_j$ is non-anaphoric).  Although these models are by definition less expressive than entity-based models, their inference can be relatively simple and effective, allowing them to be fast and scalable.  As a consequence, they have often been the approach used by many state-of-the-art systems \cite{Soon:2001:MLA:972597.972602,DBLP:conf/emnlp/DurrettK13,DBLP:journals/corr/WisemanRS16}.
+
+\textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756}.
+
+\textbf{Entity-centric} models differ in that they focus on building a global representation of each underlying entity, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,conf/acl/ClarkM16}.
+
+In this work, we use a novel and powerfully simple mention-ranking model that is designed solely to discriminate between input pairs of features: Siamese Convolutional Neural Networks, which, for political reasons, we will henceforth refer to as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace the main weakness of mention-ranking models with an approach resembling the main strength of entity-centric models.  Specifically, we aim to combine all linked mention pairs into a cluster via a simple neural, easy-first, clustering approach which factors in a small, but effective, notion of the entire cluster at large.
+%instead of combining all linked pairs of mentions into a cluster, independent of how they relate to the other mentions in the cluster
+%in lieu of sim
+%maintaining a true entity-level representation against which all candidate mentions will be compared and added, we  
+
+
+Additionally, regardless of the modelling approach, most research typically uses a plethora of relatively-expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, part-of-speech, etc.  Although some research includes a listing of the learned feature weights of a system (corresponding to each feature's importance) \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalistic approach and illustrates the effects of using few features.  We aim to address this by starting with the widely-accepted strong baseline of \textit{SameLemma} -- two objects are co-referent if, and only if, they have the same lemmatization -- and then evaluate the effectiveness of slowly adding other commonly used features.
+
+Finally, in general, entity coreference resolution has received drastically more attention than event coreference.  This lack of research could in part be due to events' often involving more complex nature: a single underlying event may be described via multiple lexicographically-differing mentions, yet different underlying events may also be represented by mentions that lexicographically look the same.  This latter case is less common in entity coreference; other than pronouns, usually mentions' having the same text is a strong indication that the mentions are co-referent.  In this paper, we are exclusively interested in event coreference.
+
+In summary, we introduce a novel approach to event coreference resolution by performing mention-ranking with a Conjoined Convolutional Neural Network and unusually few features.  We contribute a detailed performance analysis of other commonly used features.  And last, we combine our predicted mention pairs into a cluster via a simple, neural approach which attempts to represent each cluster as a whole, yielding us with state-of-the-art results on the ECB+ corpus.
+
+
+% the problem
+%In this paper,   Further, we wish to address the possible shortcoming of 
+%Again, the main shortcoming of the two former mention-* models is that after making pairwise decisions, combining them into clusters only requires satisfying local constraints
+% our solution
+% explain subsequent chapters
+
+\section{Related Work}
+
+
 
 \section{General Instructions}
 
