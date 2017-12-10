@@ -17,7 +17,7 @@
 \usepackage{latexsym}
 \usepackage{multirow}
 \usepackage{url}
-
+\usepackage{amssymb}
 \aclfinalcopy % Uncomment this line for the final submission
 \def\aclpaperid{***} %  Enter the acl Paper ID here
 
@@ -163,7 +163,7 @@ As a recap, there has yet to exist a deep learning event-level model for event c
   \label{fig:lemmaPower}
 \end{figure}
 \subsection{Overview}
-Conjoined Neural Networks (or Siamese Networks, as they are known as) were first introduced by Bromly and LeCun \shortcite{SiameseNet} towards a task whereby the goal was to accurately determine if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as twin neural networks, each of which accepts distinct inputs, but they are eventually joined by a loss function over their highest-level features.  The loss feature computes a metric that represents the similarity between the two input pairs (e.g., euclidean distance, cosine similarity, hamming distance, etc).  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs into each network will be mapped accordingly, otherwise, they could be mapped to hidden representations that are disproportionately different compared to their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
+Conjoined Neural Networks (or Siamese Networks, as they are known as) were first introduced by Bromly and LeCun \shortcite{SiameseNet} towards a task whereby the goal was to accurately determine if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as twin neural networks, each of which accepts distinct inputs, but they are eventually joined by a loss function over their highest-level features.  The loss function computes a metric that represents the similarity between the two input pairs (e.g., euclidean distance, cosine similarity, hamming distance, etc).  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs into each network will be mapped accordingly, otherwise, they could be mapped to hidden representations that are disproportionately dissimilar from their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
 
 \vspace{4mm}
 
@@ -177,8 +177,7 @@ Last, we posit that CCNN's have been shown to perform well in low-resource situa
 
 As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  Likewise, we choose to use a CNN due to their power in learning sub-regions of features, and the relations thereof -- rather than heavily relying manually-defined features.
 
-\subsection{Details}
-\subsubsection{Input Features}
+\subsection{Input Features}
 Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features that are common in other coreference systems (e.g., SameLemma, Jaccard Similarity of the mentions' context words, First common WordNet parent, \# of Sentence in between Mentions, etc).  We thoroughly tested the following input features and their listed variants:
 \begin{itemize}
   \item \textbf{Part-of-Speech:} 1-hot representation; LSTM-learned embeddings after maping the entire corpus to their POS tags
@@ -186,24 +185,53 @@ Since our CCNN needs each mention to be represented exclusively by its own input
   \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each mention token, and we represent it via the aforementioned lemma embeddings)
   \item \textbf{Character Embeddings:} we represent each mention token as a concatenation of its character embeddings (truncated or padded up to the first 20 characters), where we experimented with character embeddings being either (1) random 20-length embeddings or (2) pre-trained 20-length embeddings
   \item \textbf{Word Embeddings:} same as the embeddings listed for \textit{lemma}, just we apply these embeddings for the word tokens themselves, not the lemma of each token.
-  
-Note, since mentions are of varying token length (see Table \ref{tab:ECB1}, we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing across all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $M$'s embedding is calculated via:
-
-$M_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$,
-
-where $t$ is a token in the set of tokens $T$ that comprise $M$
-
-
 \end{itemize}
+Note, since mentions are of varying token length (see Table \ref{tab:ECB1}), we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing across all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $m$'s embedding is calculated via:
 
+$m_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$,
 
-\subsubsection{Architecture}
+where $t$ is a token in the set of tokens $T$ that comprise $m$
+
+\subsection{Architecture}
 We define the embedding for a given token $t$, as: $t_{emb} = t_{f_{1}} \oplus t_{f_{2}} \oplus \ldots \oplus t_{f_{n}},$
 
 where $\oplus$ represents vector concatenation and $t_{f_{i}}$ represents a specific input feature vector for token $t$.
 
+Naturally, we may want to convolve over the context of mention $m$, too, by including the $N$ words before and after $m$.  Thus, for a given window size of $N$, our entire matrix corresponding to mention $m$ is of size $(2*N + 1) \times d$, where $d$ is the length of $t_{emb}$.  Each row corresponds to a given token, and each column corresponds to a particular dimension in the vector space representation.  A la Kim \shortcite{DBLP:conf/emnlp/Kim14}, we zero-pad any tokens that would be beyond our window.
 
- 
+\vspace{3mm}
+
+Let $\textbf{M}$ represent the full matrix corresponding to mention $m$: $\textbf{M} \in \mathbb{R}^{(2*N+1) \times d}$
+
+\vspace{1mm}
+
+and
+
+\vspace{1mm}
+
+$\textbf{M}_{(i,j),(k:l)}$ represent the sub-matrix of $M$ from $(i,j)$ to $(k,l)$.
+
+\vspace{3mm}
+
+We define a kernel/filter with dimensions $(h,w)$, where $h < (2*N+1)$ and $w < d$.  This allows the kernel to operate on sub-sections of the embeddings.  The kernel has an associated weight matrix $\textbf{w} \in \mathbb{R}^{w \times h}$.  Therefore, starting at a given index $(i,j)$ within mention matrix $\textbf{M}$, a feature $c_{i}$ is defined as:
+\begin{equation}
+c_{i} = f(\textbf{w}^{T}\textbf{M}_{(i:i+h-1),(j:j+w-1)} + b)
+\end{equation}
+where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every possible sub-section of mention matrix $\textbf{M}$, yielded a feature map $\textbf{c} \in \mathbb{R}^{(2*N-h) \times (d-w-1)}$
+
+\vspace{3mm}
+
+We use several kernels (experimented with all powers of 2, from 2 - 256) and use ReLU as our activation function.
+
+Dropout is then applied (experimented with values from 0 to 0.5).
+
+Next, we repeat this processing by adding convolution and dropout again, then apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$.
+
+Last, we apply dropout again, then merge all of our kernels to feed into a final ReLU.
+
+\subsection{Loss}
+The goal of our model is to maximize discriminability between mentions belongings to different events, while enforcing features to be as similar as possible when they are of the same class.  Contrastive Loss is perfectly suited for this objective \cite{conf/cvpr/SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  As suggested by Sun, et. al. \shortcite{NIPS2014_5416}, it is crucial to carefully
+\subsection{Optimization}
 
 \section{Neural Clustering}
 \label{sec:clustering}
