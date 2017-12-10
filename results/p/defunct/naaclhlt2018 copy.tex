@@ -18,6 +18,7 @@
 \usepackage{multirow}
 \usepackage{url}
 \usepackage{amssymb}
+\usepackage{amsmath}
 \aclfinalcopy % Uncomment this line for the final submission
 \def\aclpaperid{***} %  Enter the acl Paper ID here
 
@@ -188,9 +189,7 @@ Since our CCNN needs each mention to be represented exclusively by its own input
 \end{itemize}
 Note, since mentions are of varying token length (see Table \ref{tab:ECB1}), we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing across all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $m$'s embedding is calculated via:
 
-$m_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$,
-
-where $t$ is a token in the set of tokens $T$ that comprise $m$
+$m_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$, where $t$ is a token in the set of tokens $T$ that comprise $m$
 
 \subsection{Architecture}
 We define the embedding for a given token $t$, as: $t_{emb} = t_{f_{1}} \oplus t_{f_{2}} \oplus \ldots \oplus t_{f_{n}},$
@@ -230,7 +229,15 @@ Next, we repeat this processing by adding convolution and dropout again, then ap
 Last, we apply dropout again, then merge all of our kernels to feed into a final ReLU.
 
 \subsection{Loss}
-The goal of our model is to maximize discriminability between mentions belongings to different events, while enforcing features to be as similar as possible when they are of the same class.  Contrastive Loss is perfectly suited for this objective \cite{conf/cvpr/SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  As suggested by Sun, et. al. \shortcite{NIPS2014_5416}, it is crucial to carefully
+The goal of our model is to maximize discriminability between mentions belongings to different events, while enforcing features to be as similar as possible when they are of the same class.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  Because our input is mention pairs, there is a strong class imbalance, so we down-sample the negative examples, yielding a training set of 5 negative examples per positive example.
+
+\begin{equation}
+\begin{aligned}
+L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
+&\qquad {} + (1-y)*(max(1-d,0))^2] \\
+&\textnormal{where }d=\|a_{n}-b_{n}\|_{2}
+\end{aligned}
+\end{equation}
 \subsection{Optimization}
 
 \section{Neural Clustering}
