@@ -58,7 +58,7 @@ Specifically, coreference systems aim to find a globally-optimal fit of mentions
 
 \textbf{Mention-ranking} models define a scoring a function $f(m_i,m_j)$ which operates on any $m_j$ and possible antecedent $m_i$, where $m_i$ occurs earlier in the document and could be null (represented by $\epsilon$ and denoting that $m_j$ is non-anaphoric).  Although these models are by definition less expressive than entity/event-level models, their inference can be relatively simple and effective, allowing them to be fast and scalable.  As a consequence, they have often been the approach used by many state-of-the-art systems \cite{Soon:2001:MLA:972597.972602,DBLP:conf/emnlp/DurrettK13,DBLP:journals/corr/WisemanRS16}.
 
-\textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756, Soon:2001:MLA:972597.972602}.
+\textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756,Soon:2001:MLA:972597.972602}.
 
 \textbf{Entity/Event-level} models differ in that they focus on building a global representation of each underlying entity or event, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,clark2016improving}.
 
@@ -105,6 +105,7 @@ Separately, Clark and Manning \shortcite{clark2016improving,DBLP:journals/corr/C
 For our research, we make use of the ECB+ corpus \cite{ECB+}, an extension of EventCorefBank (ECB) \cite{Bejan:2010:UEC:1858681.1858824}, which we further describe in Section \ref{sec:corpus}.  In short, this rich corpus provides annotations for both entities and events, yet most research chooses to focus on using \textit{either} events or entities, not both.  To the best of our knowledge, there are only two papers which focus on the event mentions of ECB+: The Hierarchical Distance-dependent Chinese Restaurant Process (HDDCRP) model by Yang, et. al. \shortcite{journals/tacl/YangCF15} and Choubey's and Huang's Iterative-Unfolding approach \shortcite{Choubey2017EventCR}.   Consequently both are highly relevant to our work.
 
 \subsubsection{HDDCRP Model}
+\label{sec:HDDCRP}
 % HDDCRP
 Yang, et. al's HDDCRP model \shortcite{journals/tacl/YangCF15} uses a clever and inspiring mention-pair approach, whereby they first use logistic regression to train the set of parameters $\theta$ for the similarity function in Equation \ref{eq:hddcrp}.  
 \begin{equation}
@@ -114,6 +115,7 @@ f_{\theta}(x_i,x_j) \propto \textnormal{exp\{} \theta^T\psi(m_i,m_j)\textnormal{
 Then, the crux of their system is that in a Chinese-restaurant-process fashion, they probabilistically assign links between mentions purely based on the scores provided by this similarity function.  That is, the value emitted by $f(m_i,m_j)$ is directly correlated with the probability of $(m_i,m_j)$ being chosen as a linked pair.  However, identical to Bengtson's and Roth's work \cite{Bengtson:2008:UVF:1613715.1613756}, the HDDCRP model then automatically forms clusters by tracing through all linked pairs; all mentions that are reachable by a continuous path become assigned the same cluster.  This hinges on the transitive property holding true for coreference.  For example, if ${(m_1,m_3),(m_3,m_5)}$ and $(m_5,m_6)$ are each individually linked via the scoring function, then a cluster $C_i$ is formed, where $C_i = \{m_1,m_3,m_5,m_6\}$, even though $(m_1,m_5)$ or $(m_3,m_6)$ may have had very low similarity scores.  After these initial clusters are formed for both within-doc (WD) and cross-document (CD) mentions, their system continues to perform Gibbs sampling until convergence, allowing mentions to freely shift between other clusters according to the similarity function.  We aim to improve this shortcoming, as detailed in Section \ref{sec:clustering}.
 
 \subsubsection{Neural Iterative-Unfolding Model}
+\label{sec:Choubey}
 % Choubey
 Most recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model that is exclusive for event coreference.  Their system also fits into the mention-pair paradigm, whereby mentions are predicted by a feed-forward neural network. For within-doc predictions, their network features are primarily based on the cosine similarity and euclidean distance of input-pair embeddings.  The cross-document model is identical, other than adding context features, too.  This was an important finding, for they assert that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context.  That is, the mention words themselves were sufficient.  Similar to the weakness of the HDDCRP model, they form clusters based on local mention-pair predictions, independent of mentions' relevance to the cluster at large.
 
@@ -196,7 +198,7 @@ We define the embedding for a given token $t$, as: $t_{emb} = t_{f_{1}} \oplus t
 
 where $\oplus$ represents vector concatenation and $t_{f_{i}}$ represents a specific input feature vector for token $t$.
 
-Naturally, we may want to convolve over the context of mention $m$, too, by including the $N$ words before and after $m$.  Thus, for a given window size of $N$, our entire matrix corresponding to mention $m$ is of size $(2*N + 1) \times d$, where $d$ is the length of $t_{emb}$.  Each row corresponds to a given token, and each column corresponds to a particular dimension in the vector space representation.  A la Kim \shortcite{DBLP:conf/emnlp/Kim14}, we zero-pad any tokens that would be beyond our window.
+Naturally, we may want to convolve over the context of mention $m$, too, by including the $N$ words before and after $m$.  Thus, our input for mention $m$ is a matrix $M$, and a la Kim \shortcite{DBLP:conf/emnlp/Kim14}, we zero-pad any tokens that would be beyond our window.
 
 \vspace{3mm}
 
@@ -220,363 +222,46 @@ where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every poss
 
 \vspace{3mm}
 
-We use several kernels (experimented with all powers of 2, from 2 - 256) and use ReLU as our activation function.
+We use 64 kernels (we experimented with all powers of 2, from 2 - 256), along with ReLU as our activation function.
 
-Dropout is then applied (experimented with values from 0 to 0.5).
+Dropout is then applied (we experimented with values from 0 to 0.5).
 
 Next, we repeat this processing by adding convolution and dropout again, then apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$.
 
 Last, we apply dropout again, then merge all of our kernels to feed into a final ReLU.
 
 \subsection{Loss}
-The goal of our model is to maximize discriminability between mentions belongings to different events, while enforcing features to be as similar as possible when they are of the same class.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  Because our input is mention pairs, there is a strong class imbalance, so we down-sample the negative examples, yielding a training set of 5 negative examples per positive example.
-
+The goal of our model is to maximize discriminability between mentions representing different events, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  Because our input is mention pairs, there is a strong class imbalance, so we down-sample the negative examples, yielding a training set of 5 negative examples per positive example.
 \begin{equation}
 \begin{aligned}
 L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
 &\qquad {} + (1-y)*(max(1-d,0))^2] \\
 &\textnormal{where }d=\|a_{n}-b_{n}\|_{2}
 \end{aligned}
+\label{eq:contrastive}
 \end{equation}
+
 \subsection{Optimization}
+We used Adagrad for optimization.  We also experimented with RMS and found the results to be effectively identical.
+
 
 \section{Neural Clustering}
 \label{sec:clustering}
-\section{General Instructions}
+In mention-pair models, it is common practice to first assign a probabilistic score to every mention-pair, and then to cluster with a different model.
 
-Manuscripts must be in two-column format.  Exceptions to the
-two-column format include the title, authors' names and complete
-addresses, which must be centered at the top of the first page, and
-any full-width figures or tables (see the guidelines in
-Subsection~\ref{ssec:first}). {\bf Type single-spaced.}  Start all
-pages directly under the top margin. See the guidelines later
-regarding formatting the first page.  The manuscript should be
-printed single-sided and its length
-should not exceed the maximum page limit described in Section~\ref{sec:length}.
-Pages are numbered for  initial submission. However, {\bf do not number the pages in the camera-ready version}.
+\subsection{Existing Clustering Approaches}
+\textbf{Agglomerative Clustering} is a simple but effective approach.  Namely, it first treats each mention as being its own singleton-cluster.  Then, it repeatedly merges two distinct clusters into a new cluster, whereby the two selected clusters are the ones which respectively contain the two mentions which are the shortest-distance pair.  Although this is a strong baseline, as seen in Yang, et. al. \shortcite{journals/tacl/YangCF15}, there are three main weaknesses:
+\begin{enumerate}
+\item One must introduce a stopping heuristic; otherwise, merging will continue until there is just 1 cluster.
+\item If one uses a threshold value $\alpha$ to stop (i.e., stop merging when the shortest pair exceeds $\alpha$), this asserts the data is uniform, yet the distribution of pairwise predictions inevitable differs from document-to-document.  That is, for one document, there may be a clear division where $\alpha = 0.5$ separates the pairs nicely, but in another document, the values inherently are lower or higher, causing $0.5$ to be inappropriate.
+\item Most significant, each cluster merge is based solely on two individual mentions, yet these mentions may not be representative of the cluster at large.
+\end{enumerate}
 
-By uncommenting {\small\verb|\aclfinalcopy|} at the top of this 
- document, it will compile to produce an example of the camera-ready formatting; by leaving it commented out, the document will be anonymized for initial submission.  When you first create your submission on softconf, please fill in your submitted paper ID where {\small\verb|***|} appears in the {\small\verb|\def\aclpaperid{***}|} definition at the top.
+\textbf{HDDCRP and Interative-Folding Clustering} both contain the issue \#3 above, as detailed in Sections \ref{sec:HDDCRP} and \ref{sec:Choubey}.
 
-The review process is double-blind, so do not include any author information (names, addresses) when submitting a paper for review.  
-However, you should maintain space for names and addresses so that they will fit in the final (accepted) version.  The NAACL-HLT 2018 \LaTeX\ style will create a titlebox space of 2.5in for you when {\small\verb|\aclfinalcopy|} is commented out.  
+\subsection{Our Approach}
+We aim to use the strengths of agglomerative clustering, while replacing the shortcomings.  Instead of using
 
-The author list for submissions should include all (and only) individuals who made substantial contributions to the work presented. Each author listed on a submission to NAACL-HLT 2018 will be notified of submissions, revisions and the final decision. No authors may be added to or removed from submissions to NAACL-HLT 2018 after the submission deadline.
-
-\subsection{The Ruler}
-The NAACL-HLT 2018 style defines a printed ruler which should be presented in the
-version submitted for review.  The ruler is provided in order that
-reviewers may comment on particular lines in the paper without
-circumlocution.  If you are preparing a document without the provided
-style files, please arrange for an equivalent ruler to
-appear on the final output pages.  The presence or absence of the ruler
-should not change the appearance of any other content on the page.  The
-camera ready copy should not contain a ruler. (\LaTeX\ users may uncomment the {\small\verb|\aclfinalcopy|} command in the document preamble.)  
-
-Reviewers: note that the ruler measurements do not align well with
-lines in the paper -- this turns out to be very difficult to do well
-when the paper contains many figures and equations, and, when done,
-looks ugly. In most cases one would expect that the approximate
-location will be adequate, although you can also use fractional
-references ({\em e.g.}, the first paragraph on this page ends at mark $108.5$).
-
-\subsection{Electronically-available resources}
-
-NAACL-HLT provides this description in \LaTeX2e{} ({\small\tt naaclhlt2018.tex}) and PDF
-format ({\small\tt naaclhlt2018.pdf}), along with the \LaTeX2e{} style file used to
-format it ({\small\tt naaclhlt2018.sty}) and an ACL bibliography style ({\small\tt acl\_natbib.bst})
-and example bibliography ({\small\tt naaclhlt2018.bib}).
-These files are all available at
-{\small\tt http://naacl2018.org/downloads/ naaclhlt2018-latex.zip}. 
- We
-strongly recommend the use of these style files, which have been
-appropriately tailored for the NAACL-HLT 2018 proceedings.
-
-\subsection{Format of Electronic Manuscript}
-\label{sect:pdf}
-
-For the production of the electronic manuscript you must use Adobe's
-Portable Document Format (PDF). PDF files are usually produced from
-\LaTeX\ using the \textit{pdflatex} command. If your version of
-\LaTeX\ produces Postscript files, you can convert these into PDF
-using \textit{ps2pdf} or \textit{dvipdf}. On Windows, you can also use
-Adobe Distiller to generate PDF.
-
-Please make sure that your PDF file includes all the necessary fonts
-(especially tree diagrams, symbols, and fonts with Asian
-characters). When you print or create the PDF file, there is usually
-an option in your printer setup to include none, all or just
-non-standard fonts.  Please make sure that you select the option of
-including ALL the fonts. \textbf{Before sending it, test your PDF by
-  printing it from a computer different from the one where it was
-  created.} Moreover, some word processors may generate very large PDF
-files, where each page is rendered as an image. Such images may
-reproduce poorly. In this case, try alternative ways to obtain the
-PDF. One way on some systems is to install a driver for a postscript
-printer, send your document to the printer specifying ``Output to a
-file'', then convert the file to PDF.
-
-It is of utmost importance to specify the \textbf{A4 format} (21 cm
-x 29.7 cm) when formatting the paper. When working with
-{\tt dvips}, for instance, one should specify {\tt -t a4}.
-Or using the command \verb|\special{papersize=210mm,297mm}| in the latex
-preamble (directly below the \verb|\usepackage| commands). Then using 
-{\tt dvipdf} and/or {\tt pdflatex} which would make it easier for some.
-
-Print-outs of the PDF file on A4 paper should be identical to the
-hardcopy version. If you cannot meet the above requirements about the
-production of your electronic submission, please contact the
-publication chairs as soon as possible.
-
-\subsection{Layout}
-\label{ssec:layout}
-
-Format manuscripts two columns to a page, in the manner these
-instructions are formatted. The exact dimensions for a page on A4
-paper are:
-
-\begin{itemize}
-\item Left and right margins: 2.5 cm
-\item Top margin: 2.5 cm
-\item Bottom margin: 2.5 cm
-\item Column width: 7.7 cm
-\item Column height: 24.7 cm
-\item Gap between columns: 0.6 cm
-\end{itemize}
-
-\noindent Papers should not be submitted on any other paper size.
- If you cannot meet the above requirements about the production of 
- your electronic submission, please contact the publication chairs 
- above as soon as possible.
-
-\subsection{Fonts}
-
-For reasons of uniformity, Adobe's {\bf Times Roman} font should be
-used. In \LaTeX2e{} this is accomplished by putting
-
-\begin{quote}
-\begin{verbatim}
-\usepackage{times}
-\usepackage{latexsym}
-\end{verbatim}
-\end{quote}
-in the preamble. If Times Roman is unavailable, use {\bf Computer
-  Modern Roman} (\LaTeX2e{}'s default).  Note that the latter is about
-  10\% less dense than Adobe's Times Roman font.
-
-\begin{table}[t!]
-\begin{center}
-\begin{tabular}{|l|rl|}
-\hline \bf Type of Text & \bf Font Size & \bf Style \\ \hline
-paper title & 15 pt & bold \\
-author names & 12 pt & bold \\
-author affiliation & 12 pt & \\
-the word ``Abstract'' & 12 pt & bold \\
-section titles & 12 pt & bold \\
-document text & 11 pt  &\\
-captions & 10 pt & \\
-abstract text & 10 pt & \\
-bibliography & 10 pt & \\
-footnotes & 9 pt & \\
-\hline
-\end{tabular}
-\end{center}
-\caption{\label{font-table} Font guide. }
-\end{table}
-
-\subsection{The First Page}
-\label{ssec:first}
-
-Center the title, author's name(s) and affiliation(s) across both
-columns. Do not use footnotes for affiliations. Do not include the
-paper ID number assigned during the submission process. Use the
-two-column format only when you begin the abstract.
-
-{\bf Title}: Place the title centered at the top of the first page, in
-a 15-point bold font. (For a complete guide to font sizes and styles,
-see Table~\ref{font-table}) Long titles should be typed on two lines
-without a blank line intervening. Approximately, put the title at 2.5
-cm from the top of the page, followed by a blank line, then the
-author's names(s), and the affiliation on the following line. Do not
-use only initials for given names (middle initials are allowed). Do
-not format surnames in all capitals ({\em e.g.}, use ``Mitchell'' not
-``MITCHELL'').  Do not format title and section headings in all
-capitals as well except for proper names (such as ``BLEU'') that are
-conventionally in all capitals.  The affiliation should contain the
-author's complete address, and if possible, an electronic mail
-address. Start the body of the first page 7.5 cm from the top of the
-page.
-
-The title, author names and addresses should be completely identical
-to those entered to the electronical paper submission website in order
-to maintain the consistency of author information among all
-publications of the conference. If they are different, the publication
-chairs may resolve the difference without consulting with you; so it
-is in your own interest to double-check that the information is
-consistent.
-
-{\bf Abstract}: Type the abstract at the beginning of the first
-column. The width of the abstract text should be smaller than the
-width of the columns for the text in the body of the paper by about
-0.6 cm on each side. Center the word {\bf Abstract} in a 12 point bold
-font above the body of the abstract. The abstract should be a concise
-summary of the general thesis and conclusions of the paper. It should
-be no longer than 200 words. The abstract text should be in 10 point font.
-
-{\bf Text}: Begin typing the main body of the text immediately after
-the abstract, observing the two-column format as shown in 
-
-
-the present document. Do not include page numbers.
-
-{\bf Indent}: Indent when starting a new paragraph, about 0.4 cm. Use 11 points for text and subsection headings, 12 points for section headings and 15 points for the title. 
-
-
-\begin{table}
-\centering
-\small
-\begin{tabular}{cc}
-\begin{tabular}{|l|l|}
-\hline
-{\bf Command} & {\bf Output}\\\hline
-\verb|{\"a}| & {\"a} \\
-\verb|{\^e}| & {\^e} \\
-\verb|{\`i}| & {\`i} \\ 
-\verb|{\.I}| & {\.I} \\ 
-\verb|{\o}| & {\o} \\
-\verb|{\'u}| & {\'u}  \\ 
-\verb|{\aa}| & {\aa}  \\\hline
-\end{tabular} & 
-\begin{tabular}{|l|l|}
-\hline
-{\bf Command} & {\bf  Output}\\\hline
-\verb|{\c c}| & {\c c} \\ 
-\verb|{\u g}| & {\u g} \\ 
-\verb|{\l}| & {\l} \\ 
-\verb|{\~n}| & {\~n} \\ 
-\verb|{\H o}| & {\H o} \\ 
-\verb|{\v r}| & {\v r} \\ 
-\verb|{\ss}| & {\ss} \\\hline
-\end{tabular}
-\end{tabular}
-\caption{Example commands for accented characters, to be used in, {\em e.g.}, \BibTeX\ names.}\label{tab:accents}
-\end{table}
-
-\subsection{Sections}
-
-{\bf Headings}: Type and label section and subsection headings in the
-style shown on the present document.  Use numbered sections (Arabic
-numerals) in order to facilitate cross references. Number subsections
-with the section number and the subsection number separated by a dot,
-in Arabic numerals.
-Do not number subsubsections.
-
-\begin{table*}[t!]
-\centering
-\begin{tabular}{lll}
-  output & natbib & previous ACL style files\\
-  \hline
-  \citep{Gusfield:97} & \verb|\citep| & \verb|\cite| \\
-  \citet{Gusfield:97} & \verb|\citet| & \verb|\newcite| \\
-  \citeyearpar{Gusfield:97} & \verb|\citeyearpar| & \verb|\shortcite| \\
-\end{tabular}
-\caption{Citation commands supported by the style file.
-  The citation style is based on the natbib package and
-  supports all natbib citation commands.
-  It also supports commands defined in previous ACL style files
-  for compatibility.
-  }
-\end{table*}
-
-{\bf Citations}: Citations within the text appear in parentheses
-as~\cite{Gusfield:97} or, if the author's name appears in the text
-itself, as Gusfield~\shortcite{Gusfield:97}.
-Using the provided \LaTeX\ style, the former is accomplished using
-{\small\verb|\cite|} and the latter with {\small\verb|\shortcite|} or {\small\verb|\newcite|}. Collapse multiple citations as in~\cite{Gusfield:97,Aho:72}; this is accomplished with the provided style using commas within the {\small\verb|\cite|} command, {\em e.g.}, {\small\verb|\cite{Gusfield:97,Aho:72}|}. Append lowercase letters to the year in cases of ambiguities.  
- Treat double authors as
-in~\cite{Aho:72}, but write as in~\cite{Chandra:81} when more than two
-authors are involved. Collapse multiple citations as
-in~\cite{Gusfield:97,Aho:72}. Also refrain from using full citations
-as sentence constituents.
-
-We suggest that instead of
-\begin{quote}
-  ``\cite{Gusfield:97} showed that ...''
-\end{quote}
-you use
-\begin{quote}
-``Gusfield \shortcite{Gusfield:97}   showed that ...''
-\end{quote}
-
-If you are using the provided \LaTeX{} and Bib\TeX{} style files, you
-can use the command \verb|\citet| (cite in text)
-to get ``author (year)'' citations.
-
-If the Bib\TeX{} file contains DOI fields, the paper
-title in the references section will appear as a hyperlink
-to the DOI, using the hyperref \LaTeX{} package.
-To disable the hyperref package, load the style file
-with the \verb|nohyperref| option: \\{\small
-\verb|\usepackage[nohyperref]{naaclhlt2018}|}
-
-
-\textbf{Digital Object Identifiers}:  As part of our work to make ACL
-materials more widely used and cited outside of our discipline, ACL
-has registered as a CrossRef member, as a registrant of Digital Object
-Identifiers (DOIs), the standard for registering permanent URNs for
-referencing scholarly materials.  As of 2017, we are requiring all
-camera-ready references to contain the appropriate DOIs (or as a
-second resort, the hyperlinked ACL Anthology Identifier) to all cited
-works.  Thus, please ensure that you use Bib\TeX\ records that contain
-DOI or URLs for any of the ACL materials that you reference.
-Appropriate records should be found for most materials in the current
-ACL Anthology at \url{http://aclanthology.info/}.
-
-As examples, we cite \cite{P16-1001} to show you how papers with a DOI
-will appear in the bibliography.  We cite \cite{C14-1001} to show how
-papers without a DOI but with an ACL Anthology Identifier will appear
-in the bibliography.  
-
-As reviewing will be double-blind, the submitted version of the papers
-should not include the authors' names and affiliations. Furthermore,
-self-references that reveal the author's identity, {\em e.g.},
-\begin{quote}
-``We previously showed \cite{Gusfield:97} ...''  
-\end{quote}
-should be avoided. Instead, use citations such as 
-\begin{quote}
-``\citeauthor{Gusfield:97} \shortcite{Gusfield:97}
-previously showed ... ''
-\end{quote}
-
-Any preliminary non-archival versions of submitted papers should be listed in the submission form but not in the review version of the paper. NAACL-HLT 2018 reviewers are generally aware that authors may present preliminary versions of their work in other venues, but will not be provided the list of previous presentations from the submission form. 
-
-
-\textbf{Please do not use anonymous citations} and do not include
- when submitting your papers. Papers that do not
-conform to these requirements may be rejected without review.
-
-\textbf{References}: Gather the full set of references together under
-the heading {\bf References}; place the section before any Appendices,
-unless they contain references. Arrange the references alphabetically
-by first author, rather than by order of occurrence in the text.
-Provide as complete a citation as possible, using a consistent format,
-such as the one for {\em Computational Linguistics\/} or the one in the 
-{\em Publication Manual of the American 
-Psychological Association\/}~\cite{APA:83}. Use of full names for
-authors rather than initials is preferred. A list of abbreviations
-for common computer science journals can be found in the ACM 
-{\em Computing Reviews\/}~\cite{ACM:83}.
-
-The \LaTeX{} and Bib\TeX{} style files provided roughly fit the
-American Psychological Association format, allowing regular citations, 
-short citations and multiple citations as described above.
-
-Submissions should accurately reference prior and related work, including code and data. If a piece of prior work appeared in multiple venues, the version that appeared in a refereed, archival venue should be referenced. If multiple versions of a piece of prior work exist, the one used by the authors should be referenced. Authors should not rely on automated citation indices to provide accurate references for prior and related work.
-
-{\bf Appendices}: Appendices, if any, directly follow the text and the
-references (but see above).  Letter them in sequence and provide an
-informative title: {\bf Appendix A. Title of Appendix}.
 
 \subsection{Footnotes}
 
