@@ -15,7 +15,7 @@
 \usepackage[hyperref]{naaclhlt2018}
 \usepackage{times}
 \usepackage{latexsym}
-
+\usepackage{multirow}
 \usepackage{url}
 
 \aclfinalcopy % Uncomment this line for the final submission
@@ -35,7 +35,7 @@
 Brown Linguistic Laboratory of Information Processing \\
   Brown University \\
   Providence, RI  02912 \\
-  {\tt christanner@cs.brown.edu} \\}
+  {\tt \{christanner,ec\}@cs.brown.edu} \\}
 
 \date{}
 
@@ -43,30 +43,25 @@ Brown Linguistic Laboratory of Information Processing \\
 \maketitle
 \begin{abstract}
 % motivation / others' weaknesses
-Coreference resolution systems for entities and/or events almost invariably make use of many linguistic, parsing-based features which concern both the mention words (i.e., the entities and/or events) and their contexts.
-% our novelty and contributions
-In contrast, we (1) introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word-/char- embeddings; and (2) exhaustively illustrate the performance of other commonly-used features.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Siamese Convolutional Neural Network (henceforth referred to as Conjoined Convolutional Neural Network or CCNN).  Next, we cluster the event mentions with a simple, but novel, neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made from exclusively min-pairwise decision.
-% These features typically include part-of-speech, dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, etc.
+Coreference resolution systems for entities and/or events almost always make use of many linguistic, parsing-based features.  In contrast, (1) we introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word-/char- embeddings, achieving 67.2 CoNLL F1 score on a common ECB+ test set, along with setting a new baseline of 8X.XX for the test set at large. (2) We exhaustively illustrate the performance of other commonly-used features.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Siamese Convolutional Neural Network (henceforth referred to as Conjoined Convolutional Neural Network or CCNN).  Last, (3) we cluster the event mentions with a simple, but novel, neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made exclusively from min-pairwise decisions.
 \end{abstract}
 
 \section{Introduction}
-%An entity is typically defined as being a person, location, organization, or time, whereas an event is an action or occurrence.  And, a mention is a specific instance of an entity or event (e.g., \textit{she} or \textit{announced}).
-
 % problem definition/statement
 Coreference resolution is the task of trying to identify -- within a single text or across multiple documents -- which \textit{mentions} refer to the same underlying discourse \textit{entity} or \textit{event}.  Naturally, one may be solely interesting in determining if two given entities co-refer to the same object (e.g., a pairwise prediction of \textit{she} and \textit{Mary} co-referring); however, ultimately, coreference resolution is a clustering task, whereby we wish to group all like-mentions together.  Successfully doing so can be useful for several other core NLP tasks that concern natural language understanding, such as information extraction \cite{Humphreys:1997}, topic detection \cite{Allan:1998}, text summarization \cite{Daniel:2003}, knowledge base population \cite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}, question answering \cite{Narayanan:2004:QAB:1220355.1220455}, etc.
 % motivation
 Coreference Resolution has always been one of the fundamental tasks within NLP, and with the ever-increasing amount of textual, digital data that is generated and consumed in present-day, it remains both important and challenging.
 
 % problem definition
-Specifically, coreference systems aim to find a globally-optimal fit of mentions to clusters, whereby every mention $m$ in the corpus is assigned to exactly one cluster $C$, the membership of which constitutes that every ${m_i,m_j} \in C_k$ is co-referent with each other.  If a given $m_i$ is not anaphoric with any other $m_j$, then it should belong to its own $C_k$ with a membership of one.  Further, the number of distinct clusters is not known apriori but is bounded by the number of mentions and is part of the system's inference.  Finding such a globally-optimal assignment is NP-Hard and thus computationally intractable.  In attempt to avoid this, systems typically perform pairwise-mention predictions, then use those predictions to build up clusters. The specific modelling strategies for such approximately fall into two categories: (1) mention-ranking / mention-pairs; and (2) entity-centric.
+Specifically, coreference systems aim to find a globally-optimal fit of mentions to clusters, whereby every mention $m$ in the corpus is assigned to exactly one cluster $C$, the membership of which constitutes that every ${m_i,m_j} \in C_k$ is co-referent with each other.  If a given $m_i$ is not anaphoric with any other $m_j$, then it should belong to its own $C_k$ with a membership of one.  Further, the number of distinct clusters is not known apriori but is bounded by the number of mentions and is part of the system's inference.  Finding such a globally-optimal assignment is NP-Hard and thus computationally intractable.  In attempt to avoid this, systems typically perform pairwise-mention predictions, then use those predictions to build up clusters. The specific modelling strategies for such approximately fall into two categories: (1) mention-ranking / mention-pairs; and (2) entity/event-level.
 
-\textbf{Mention-ranking} models define a scoring a function $f(m_i,m_j)$ which operates on any $m_j$ and possible antecedent $m_i$, where $m_i$ occurs earlier in the document and could be null (represented by $\epsilon$ and denoting that $m_j$ is non-anaphoric).  Although these models are by definition less expressive than entity-based models, their inference can be relatively simple and effective, allowing them to be fast and scalable.  As a consequence, they have often been the approach used by many state-of-the-art systems \cite{Soon:2001:MLA:972597.972602,DBLP:conf/emnlp/DurrettK13,DBLP:journals/corr/WisemanRS16}.
+\textbf{Mention-ranking} models define a scoring a function $f(m_i,m_j)$ which operates on any $m_j$ and possible antecedent $m_i$, where $m_i$ occurs earlier in the document and could be null (represented by $\epsilon$ and denoting that $m_j$ is non-anaphoric).  Although these models are by definition less expressive than entity/event-level models, their inference can be relatively simple and effective, allowing them to be fast and scalable.  As a consequence, they have often been the approach used by many state-of-the-art systems \cite{Soon:2001:MLA:972597.972602,DBLP:conf/emnlp/DurrettK13,DBLP:journals/corr/WisemanRS16}.
 
 \textbf{Mention-pair} models are defined almost identically, with the subtle difference being the target objective of the pairwise-candidates.  That is, mention-ranking model aim to find the ideal $m_i$ antecedent for every $m_j$, whereas mention-pair models score all possible $(m_i,m_j)$ pairs \cite{Bengtson:2008:UVF:1613715.1613756, Soon:2001:MLA:972597.972602}.
 
-\textbf{Entity-centric} models differ in that they focus on building a global representation of each underlying entity, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,clark2016improving}.
+\textbf{Entity/Event-level} models differ in that they focus on building a global representation of each underlying entity or event, the basis of which determines each mention's membership -- as opposed to the most local pairwise- elements that comprise the aforementioned models \cite{DBLP:journals/corr/WisemanRS16,clark2016improving}.
 
-In this work, we use a novel and powerfully simple mention-ranking model that is designed solely to discriminate between pairs of input features: Siamese Convolutional Neural Networks, which, for political reasons, we will henceforth refer to as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace the main weakness of mention-ranking models with an approach resembling the main strength of entity-centric models.  Specifically, we aim to combine all linked mention pairs into a cluster via a simple neural, easy-first, clustering approach which factors in a small, but effective, notion of the entire cluster at large.
+In this work, we use a novel and powerfully simple mention-ranking model that is designed solely to discriminate between pairs of input features: Siamese Convolutional Neural Networks, which, for political reasons, we will henceforth refer to as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace the main weakness of mention-ranking models with an approach resembling the main strength of entity/event-level models.  Specifically, we aim to combine all linked mention pairs into a cluster via a simple neural, easy-first, clustering approach which factors in a small, but effective, notion of the entire cluster at large.
 %instead of combining all linked pairs of mentions into a cluster, independent of how they relate to the other mentions in the cluster
 %in lieu of sim
 %maintaining a true entity-level representation against which all candidate mentions will be compared and added, we  
@@ -87,34 +82,129 @@ In summary, we introduce a novel approach to event coreference resolution by per
 
 \section{Related Work}
 % initial start
-Event coreference resolution has received significantly less attention than its entity-based counterpart.  The seminal research on event-based coreference can be traced back to the DARPA-initiated MUC conferences, whereby the focus was on limited scenarios involving terrorist attacks, plane crashes, management succession, resignation, etc.  Most notable from this period were the works by Humphreys et al. \shortcite{Humphreys:1997} and Bagga and Baldwin \shortcite{Bagga:1999:CEC:1608810.1608812}, which applied event coreference to the tasks of information extraction, topic detection and tracking.
+Event coreference resolution has received significantly less attention than its entity-based counterpart.  The seminal research on event-based coreference can be traced back to the DARPA-initiated MUC conferences, whereby the focus was on limited scenarios involving terrorist attacks, plane crashes, management succession, resignation, etc.  Most notable from this period were the works by Humphreys et al. \shortcite{Humphreys:1997} and Bagga and Baldwin \shortcite{Bagga:1999:CEC:1608810.1608812}, which applied event coreference to the tasks of information extraction, topic detection and tracking.  The successor of MUC was the annual ACE program, which addressed more fine-grained events with the aforementioned challenging situations wherein mentions may have identical text shared by many distinct events.
+
+
+%Event coreference resolution has received significantly less attention than its entity-based counterpart.  The seminal research on event-based coreference can be traced back to the DARPA-initiated MUC conferences, whereby the focus was on limited scenarios involving terrorist attacks, plane crashes, management succession, resignation, etc.  Most notable from this period were the works by Humphreys et al. \shortcite{Humphreys:1997} and Bagga and Baldwin \shortcite{Bagga:1999:CEC:1608810.1608812}, which applied event coreference to the tasks of information extraction, topic detection and tracking.
 
 % continued efforts
-The successor of MUC was the annual ACE program, which occurred from 1999 to 2008 and furthered researched by including corpora containing more fine-grained events.  This addressed the aforementioned challenge whereby events may be an overloaded term in that multiple, uniquely distinct underlying events may use textually-identical mention representation.  One of the most notable papers from this period, which also illustrates the varied modelling approaches, is the graph-based system by Chen and Ji \shortcite{Chen:2010:GCC:1870490.1870491}.  This is an example of a mention-pair model, as they constructed a graph from the fully-complete weight matrix that corresponds to all mention pairs.
+%The successor of MUC was the annual ACE program, which occurred from 1999 to 2008 and furthered researched by including corpora containing more fine-grained events.  This addressed the aforementioned challenge whereby events may be an overloaded term in that multiple, uniquely distinct underlying events may use textually-identical mention representation.  One of the most notable papers from this period, which also illustrates the varied modelling approaches, is the graph-based system by Chen and Ji \shortcite{Chen:2010:GCC:1870490.1870491}.  This is an example of a mention-pair model, as they constructed a graph from the fully-complete weight matrix that corresponds to all mention pairs.
 
-In general, although Deep Learning has had an undeniable, ubiquitous impact on Natural Language Processing, there are 
+In present day, Deep Learning is revolutionarily affecting NLP; however, there has been a few successful applications of deep learning to coreference resolution, almost all of which have been for entity-based system.  We attribute this dearth to the fact that coreference resolution is inherently a clustering task, which tends to be a non-obvious modality for deep learning.  We divide the work relevant to ours into two categories: (1) deep learning approaches; and (2) the systems which use the same ECB+ corpus \cite{ECB+} as we do.
 
-FINISH THIS
+\subsection{Deep Learning Approaches}
+To the best of our knowledge, there are only five other publications which apply deep learning to coreference resolution, four of which focus on entity coreference.
 
+Sam Wiseman, et. al. built mention-ranking models \shortcite{DBLP:conf/acl/WisemanRSW15,DBLP:conf/naacl/WisemanRS16} which are trained with a heuristic loss functions that assign different costs based on the types of errors made, and their latter work used mention-ranking predictions towards an entity-level model via LSTM hidden states \cite{Hochreiter:1997:LSM:1246443.1246450}.
+
+Separately, Clark and Manning \shortcite{clark2016improving,DBLP:journals/corr/ClarkM16a} also built both a mention-ranking and an entity-level model, the former of which was novel in using reinforcement learning to find the optimal loss values for the same four distinct error types defined in Wiseman's, et. al \shortcite{DBLP:conf/acl/WisemanRSW15} work.
+
+\subsection{Systems using ECB+ Corpus}
 % most related
 For our research, we make use of the ECB+ corpus \cite{ECB+}, an extension of EventCorefBank (ECB) \cite{Bejan:2010:UEC:1858681.1858824}, which we further describe in Section \ref{sec:corpus}.  In short, this rich corpus provides annotations for both entities and events, yet most research chooses to focus on using \textit{either} events or entities, not both.  To the best of our knowledge, there are only two papers which focus on the event mentions of ECB+: The Hierarchical Distance-dependent Chinese Restaurant Process (HDDCRP) model by Yang, et. al. \shortcite{journals/tacl/YangCF15} and Choubey's and Huang's Iterative-Unfolding approach \shortcite{Choubey2017EventCR}.   Consequently both are highly relevant to our work.
 
+\subsubsection{HDDCRP Model}
 % HDDCRP
 Yang, et. al's HDDCRP model \shortcite{journals/tacl/YangCF15} uses a clever and inspiring mention-pair approach, whereby they first use logistic regression to train the set of parameters $\theta$ for the similarity function in Equation \ref{eq:hddcrp}.  
 \begin{equation}
 \label{eq:hddcrp}
 f_{\theta}(x_i,x_j) \propto \textnormal{exp\{} \theta^T\psi(m_i,m_j)\textnormal{\}}
 \end{equation}
-Then, the crux of their system is that in a Chinese-restaurant-process fashion, they probabilistically assign links between mentions purely based on the scores provided by this similarity function.  That is, the value emitted by $f(m_i,m_j)$ is directly correlated with the probability of $(m_i,m_j)$ being chosen as a linked pair.  However, identical to Bengtson's and Roth's work \cite{Bengtson:2008:UVF:1613715.1613756}, the HDDCRP model then automatically forms clusters purely based on tracing through all linked pairs; all mentions that are reachable by a continuous path become assigned the same cluster.  This hinges on the transitive property holding true for coreference.  For example, if ${(m_1,m_3),(m_3,m_5)}$ and $(m_5,m_6)$ are each individually linked via the scoring function, then a cluster $C_i$ is formed, where $C_i = \{m_1,m_3,m_5,m_6\}$, even though $(m_1,m_5)$ or $(m_3,m_6)$ may have had very low similarity scores.  After these initial clusters are formed for both within-doc (WD) and cross-document (CD) mentions, their system continues to perform Gibbs sampling until convergence, allowing mentions to freely shift between other clusters according to the similarity function.  We aim to improve this shortcoming, as detailed in Section \ref{sec:clustering}.
+Then, the crux of their system is that in a Chinese-restaurant-process fashion, they probabilistically assign links between mentions purely based on the scores provided by this similarity function.  That is, the value emitted by $f(m_i,m_j)$ is directly correlated with the probability of $(m_i,m_j)$ being chosen as a linked pair.  However, identical to Bengtson's and Roth's work \cite{Bengtson:2008:UVF:1613715.1613756}, the HDDCRP model then automatically forms clusters by tracing through all linked pairs; all mentions that are reachable by a continuous path become assigned the same cluster.  This hinges on the transitive property holding true for coreference.  For example, if ${(m_1,m_3),(m_3,m_5)}$ and $(m_5,m_6)$ are each individually linked via the scoring function, then a cluster $C_i$ is formed, where $C_i = \{m_1,m_3,m_5,m_6\}$, even though $(m_1,m_5)$ or $(m_3,m_6)$ may have had very low similarity scores.  After these initial clusters are formed for both within-doc (WD) and cross-document (CD) mentions, their system continues to perform Gibbs sampling until convergence, allowing mentions to freely shift between other clusters according to the similarity function.  We aim to improve this shortcoming, as detailed in Section \ref{sec:clustering}.
 
+\subsubsection{Neural Iterative-Unfolding Model}
 % Choubey
-Most recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model that is exclusive for event coreference.  Their system also fits into the pairwise-mention model, whereby mention pairs are predicted by a feed-forward neural network. For within-doc predictions, their network features are primarily based on the cosine similarity and euclidean distance of input-pair embeddings.  The cross-document model is identical, other than adding context features, too.  This was an important finding, for they assert that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context.  That is, the mention words themselves were sufficient.  Similar to the HDDCRP model, they form clusters based on local mention-pair predictions, independent of its relevance with the cluster at large.
+Most recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model that is exclusive for event coreference.  Their system also fits into the mention-pair paradigm, whereby mentions are predicted by a feed-forward neural network. For within-doc predictions, their network features are primarily based on the cosine similarity and euclidean distance of input-pair embeddings.  The cross-document model is identical, other than adding context features, too.  This was an important finding, for they assert that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context.  That is, the mention words themselves were sufficient.  Similar to the weakness of the HDDCRP model, they form clusters based on local mention-pair predictions, independent of mentions' relevance to the cluster at large.
 
 \section{System Overview}
+\subsection{Mention Identification}
+Coreference systems are predicated upon having entity/event mentions identified.  In fact, this identification process is the focus of a different line of research: entity recognition and event detection are the names given to identifying entities and events, respectively.  This separation of tasks allows coreference systems to be evaluated precisely on their ability to link/cluster together appropriate mentions.  Thus, it is common practice for coreference systems to either: (1) use gold mentions that are defined by the true annotations in the corpus, or (2) use an off-the-shelf entity recognition or semantic role labelling system.  We do both.  That is, the majority of our results are shown with having used gold mentions.  Yet, it was critically important to us to ensure we developed a competitive system, so it was imperative to use the same mentions that were used in the two aforementioned system that focus on events of the ECB+ corpus.  The HDDCRP model set the precedence by using an SRL system to predict mentions, then they pre-processed and filtered many of those, yielding their system with an imperfect but reasonable set of mentions that shares a moderate overlap with the gold mentions.  Determining the exact mentions that were used by HDDCRP was one of the most challenging and time-consuming processes of our research.
+
+Naturally, Choubey's, et. al. system also aimed to use their same mentions.  After numerous exchanges with the author, it was clear that their set of mentions was similar and reasonable for research, but understandably not the same as that used by HDDCRP.  Namely, they filtered out: (1) all predicted mentions which were not in the gold set (false positives), and (2) predicted mentions which were singletons (ones that did not cluster with a mention from another document).
+
+We evaluate our systems having used the: (1) gold mentions; (2) HDDCRP-predicted mentions; (3) Choubey-predicted mentioned.
+
+\subsection{Reproducibility}
+As illustrated, reproducing coreference results can be naturally tedious, as it is challenging to ensure every token identified and parsed according to one system perfectly aligns and is represented correctly by another.  Since these issues comprised a large amount of our research efforts, we aim to ameliorate the situation by providing our code online, which is easily runnable on any of the aforementioned sets of mentions and evaluations.  Additionally, our code runs in just a few minutes on a single Titan X GPU.
 \subsection{Models}
+Our system is comprised of two neural models:
+\begin{itemize}
+  \item Conjoined Convolutional Neural Network -- used for making mention-pair predictions.  (Section \ref{sec:CCNN})
+  \item Neural Clustering -- uses the pairwise predictions to cluster mentions into events (Section \ref{sec:clustering})
+\end{itemize}
 \subsection{Corpus}
 \label{sec:corpus}
-\section{Conjoined Convolutional Networks}
+We exclusively make use of the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories.  Each of the 43 topics has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains 2 sub-topics, 1 of which about Lindsay Lohan checking into a rehab center in Malibu, California, and the other about Tara Reid checking into a rehab center in the same city.  Each sub-topic contains roughly 8-15 short text documents which all concern the same given sub-topic.  Following the convention of the aforementioned researchers who use this corpus, we divide the corpus into the following splits: training set contains topics 1-20; dev set contains topics 21-23, and the test set contains topics 24-43.  For those interested in this corpus, note that the actual structure of the corpus files happens to not include a topic directory named \#15 or \#17, so the listed divisions correspond to the sequential ordering of topics and size of each split, not the exact structure of directory names.
+
+Corpus statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|c|c|c|}
+\cline{2-5}
+& Train & Dev & Test & Total \\ \cline{1-5} \hline
+\multicolumn{1}{ |c| }{\# Documents} & 462 & 73 & 447 & 982   \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{\# Sentences} & 7,294 & 649 & 7,867 & 15,810    \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{\# 1-Token Mentions} & 1,938 & 386 & 2,837 & 5,161    \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{\# 2-Token Mentions} & 142 & 52 & 240 & 434    \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{\# 3-Token Mentions} & 18 & -- & 25 & 43    \\% \cline{1-5}
+\multicolumn{1}{ |c| }{\# 4-Token Mentions} & 6 & -- & 7 & 13   \\ \cline{1-5}
+\end{tabular}
+\caption{Statistics of the ECB+ Corpus}
+\label{tab:ECB1}
+\end{table}
+
+\section{Conjoined Convolutional Neural Network}
+\label{sec:CCNN}
+\subsection{Motivation}
+As a recap, there has yet to exist a deep learning event-level model for event coreference resolution.  Although it is tempting to explore this option due to the success of deep learning entity-based models, we were motivated for a few reasons to develop a model that fits the mention-pair paradigm: not only has the previous work on the ECB+ corpus shown strength from using mention-pair models, but analyzing the training set data illustrates that most golden co-referent clusters contain little variance in the lemma-representation of each mention (see Figure \ref{fig:lemmaPower}).  Since there is such high homogeneity on an intra-cluster level, it suggests that entity-level representations might not offer much benefit.  Naturally, one could argue that intra-cluster representation is not conclusive evidence; that is, the context of mentions, which could differ drastically for each co-referent mention, might be beneficial.  However, as Choubey, et. al. \shortcite{Choubey2017EventCR} concluded, context seems to offer not benefit at all for within-doc coreference on the ECB+ corpus.  Thus, we are interested in developing a powerful pairwise-prediction model, such as a Conjoined Neural Network \cite{SiameseNet}.
+\begin{figure}
+  \caption{A boat.}
+  \label{fig:lemmaPower}
+\end{figure}
+\subsection{Overview}
+Conjoined Neural Networks (or Siamese Networks, as they are known as) were first introduced by Bromly and LeCun \shortcite{SiameseNet} towards a task whereby the goal was to accurately determine if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as twin neural networks, each of which accepts distinct inputs, but they are eventually joined by a loss function over their highest-level features.  The loss feature computes a metric that represents the similarity between the two input pairs (e.g., euclidean distance, cosine similarity, hamming distance, etc).  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs into each network will be mapped accordingly, otherwise, they could be mapped to hidden representations that are disproportionately different compared to their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
+
+\vspace{4mm}
+
+ $CCNN(f_i,f_j) \equiv CCNN(f_j,f_i)$
+
+\vspace{4mm}
+
+This is critical, as the CCNN should yield the same similarity score independent of the ordering of its input pair.
+
+Last, we posit that CCNN's have been shown to perform well in low-resource situation \cite{Koch2015SiameseNN}.  This is ideal for our task, as it is highly likely that at test time we will encounter event mentions that are OOV.  We desire our model to discriminately learn the relationships of input mentions, rather than exclusively relying on and memorizing the input values themselves.
+
+As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  Likewise, we choose to use a CNN due to their power in learning sub-regions of features, and the relations thereof -- rather than heavily relying manually-defined features.
+
+\subsection{Details}
+\subsubsection{Input Features}
+Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features that are common in other coreference systems (e.g., SameLemma, Jaccard Similarity of the mentions' context words, First common WordNet parent, \# of Sentence in between Mentions, etc).  We thoroughly tested the following input features and their listed variants:
+\begin{itemize}
+  \item \textbf{Part-of-Speech:} 1-hot representation; LSTM-learned embeddings after maping the entire corpus to their POS tags
+  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each mention token, where the embedding came from running GLoVE \cite{pennington2014glove} either on our corpus, or using their provided pre-trained 6 billion and 840 billion token crawls.
+  \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each mention token, and we represent it via the aforementioned lemma embeddings)
+  \item \textbf{Character Embeddings:} we represent each mention token as a concatenation of its character embeddings (truncated or padded up to the first 20 characters), where we experimented with character embeddings being either (1) random 20-length embeddings or (2) pre-trained 20-length embeddings
+  \item \textbf{Word Embeddings:} same as the embeddings listed for \textit{lemma}, just we apply these embeddings for the word tokens themselves, not the lemma of each token.
+  
+Note, since mentions are of varying token length (see Table \ref{tab:ECB1}, we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing across all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $M$'s embedding is calculated via:
+
+$M_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$,
+
+where $t$ is a token in the set of tokens $T$ that comprise $M$
+
+
+\end{itemize}
+
+
+\subsubsection{Architecture}
+We define the embedding for a given token $t$, as: $t_{emb} = t_{f_{1}} \oplus t_{f_{2}} \oplus \ldots \oplus t_{f_{n}},$
+
+where $\oplus$ represents vector concatenation and $t_{f_{i}}$ represents a specific input feature vector for token $t$.
+
+
+ 
+
 \section{Neural Clustering}
 \label{sec:clustering}
 \section{General Instructions}
