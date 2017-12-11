@@ -13,12 +13,12 @@ from get_coref_metrics import *
 class CorefEngine:
 	if __name__ == "__main__":
 
-		runFFNN = True
+		runFFNN = False
 
 		#stoppingPoints = [0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
-		#stoppingPoints = [0.51]
+		stoppingPoints = [0.51]
 		#stoppingPoints = [0.52,0.54,0.56,0.58,0.601,0.62,0.64,0.66,0.68,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
-		stoppingPoints = [0.301,0.34,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701]
+		#stoppingPoints = [0.301,0.34,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701]
 
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -67,7 +67,6 @@ class CorefEngine:
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 		
 			# performs agg. clustering on our predicted, testset of HMentions
-
 			for sp in stoppingPoints:
 
 				if args.useECBTest: # use corpus' gold test set
