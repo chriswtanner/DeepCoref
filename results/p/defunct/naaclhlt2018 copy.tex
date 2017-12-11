@@ -19,6 +19,7 @@
 \usepackage{url}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{hyperref}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \aclfinalcopy % Uncomment this line for the final submission
@@ -128,7 +129,7 @@ Naturally, the Iteratively-Unfolding system also aimed to use their same mention
 We evaluate our systems having used the: (1) gold mentions; (2) HDDCRP-predicted mentions; (3) Choubey-predicted mentioned.
 
 \subsection{Reproducibility}
-It is challenging to use others' coreference systems, in part due to the complexity of ensuring every token identified and parsed according to one system perfectly aligns and is represented correctly by another.  To ameliorate the common issues, we provide our code online, which is easily runnable on any of the aforementioned sets of mentions and evaluations.  Additionally, our code runs in just a few minutes on a single Titan X GPU.
+We provide our code online\footnote{\url{www.github.com/}}, which is easily runnable on any of the aforementioned sets of mentions and evaluations.  Additionally, our code runs in just a few minutes on a single Titan X GPU.
 \subsection{Models}
 Our system is comprised of two neural models:
 \begin{itemize}
@@ -137,9 +138,7 @@ Our system is comprised of two neural models:
 \end{itemize}
 \subsection{Corpus}
 \label{sec:corpus}
-We exclusively make use of the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories.  Each of the 43 topics has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains 2 sub-topics, 1 of which about Lindsay Lohan checking into a rehab center in Malibu, California, and the other about Tara Reid checking into a rehab center in the same city.  Each sub-topic contains roughly 8-15 short text documents which all concern the same given sub-topic.  Following the convention of the aforementioned researchers who use this corpus, we divide the corpus into the following splits: training set contains topics 1-20; dev set contains topics 21-23, and the test set contains topics 24-43.  For those interested in this corpus, note that the actual structure of the corpus files happens to not include a topic directory named \#15 or \#17, so the listed divisions correspond to the sequential ordering of topics and size of each split, not the exact structure of directory names.
-
-Corpus statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
+We exclusively make use of the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories -- each of which has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains two sub-topics: one about Lindsay Lohan checking into a rehab center, the other about Tara Reid doing so.  Each sub-topic contains roughly 10 short text documents which all concern the same given sub-topic.  We maintained the same train/dev/test splits as previous researchers\footnote{Training set contains topics 1-20, the dev set contains topics 21-23, and the test set has topics 24-43.}  Corpus statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
 
 \begin{table}
 \centering
@@ -147,11 +146,12 @@ Corpus statistics are listed in Table \ref{tab:ECB1}, where it is clear that the
 \cline{2-5}
 & Train & Dev & Test & Total \\ \cline{1-5} \hline
 \multicolumn{1}{ |c| }{\# Documents} & 462 & 73 & 447 & 982   \\ %\cline{1-5}
-\multicolumn{1}{ |c| }{\# Sentences} & 7,294 & 649 & 7,867 & 15,810    \\ %\cline{1-5}
-\multicolumn{1}{ |c| }{\# 1-Token Mentions} & 1,938 & 386 & 2,837 & 5,161    \\ %\cline{1-5}
-\multicolumn{1}{ |c| }{\# 2-Token Mentions} & 142 & 52 & 240 & 434    \\ %\cline{1-5}
-\multicolumn{1}{ |c| }{\# 3-Token Mentions} & 18 & -- & 25 & 43    \\% \cline{1-5}
-\multicolumn{1}{ |c| }{\# 4-Token Mentions} & 6 & -- & 7 & 13   \\ \cline{1-5}
+\multicolumn{1}{ |c| }{\# Sentences} & 7,294 & 649 & 7,867 & 15,810    \\  \hline \cline{1-5} \cline{1-5} \hline
+\multicolumn{5}{|c|}{\multirow{1}{*}{Mention Length}} \\ \cline{1-5}
+\multicolumn{1}{ |c| }{1 Token} & 1,938 & 386 & 2,837 & 5,161    \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{2 Tokens} & 142 & 52 & 240 & 434    \\ %\cline{1-5}
+\multicolumn{1}{ |c| }{3 Tokens} & 18 & -- & 25 & 43    \\% \cline{1-5}
+\multicolumn{1}{ |c| }{4 Tokens} & 6 & -- & 7 & 13   \\ \cline{1-5}
 \end{tabular}
 \caption{Statistics of the ECB+ Corpus}
 \label{tab:ECB1}
@@ -160,13 +160,14 @@ Corpus statistics are listed in Table \ref{tab:ECB1}, where it is clear that the
 \section{Conjoined Convolutional Neural Network}
 \label{sec:CCNN}
 \subsection{Motivation}
-As a recap, there has yet to exist a deep learning event-level model for event coreference resolution.  Although it is tempting to explore this option due to the success of deep learning entity-based models, we were motivated for a few reasons to develop a model that fits the mention-pair paradigm: not only has the previous work on the ECB+ corpus shown strength from using mention-pair models, but analyzing the training set data illustrates that most golden co-referent clusters contain little variance in the lemma-representation of each mention (see Figure \ref{fig:lemmaPower}).  Since there is such high homogeneity on an intra-cluster level, it suggests that entity-level representations might not offer much benefit.  Naturally, one could argue that intra-cluster representation is not conclusive evidence; that is, the context of mentions, which could differ drastically for each co-referent mention, might be beneficial.  However, as Choubey, et. al. \shortcite{Choubey2017EventCR} concluded, context seems to offer not benefit at all for within-doc coreference on the ECB+ corpus.  Thus, we are interested in developing a powerful pairwise-prediction model, such as a Conjoined Neural Network \cite{SiameseNet}.
+In the training data, the mentions that belong to the same gold cluster often have little variance amongst their text.  This, coupled with Choubey's, et. al. \shortcite{Choubey2017EventCR} conclusion that context does not improve within-doc performance, lends us to believe that an event-level model for our corpus would be unnecessary and probably worse.  Local, pairwise predictions are preferred. Thus, we continue the trend of using a mention-pair model for event within-doc coreference.
+%As a recap, there has yet to exist a deep learning event-level model for event coreference resolution.  Although it is tempting to explore this option due to the success of deep learning entity-based models, we were motivated for a few reasons to develop a model that fits the mention-pair paradigm: not only has the previous work on the ECB+ corpus shown strength from using mention-pair models, but analyzing the training set data illustrates that most golden co-referent clusters contain little variance in the lemma-representation of each mention (see Figure \ref{fig:lemmaPower}).  Since there is such high homogeneity on an intra-cluster level, it suggests that entity-level representations might not offer much benefit.  Naturally, one could argue that intra-cluster representation is not conclusive evidence; that is, the context of mentions, which could differ drastically for each co-referent mention, might be beneficial.  However, as Choubey, et. al. \shortcite{Choubey2017EventCR} concluded, context seems to offer not benefit at all for within-doc coreference on the ECB+ corpus.  Thus, we are interested in developing a powerful pairwise-prediction model, such as a Conjoined Neural Network \cite{SiameseNet}.
 \begin{figure}
   \caption{A boat.}
   \label{fig:lemmaPower}
 \end{figure}
 \subsection{Overview}
-Conjoined Neural Networks (or Siamese Networks, as they are known as) were first introduced by Bromly and LeCun \shortcite{SiameseNet} towards a task whereby the goal was to accurately determine if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as twin neural networks, each of which accepts distinct inputs, but they are eventually joined by a loss function over their highest-level features.  The loss function computes a metric that represents the similarity between the two input pairs (e.g., euclidean distance, cosine similarity, hamming distance, etc).  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs into each network will be mapped accordingly, otherwise, they could be mapped to hidden representations that are disproportionately dissimilar from their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
+Conjoined Neural Networks (or Siamese Networks, as they are known as) were first introduced by Bromly and LeCun \shortcite{SiameseNet} towards a task whereby the goal was to accurately determine if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as twin neural networks, each of which accepts distinct inputs, but they are eventually joined by a loss function over their highest-level features.  The loss function computes a similarity score (e.g., euclidean distance) for an input pair.  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs will be mapped accordingly, otherwise, they could be mapped to hidden representations that are disproportionately dissimilar from their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
 
 \vspace{4mm}
 
@@ -178,17 +179,17 @@ This is critical, as the CCNN should yield the same similarity score independent
 
 Last, we posit that CCNN's have been shown to perform well in low-resource situation \cite{Koch2015SiameseNN}.  This is ideal for our task, as it is highly likely that at test time we will encounter event mentions that are OOV.  We desire our model to discriminately learn the relationships of input mentions, rather than exclusively relying on and memorizing the input values themselves.
 
-As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  Likewise, we choose to use a CNN due to their power in learning sub-regions of features, and the relations thereof -- rather than heavily relying manually-defined features.
+As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  Likewise, we choose to use a CNN due to their power in learning sub-regions of features, and the relations thereof.
 
 \subsection{Input Features}
 \label{sec:features}
-Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features that are common in other coreference systems (e.g., SameLemma, Jaccard Similarity of the mentions' context words, First common WordNet parent, \# of Sentence in between Mentions, etc).  We thoroughly tested the following input features and their listed variants:
+Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features that are common in other coreference systems (e.g., SameLemma, Jaccard Similarity of mentions' context, First common WordNet parent, etc).  We thoroughly tested the following input features and their listed variants:
 \begin{itemize}
-  \item \textbf{Part-of-Speech:} 1-hot representation; LSTM-learned embeddings after maping the entire corpus to their POS tags
-  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each mention token, where the embedding came from running GLoVE \cite{pennington2014glove} either on our corpus, or using their provided pre-trained 6 billion and 840 billion token crawls.
-  \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each mention token, and we represent it via the aforementioned lemma embeddings)
-  \item \textbf{Character Embeddings:} we represent each mention token as a concatenation of its character embeddings (truncated or padded up to the first 20 characters), where we experimented with character embeddings being either (1) random 20-length embeddings or (2) pre-trained 20-length embeddings
-  \item \textbf{Word Embeddings:} same as the embeddings listed for \textit{lemma}, just we apply these embeddings for the word tokens themselves, not the lemma of each token.
+  \item \textbf{Part-of-Speech:} 1-hot representation; LSTM-learned embeddings after mapping the entire corpus to their POS tags.
+  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each mention token, where the embedding came from running GloVe \cite{pennington2014glove} on our corpus, or using their provided pre-trained 6 billion and 840 billion token crawls.
+  \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each mention token, and we represent it via the aforementioned lemma embeddings.
+  \item \textbf{Character Embeddings:} we represent each mention token as a concatenation of its character embeddings, where we experimented with 20-dimensional character embeddings being either random or pre-trained.
+  \item \textbf{Word Embeddings:} use the same embeddings that we use for the lemma feature, only the mention is being represented by its actual word, not lemma.
 \end{itemize}
 Note, since mentions are of varying token length (see Table \ref{tab:ECB1}), we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing across all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $m$'s embedding is calculated via:
 
@@ -215,24 +216,18 @@ $\textbf{M}_{(i,j),(k:l)}$ represent the sub-matrix of $M$ from $(i,j)$ to $(k,l
 
 \vspace{3mm}
 
-We define a kernel/filter with dimensions $(h,w)$, where $h < (2*N+1)$ and $w < d$.  This allows the kernel to operate on sub-sections of the embeddings.  The kernel has an associated weight matrix $\textbf{w} \in \mathbb{R}^{w \times h}$.  Therefore, starting at a given index $(i,j)$ within mention matrix $\textbf{M}$, a feature $c_{i}$ is defined as:
+We define a kernel with dimensions $(h,w)$, where $h < (2*N+1)$ and $w < d$.  This allows the kernel to operate on sub-sections of the embeddings.  The kernel has an associated weight matrix $\textbf{w} \in \mathbb{R}^{w \times h}$.  Starting at a given index $(i,j)$ within mention matrix $\textbf{M}$, a feature $c_{i}$ is defined as:
 \begin{equation}
 c_{i} = f(\textbf{w}^{T}\textbf{M}_{(i:i+h-1),(j:j+w-1)} + b)
 \end{equation}
-where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every possible sub-section of mention matrix $\textbf{M}$, yielded a feature map $\textbf{c} \in \mathbb{R}^{(2*N-h) \times (d-w-1)}$
+where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every possible sub-section of mention matrix $\textbf{M}$, yielding a feature map $\textbf{c} \in \mathbb{R}^{(2*N-h) \times (d-w-1)}$
 
 \vspace{3mm}
 
-We use 64 kernels (we experimented with all powers of 2, from 2 - 256), along with ReLU as our activation function.
-
-Dropout is then applied (we experimented with values from 0 to 0.5).
-
-Next, we repeat this processing by adding convolution and dropout again, then apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$.
-
-Last, we apply dropout again, then merge all of our kernels to feed into a final ReLU.
+We use 64 kernels (we experimented with all powers of 2, from 2 - 256), along with ReLU as our activation function.  Dropout is then applied (we experimented with values from 0 to 0.5).  Next, we repeat this processing by adding convolution and dropout again, then we apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$. Last, we merge all of our kernels' univariate vectors together into 1 final layer, apply dropout again, and feed into one ReLU, which yields a two-class softmax prediction.
 
 \subsection{Loss}
-The goal of our model is to maximize discriminability between mentions representing different events, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  Because our input is mention pairs, there is a strong class imbalance, so we down-sample the negative examples, yielding a training set of 5 negative examples per positive example.
+Our goal is to maximize discriminability between mentions representing different events, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}.  Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.
 \begin{equation}
 \begin{aligned}
 L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
@@ -243,17 +238,17 @@ L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
 \end{equation}
 
 \subsection{Optimization}
-We used Adagrad for optimization.  We also experimented with RMS and found the results to be effectively identical.
+We used Adagrad for optimization. RMS yielded effectively identical results.
 
 \section{Neural Clustering}
 \label{sec:clustering}
-In mention-pair models, it is common practice to first assign a probabilistic score to every mention-pair, and then to cluster with a different model.
+It is common practice for mention-pair models to first assign a probability score to every mention-pair, and then cluster with a different model.
 
 \subsection{Existing Clustering Approaches}
-\textbf{Agglomerative Clustering} is a simple but effective approach.  Namely, it first treats each mention as being its own singleton-cluster.  Then, it repeatedly merges two distinct clusters into a new cluster, whereby the two selected clusters are the ones which respectively contain the two mentions which are the shortest-distance pair.  Although this is a strong baseline, as seen in Yang, et. al. \shortcite{journals/tacl/YangCF15}, there are three main weaknesses:
+\textbf{Agglomerative Clustering} is a simple but effective approach.  It first treats each mention as being its own singleton-cluster.  Then, it repeatedly merges the two distinct clusters which contain the shortest-distance mention pairs.  Although this is a strong baseline, as seen in Yang, et. al. \shortcite{journals/tacl/YangCF15}, there are three main weaknesses:
 \begin{enumerate}
-\item One must introduce a stopping heuristic; otherwise, merging will continue until there is just 1 cluster.
-\item If one uses a threshold value $\alpha$ to stop (i.e., stop merging when the shortest pair exceeds $\alpha$), this asserts the data is uniform, yet the distribution of pairwise predictions inevitable differs from document-to-document.  That is, for one document, there may be a clear division where $\alpha = 0.5$ separates the pairs nicely, but in another document, the values inherently are lower or higher, causing $0.5$ to be inappropriate.
+\item One must define a stopping heuristic.
+\item If one uses a threshold value $\alpha$ to stop (i.e., only merge while the shortest-pair is $< \alpha$), this asserts the data is uniform. Yet the distribution of pairwise predictions inevitable differs for each document.  For one document, there may be a clear division where $\alpha = 0.5$ separates the pairs nicely, but in another document, maybe \textit{all} mention distances tend to be higher, causing $0.5$ to be inappropriate.
 \item Most significant, each cluster merge is based solely on two individual mentions, yet these mentions may not be representative of the cluster at large.
 \end{enumerate}
 
