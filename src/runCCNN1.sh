@@ -1,7 +1,5 @@
 #!/bin/bash
-cd /home/christanner/researchcode/DeepCoref/src/
-hn=`hostname`
-featureMap=(1 2 3 4 5)
+featureMap=(2 4)
 numLayers=(2) # 3) # 1 3
 numEpochs=(10) # 20)
 windowSize=(0)
@@ -26,6 +24,9 @@ SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
 devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+
+cd /home/christanner/researchcode/DeepCoref/src/
+hn=`hostname`
 
 # FEATURE MAP OVERRIDE
 if [[ " ${featureMap[*]} " == *"1"* ]]; then

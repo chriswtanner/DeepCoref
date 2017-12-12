@@ -16,10 +16,10 @@ class CorefEngine:
 		runFFNN = False
 
 		#stoppingPoints = [0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
-		#stoppingPoints = [0.51]
+		stoppingPoints = [0.51]
 		#stoppingPoints = [0.52,0.54,0.56,0.58,0.601,0.62,0.64,0.66,0.68,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
 		#stoppingPoints = [0.301,0.34,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701]
-		stoppingPoints = [0.12,0.15,0.18,0.21,0.24,0.27,0.301,0.33,0.36,0.39,0.42,0.45,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
+		#stoppingPoints = [0.12,0.15,0.18,0.21,0.24,0.27,0.301,0.33,0.36,0.39,0.42,0.45,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -60,7 +60,7 @@ class CorefEngine:
 					print("FFNN F1 sp:",str(sp),"=",str(conll_f1))
 				else:
 					helper.writeCoNLLFile(predictedClusters, sp)
-		else:
+		else: # AGGLOMERATIVE CLUSTERING
 
 			# trains and tests the pairwise-predictions via Conjoined-CNN
 			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed)
@@ -70,9 +70,13 @@ class CorefEngine:
 			for sp in stoppingPoints:
 
 				if args.useECBTest: # use corpus' gold test set
+
+					(predictedClusters, goldenClusters) = ccnnEngine.clusterPredictions(dev_pairs, dev_preds, sp)
+					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
+
 					(predictedClusters, goldenClusters) = ccnnEngine.clusterPredictions(testing_pairs, testing_preds, sp)
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
-					print("AGG F1 sp:",str(sp),"=",str(conll_f1))
+					print("AGG TEST F1 sp:",str(sp),"=",str(conll_f1))
 				else:
 					predictedClusters = helper.clusterHPredictions(testing_pairs, testing_preds, sp)
 					ccnnEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
