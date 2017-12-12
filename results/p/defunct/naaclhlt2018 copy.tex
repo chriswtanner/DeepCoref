@@ -22,6 +22,7 @@
 \usepackage{hyperref}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{graphicx}
 %\DeclareMathOperator*{\argmax}{argmax}
 %\DeclareMathOperator*{\argmin}{argmin}
 \newcommand{\argmin}[1]{\underset{#1}{\operatorname{argmin}}\;}
@@ -300,10 +301,12 @@ Our metric is CoNLL F1 score, which is a clustering-based metric that combines t
 
 We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We used the gold mentions identified in the ECB+ test set and exhaustively tried (1) all combinations of features; (2) CCNN compared to a Feed-Forward Neural Network; and (3) clustering with our Neural Clustering versus Agglomerative\footnote{We chose the stopping threshold $\alpha=0.48$ based on the best-performing value found on the dev set.}.  All results are illustrated in Figure \ref{fig:allfeatures}, which shows that our CCNN model always outperforms the feed-forward neural network, and that our Neural Clustering outperforms Agglomerative Clustering.
 
-\begin{figure}
+\begin{figure*}[h]
 \label{fig:allfeatures}
+\centering
+    \includegraphics[width=1\textwidth]{features.pdf}
 \caption{Main Result: exhaustively tested all features to show the effects of using our CCNN and Neural Clustering models.}
-\end{figure}
+\end{figure*}
 
 \textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  Using the embeddings of the lemmas, especially with the power of the CCNN, provides much more expression than the mere boolean feature of \textit{SameLemma}.  Our best results for this feature came from using the pre-trained 840 billion-token GloVe embeddings.
 

@@ -1,26 +1,26 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
-featureMap=(2 3 4 5)
-numLayers=(1) # 3) # 1 3
-numEpochs=(1) # 20)
+featureMap=(1 2 3 4 5)
+numLayers=(2) # 3) # 1 3
+numEpochs=(10) # 20)
 windowSize=(0)
-numNeg=(1)
+numNeg=(6)
 batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("840B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
-CCNNOpt=("rms") # "rms" "adam" "adagrad"
+CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(2)
-filterMultiplier=(1.0) # 2.0)
+numFilters=(32)
+filterMultiplier=(2.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
 lemmaType=("sum") # "sum" "avg")
 dependencyType=("none") # # "sum" "avg")
-charType=("concat") # "none" "concat" "sum" "avg"
+charType=("none") # "none" "concat" "sum" "avg"
 SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
@@ -28,13 +28,26 @@ SSlog=("True")
 devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
 # FEATURE MAP OVERRIDE
+if [[ " ${featureMap[*]} " == *"1"* ]]; then
+	posType=("sum")
+fi
+if [[ " ${featureMap[*]} " == *"2"* ]]; then
+	lemmaType=("sum")
+fi
+if [[ " ${featureMap[*]} " == *"3"* ]]; then
+	dependencyType=("sum")
+fi
 if [[ " ${featureMap[*]} " == *"4"* ]]; then
-    echo "featureMap contains 1"
+	charType=("concat")
+fi
+if [[ " ${featureMap[*]} " == *"5"* ]]; then
+	SSType=("none")
+	SSwindowSize=(5)
+	SSvectorSize=(400)
 fi
 
-#exit 1
 # FFNN params
-FFNNnumEpochs=(5) # 5 20
+FFNNnumEpochs=(20) # 5 20
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate
