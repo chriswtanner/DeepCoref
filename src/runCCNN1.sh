@@ -9,7 +9,7 @@ numNeg=(6)
 batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
-embeddingsBaseFile=("840B.300") # 6B.300") # "840B.300")
+embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
@@ -29,6 +29,7 @@ devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
 # FEATURE MAP OVERRIDE
 if [[ " ${featureMap[*]} " == *"1"* ]]; then
+	featurePOS=("emb_glove")
 	posType=("sum")
 fi
 if [[ " ${featureMap[*]} " == *"2"* ]]; then
@@ -41,7 +42,7 @@ if [[ " ${featureMap[*]} " == *"4"* ]]; then
 	charType=("concat")
 fi
 if [[ " ${featureMap[*]} " == *"5"* ]]; then
-	SSType=("none")
+	SSType=("sum")
 	SSwindowSize=(5)
 	SSvectorSize=(400)
 fi
