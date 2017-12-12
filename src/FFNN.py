@@ -168,7 +168,8 @@ class FFNN:
 				(dm1,dm2) = dev_pairs[_]
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
-				devPredictions[dev_pairs[_]] = dev_preds[_][0]
+				pred = dev_preds[_][0]
+				devPredictions[dev_pairs[_]] = pred
 				doc_id = ""
 				if self.args.useECBTest:
 					doc_id = dm1[0]

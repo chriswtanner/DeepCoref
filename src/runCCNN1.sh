@@ -1,7 +1,7 @@
 #!/bin/bash
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
-
+featureMap=(2 3 4 5)
 numLayers=(1) # 3) # 1 3
 numEpochs=(1) # 20)
 windowSize=(0)
@@ -27,6 +27,12 @@ SSvectorSize=(0) #100 400 800)
 SSlog=("True")
 devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
+# FEATURE MAP OVERRIDE
+if [[ " ${featureMap[*]} " == *"4"* ]]; then
+    echo "featureMap contains 1"
+fi
+
+#exit 1
 # FFNN params
 FFNNnumEpochs=(5) # 5 20
 FFNNPosRatio=(0.8) # 0.2 0.8
