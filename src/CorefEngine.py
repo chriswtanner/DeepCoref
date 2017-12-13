@@ -13,7 +13,7 @@ from get_coref_metrics import *
 class CorefEngine:
 	if __name__ == "__main__":
 
-		runFFNN = False
+		runFFNN = True
 
 		#stoppingPoints = [0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		#stoppingPoints = [0.51]
@@ -57,7 +57,7 @@ class CorefEngine:
 				print("# predicted:",str(len(predictedClusters)))
 				if args.useECBTest: # use corpus' gold test set
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
-					print("FFNN F1 sp:",str(sp),"=",str(conll_f1))
+					print("FFNN F1 sp:",str(sp),"=",str(conll_f1),"OTHERS:",str(muc_f1),str(bcub_f1),str(ceafe_f1))
 				else:
 					helper.writeCoNLLFile(predictedClusters, sp)
 		else: # AGGLOMERATIVE CLUSTERING
