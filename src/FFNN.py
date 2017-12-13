@@ -171,10 +171,10 @@ class FFNN:
 				pred = dev_preds[_][0]
 				devPredictions[dev_pairs[_]] = pred
 				doc_id = ""
-				if self.args.useECBTest:
-					doc_id = dm1[0]
-				else:
-					doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+				#if self.args.useECBTest:
+				doc_id = dm1[0]
+				#else:
+				#	doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
 				docDMPredictions[doc_id][(dm1,dm2)] = pred
 
 		# sanity check part 2: ensure all dev DMs are accounted for (that we have prediction values for all)
