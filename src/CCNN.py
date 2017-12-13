@@ -768,8 +768,8 @@ class CCNN:
             print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
             print("testing size:", str(len(testing_data)))
 
-        if not self.args.useECBTest:
-            self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
+        #if not self.args.useECBTest:
+        #    self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
 
         # TMP: remove this after i have tested if K-fold helps and is needed
         #self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)

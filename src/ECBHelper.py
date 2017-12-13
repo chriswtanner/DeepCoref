@@ -76,22 +76,7 @@ class ECBHelper:
 #    creates DM pairs for train/dev/test
 ##################################################
 ##################################################
-	'''
-	def loadWordEmbeddings(self, embeddingsFile):
-		print("self.args.lemmaType:",str(self.args.lemmaType))
-		print("self.args.dependencyType:",str(self.args.dependencyType))
-		if self.args.lemmaType == "none" and self.args.dependencyType == "none":
-			return
-		print("* in loadWordEmbeddings")
-		self.wordToGloveEmbedding = {}
-		f = open(embeddingsFile, 'r', encoding="utf-8")
-		for line in f:
-			tokens = line.rstrip().split(" ")
-			word = tokens[0]
-			emb = [float(x) for x in tokens[1:]]
-			self.wordToGloveEmbedding[word] = emb
-		f.close()
-	'''
+
 	def loadStopWords(self, stopWordsFile):
 		f = open(stopWordsFile, 'r')
 		stopwords = set()

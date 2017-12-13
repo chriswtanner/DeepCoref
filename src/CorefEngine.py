@@ -16,9 +16,9 @@ class CorefEngine:
 		runFFNN = True
 
 		#stoppingPoints = [0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
-		#stoppingPoints = [0.51]
+		stoppingPoints = [0.51]
 		#stoppingPoints = [0.52,0.54,0.56,0.58,0.601,0.62,0.64,0.66,0.68,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
-		stoppingPoints = [0.24,0.27,0.301,0.33,0.36,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
+		#stoppingPoints = [0.24,0.27,0.301,0.33,0.36,0.39,0.401,0.41,0.42,0.43,0.44,0.45,0.46,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601]
 		#stoppingPoints = [0.12,0.15,0.18,0.21,0.24,0.27,0.301,0.33,0.36,0.39,0.42,0.45,0.47,0.48,0.49,0.501,0.51,0.52,0.53,0.55,0.57,0.601,0.62,0.66,0.701,0.72,0.74,0.76,0.78,0.801,0.81]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -41,13 +41,14 @@ class CorefEngine:
 		if runFFNN: # deep clustering approach
 			
 			# runs CCNN -> FFNN
-			if args.useECBTest:
+			if args.useECBTest: # ECB+ test set
 				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed)
 				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 				ffnnEngine = FFNN(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds)
-			else: # loads prediction files
-				# NOTE: we could also use HDDCRP data but do a full run through CCNN first, again
-				ffnnEngine = FFNN(args, corpus, helper, hddcrp_parsed) # reads in a saved prediction file instead
+			else: # HDDCRP test set
+				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed)
+				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
+				ffnnEngine = FFNN(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds) # reads in a saved prediction file instead
 			
 			ffnnEngine.train()
 
