@@ -4,7 +4,7 @@ numLayers=(2) # 3) # 1 3
 numEpochs=(10) # 20)
 windowSize=(0)
 numNeg=(6)
-batchSize=(128) # 128) # 64 128
+batchSize=(16) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
@@ -117,7 +117,7 @@ do
 																											if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
 																											then
 																												echo "* kicking off runCCNN2 natively"
-																												./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${co} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${fn} ${fp} ${fo} # > ${fout}												
+																												./runCCNN2.sh TEST gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${co} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${fn} ${fp} ${fo} # > ${fout}												
 																											else
 																												qsub -l gpus=1 -o ${fout} runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${co} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${fn} ${fp} ${fo}
 																											fi

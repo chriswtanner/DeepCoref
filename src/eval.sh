@@ -1,3 +1,8 @@
 #!/bin/bash
-grep "CoNLLF1" ~/*${1}*  | sort -k3 --numeric | cut -d " " -f2,3 | tail
+f=(fpemb_glove_ptsum_ltsum_dtsum_ctconcat_stsum fpemb_glove_ptsum_ltnone_dtsum_ctconcat_stsum fpemb_glove_ptsum_ltsum_dtnone_ctconcat_stsum fpemb_glove_ptsum_ltsum_dtsum_ctnone_stsum fpemb_glove_ptsum_ltsum_dtsum_ctconcat_stnone fpnone_ptnone_ltsum_dtsum_ctconcat_stsum fpemb_glove_ptsum_ltsum_dtsum_ctnone_stnone fpemb_glove_ptsum_ltsum_dtnone_ctconcat_stnone fpemb_glove_ptsum_ltsum_dtnone_ctnone_stsum fpemb_glove_ptsum_ltnone_dtsum_ctconcat_stnone fpemb_glove_ptsum_ltnone_dtsum_ctnone_stsum fpemb_glove_ptsum_ltnone_dtnone_ctconcat_stsum fpnone_ptnone_ltsum_dtsum_ctconcat_stnone fpnone_ptnone_ltsum_dtsum_ctnone_stsum fpnone_ptnone_ltsum_dtnone_ctconcat_stsum fpnone_ptnone_ltnone_dtsum_ctconcat_stsum fpemb_glove_ptsum_ltsum_dtnone_ctnone_stnone fpemb_glove_ptsum_ltnone_dtsum_ctnone_stnone fpemb_glove_ptsum_ltnone_dtnone_ctconcat_stnone fpemb_glove_ptsum_ltnone_dtnone_ctnone_stsum fpnone_ptnone_ltsum_dtsum_ctnone_stnone fpnone_ptnone_ltsum_dtnone_ctconcat_stnone fpnone_ptnone_ltsum_dtnone_ctnone_stsum fpnone_ptnone_ltnone_dtsum_ctconcat_stnone fpnone_ptnone_ltnone_dtsum_ctnone_stsum fpnone_ptnone_ltnone_dtnone_ctconcat_stsum fpemb_glove_ptsum_ltnone_dtnone_ctnone_stnone fpnone_ptnone_ltsum_dtnone_ctnone_stnone fpnone_ptnone_ltnone_dtsum_ctnone_stnone fpnone_ptnone_ltnone_dtnone_ctconcat_stnone fpnone_ptnone_ltnone_dtnone_ctnone_stsum)
+for a in "${f[@]}"
+do
+	grep "FFNN F1" ~/*${a}*  | sort -k6 --numeric  #| cut -d " " -f2,3 | tail
+	exit 1
+done
 ls -lah ~/*${1}* | wc

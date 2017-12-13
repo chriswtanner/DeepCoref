@@ -13,7 +13,7 @@ from collections import OrderedDict
 from operator import itemgetter
 from keras.datasets import mnist
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, merge, Merge, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
+from keras.layers import Dense, Activation, Dropout, merge, Merge, Flatten, Input, Lambda, Conv2D, AveragePooling2D, MaxPooling2D
 from keras.optimizers import RMSprop, Adagrad, Adam
 from keras import backend as K
 from tensorflow.python.client import device_lib
@@ -26,6 +26,7 @@ class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
         self.useRelationalFeatures = False
+        self.NNBasic = True
         self.args = args
 
         print("args:", str(args))
@@ -683,12 +684,26 @@ class CCNN:
             x = Dense(4, activation='relu')(combined_layer)
             main_output = Dense(1, activation='sigmoid', name='main_output')(x)
             model = Model([input_a, input_b, auxiliary_input], main_output)
+            model.compile(loss=self.contrastive_loss, optimizer=opt)
+
+        elif self.NNBasic: # the basic NN approach (instead of CCNN)
+            model = Sequential()
+            inputSize = len(training_data[0][0][0])
+            model.add(Dense(units=600, input_shape=(inputSize,), use_bias=True, kernel_initializer='normal'))
+            model.add(Activation('relu'))
+            model.add(Dense(units=400, input_shape=(600,), use_bias=True, kernel_initializer='normal'))
+            model.add(Activation('relu'))
+            model.add(Dense(units=200, input_shape=(400,), use_bias=True, kernel_initializer='normal'))
+            model.add(Activation('relu'))
+            model.add(Dense(units=2, input_shape=(200,), use_bias=True, kernel_initializer='normal'))
+            model.add(Activation('softmax'))
+            model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
+
         else: # original
             model = Model(inputs=[input_a, input_b], outputs=distance)
-
-        model.compile(loss=self.contrastive_loss, optimizer=opt)
+            model.compile(loss=self.contrastive_loss, optimizer=opt)
+            
         print(model.summary())
-
 
         if self.useRelationalFeatures: # relational, merged layer way
             model.fit({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)},
@@ -696,6 +711,11 @@ class CCNN:
                       batch_size=self.args.batchSize,
                       epochs=self.args.numEpochs,
                       validation_data=({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)}, {'main_output': np.asarray(dev_labels)}))
+        elif self.NNBasic:
+            (NNX, NNY) = self.transformToNNFormat(training_data, training_labels)
+            (NNDEVX, NNDEVY) = self.transformToNNFormat(dev_data, dev_labels)
+            model.fit(NNX, NNY, epochs=20, batch_size=self.args.batchSize, validation_data=(NNDEVX,NNDEVY), verbose=1)
+
         else: # original
             model.fit([training_data[:, 0], training_data[:, 1]], training_labels,
                       batch_size=self.args.batchSize,
@@ -706,20 +726,27 @@ class CCNN:
         
         if self.useRelationalFeatures:
             training_preds = model.predict({'input_a': np.asarray(training_data[:, 0]), 'input_b': np.asarray(training_data[:, 1]), 'auxiliary_input': np.asarray(training_rel)})
+        
+        elif self.NNBasic:
+            (NNX, NNY) = self.transformToNNFormat(training_data, training_labels)
+            training_preds = model.predict(NNX)
         else:
             training_preds = model.predict([training_data[:, 0], training_data[:, 1]])
-        sys.stdout.flush()
-        bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
-        print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
+            sys.stdout.flush()
+            bestProb_train = self.compute_optimal_f1("training",0.5, training_preds, training_labels)
+            print("training acc:", str(self.compute_accuracy(bestProb_train, training_preds, training_labels)))
 
         # dev accuracy
         print("-----------\npredicting dev")
         if self.useRelationalFeatures:
             dev_preds = model.predict({'input_a': np.asarray(dev_data[:, 0]), 'input_b': np.asarray(dev_data[:, 1]), 'auxiliary_input': np.asarray(dev_rel)})
+        elif self.NNBasic:
+            (NNDEVX, NNDEVY) = self.transformToNNFormat(dev_data, dev_labels)
+            dev_preds = model.predict(NNDEVX)
         else:
             dev_preds = model.predict([dev_data[:, 0], dev_data[:, 1]])
-        bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
-        print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
+            bestProb_dev = self.compute_optimal_f1("dev", bestProb_train, dev_preds, dev_labels)
+            print("dev acc:", str(self.compute_accuracy(bestProb_dev, dev_preds, dev_labels)))
         
         # clears up ram
         training_pairs = None
@@ -732,11 +759,14 @@ class CCNN:
 
         if self.useRelationalFeatures:
             testing_preds = model.predict({'input_a': np.asarray(testing_data[:, 0]), 'input_b': np.asarray(testing_data[:, 1]), 'auxiliary_input': np.asarray(testing_rel)})
+        elif self.NNBasic:
+            (NNTESTX, NNTESTY) = self.transformToNNFormat(testing_data, testing_labels)
+            testing_preds = model.predict(NNTESTX)
         else:
             testing_preds = model.predict([testing_data[:, 0], testing_data[:, 1]])
-        bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
-        print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
-        print("testing size:", str(len(testing_data)))
+            bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
+            print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
+            print("testing size:", str(len(testing_data)))
 
         if not self.args.useECBTest:
             self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
@@ -746,6 +776,29 @@ class CCNN:
 
         return (dev_pairs, dev_preds, testing_pairs, testing_preds)
         
+    # takes the CCNN format of pairs and labels (1 0 0 0 1) and transforms into format for our NN
+    def transformToNNFormat(self, X, Y):
+        newX = []
+        newY = []
+        for _ in range(len(X)):
+            tmpX = []
+            for eachDim in range(len(X[_][0][0])):
+                tmpX.append(abs(X[_][0][0][eachDim][0] - X[_][1][0][eachDim][0]))
+            newX.append(tmpX)
+        for _ in Y:
+            if _ == 1:
+                newY.append([0,1])
+            else:
+                newY.append([1,0])
+        return (newX, newY)
+
+    def weighted_binary_crossentropy(self, y_true, y_pred):
+        epsilon = tf.convert_to_tensor(K.common._EPSILON, y_pred.dtype.base_dtype)
+        y_pred = tf.clip_by_value(y_pred, epsilon, 1 - epsilon)
+        y_pred = tf.log(y_pred / (1 - y_pred))
+        cost = tf.nn.weighted_cross_entropy_with_logits(y_true, y_pred, 0.25)
+        return K.mean(cost * 0.8, axis=-1)
+
     def loadPredictions(self, fileIn):
         testing_pairs = []
         testing_preds = []
