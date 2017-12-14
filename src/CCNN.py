@@ -26,7 +26,7 @@ class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
         self.calculateMax = False
         self.useRelationalFeatures = False
-        self.NNBasic = True
+        self.NNBasic = False
         self.args = args
 
         print("args:", str(args))
