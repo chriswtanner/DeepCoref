@@ -1,10 +1,10 @@
 #!/bin/bash
 featureMap=(2 4)
 numLayers=(2) # 3) # 1 3
-numEpochs=(3) # 20)
+numEpochs=(10) # 20)
 windowSize=(0)
 numNeg=(6)
-batchSize=(16) # 128) # 64 128
+batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
