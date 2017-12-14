@@ -818,7 +818,7 @@ class ECBHelper:
 			"sp" + str(stoppingPoint) + \
 			".txt"
 
-		print("writing out:",str(fileOut))
+		print("ECBHelper writing out:",str(fileOut))
 		fout = open(fileOut, 'w')
 
 		# reads the original CoNLL, while writing each line

@@ -60,6 +60,7 @@ class CorefEngine:
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
 					print("FFNN F1 sp:",str(sp),"=",str(conll_f1),"OTHERS:",str(muc_f1),str(bcub_f1),str(ceafe_f1))
 				else:
+					print("FFNN on HDDCRP")
 					helper.writeCoNLLFile(predictedClusters, sp)
 		else: # AGGLOMERATIVE CLUSTERING
 
