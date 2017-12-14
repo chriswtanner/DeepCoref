@@ -373,7 +373,7 @@ class FFNN:
 						muid = self.hddcrp_parsed.hm_idToHMention[dm].UID
 						if muid in self.hddcrp_parsed.gold_MUIDToHMentions:
 							newCluster.add(dm)
-					if len(newCluster) > 1:
+					if len(newCluster) > 0:
 						ourClusterSuperSet[ourClusterID] = newCluster
 						ourClusterID += 1
 				else:
