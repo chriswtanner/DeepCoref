@@ -780,11 +780,12 @@ class ECBHelper:
 		print("# hm_ids:",str(len(hm_idToClusterID.keys())))
 
 		# sanity check
+		'''
 		for hm_id in self.hddcrp_parsed.hm_idToHMention.keys():
 			if hm_id not in hm_idToClusterID.keys():
 				print("ERROR: hm_id:",str(hm_id),"NOT FOUND within our clusters, but it's parsed!")
 				exit(1)
-
+		'''
 		# constructs output file
 		fileOut = str(self.args.resultsDir) + \
 			str(self.args.hddcrpBaseFile) + "_" + \
@@ -867,12 +868,15 @@ class ECBHelper:
 								if hmention.ref_id == ref_id and hmention.startTuple == startTuple: # we found the exact mention
 									foundMention = True
 									hm_id = hmention.hm_id
-									clusterID = hm_idToClusterID[hm_id]
-									ref_section += "(" + str(clusterID)
-									break
+
+									if hm_id in hm_idToClusterID:
+										clusterID = hm_idToClusterID[hm_id]
+										ref_section += "(" + str(clusterID)
+										break
 							if not foundMention:
 								print("* ERROR #1, we never found the mention for this line:",str(line))
-								exit(1)
+								ref_section = "-"
+								#exit(1)
 
 						# represents we are ending a mention
 						elif ref[-1] == ")": # i.e., ref_id) or (ref_id)
@@ -898,12 +902,14 @@ class ECBHelper:
 								if hmention.ref_id == ref_id and hmention.startTuple == startTuple and hmention.endTuple == endTuple: # we found the exact mention
 									foundMention = True
 									hm_id = hmention.hm_id
-									clusterID = hm_idToClusterID[hm_id]
-									ref_section += str(clusterID) + ")"
-									break
+									if hm_id in hm_idToClusterID:
+										clusterID = hm_idToClusterID[hm_id]
+										ref_section += str(clusterID) + ")"
+										break
 							if not foundMention:
 								print("* ERROR #2, we never found the mention for this line:",str(line))
-								exit(1)
+								ref_section = "-"
+								#exit(1)
 
 						if len(refs) == 2 and isFirst:
 							ref_section += "|"

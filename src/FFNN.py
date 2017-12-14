@@ -17,6 +17,7 @@ from itertools import product
 class FFNN:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
+		self.ChoubeyFilter = True
 		# print stuff
 		print("args:", str(args))
 		print("tf version:",str(tf.__version__))
@@ -361,10 +362,23 @@ class FFNN:
 				ourDocClusters.pop(c2, None)
 				ourDocClusters[c1] = newCluster
 			# end of current doc
+			
+			# goes through each cluster for the current doc
 			for i in ourDocClusters.keys():
-				ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
-				ourClusterID += 1
 
+				# if True, remove REFs which aren't in the gold set, then remove singletons
+				if self.ChoubeyFilter and not self.args.useECBTest:
+					newCluster = set()
+					for dm in ourDocClusters[i]:
+						muid = self.hddcrp_parsed.hm_idToHMention[dm].UID
+						if muid in self.hddcrp_parsed.gold_MUIDToHMentions:
+							newCluster.add(dm)
+					if len(newCluster) > 1:
+						ourClusterSuperSet[ourClusterID] = newCluster
+						ourClusterID += 1
+				else:
+					ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+					ourClusterID += 1
 		# end of going through every doc
 		#print("# our clusters:",str(len(ourClusterSuperSet)))
 		return (ourClusterSuperSet, goldenSuperSet)
