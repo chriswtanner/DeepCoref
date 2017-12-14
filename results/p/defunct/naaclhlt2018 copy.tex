@@ -222,12 +222,14 @@ where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every poss
 
 \vspace{3mm}
 
-We use 64 kernels (we experimented with powers of 2, from 2-256), along with ReLU as our activation function.  Dropout of 0.1 is then applied.  Next, we repeat this processing by adding convolution and dropout again, then we apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$ for each kernel. Last, we merge all kernels' univariate vectors into 1 final layer, apply dropout again, and feed into ReLU which yields a two-class softmax prediction.  The full architecture is shown in Figure \ref{fig:ccnn}.
+We use 32 kernels (we experimented with powers of 2, from 2-256), along with ReLU as our activation function.  Dropout of 0.1 is then applied.  Next, we repeat this processing by adding convolution and dropout again, then we apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$ for each kernel. Last, we merge all kernels' univariate vectors into 1 final layer, apply dropout again, and feed into ReLU which yields a two-class softmax prediction.  The full architecture is shown in Figure \ref{fig:ccnn}.
 
-\begin{figure}
-\caption{Our full Conjoined Convolutional Neural Network's Architecture.}
+\begin{figure*}[h]
+\centering
+    \includegraphics[width=1\textwidth]{architecture.pdf}
 \label{fig:ccnn}
-\end{figure}
+\caption{Our full Conjoined Convolutional Neural Network's Architecture.}
+\end{figure*}
 
 \subsection{Loss}
 Our goal is to maximize discriminability of different event mentions, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}. Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.
