@@ -878,8 +878,6 @@ class CCNN:
                 seq.add(MaxPooling2D(pool_size=(kernel_rows, 2), padding="same", data_format="channels_first"))
             else:
                 print("* ERROR: invalid poolType; must be 'avg' or 'max'")
-
-            seq.add(Dropout(float(self.args.dropout)))
             
             # end of added
         elif self.args.numLayers == 3:
