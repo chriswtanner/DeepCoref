@@ -32,7 +32,6 @@
 \citation{clark2016improving,DBLP:journals/corr/ClarkM16a}
 \citation{DBLP:conf/acl/WisemanRSW15}
 \citation{ECB+}
-\citation{Bejan:2010:UEC:1858681.1858824}
 \citation{journals/tacl/YangCF15}
 \citation{Choubey2017EventCR}
 \citation{journals/tacl/YangCF15}
@@ -54,46 +53,46 @@
 \newlabel{tab:ECB1}{{1}{4}{Statistics of the ECB+ Corpus, where Mentions-N represents event mentions which are N-tokens in length}{table.1}{}}
 \newlabel{sec:corpus}{{3.4}{4}{Corpus}{subsection.3.4}{}}
 \newlabel{sec:CCNN}{{4}{4}{Conjoined Convolutional Neural Network}{section.4}{}}
+\newlabel{sec:features}{{4.3}{4}{Input Features}{subsection.4.3}{}}
 \citation{pennington2014glove}
 \citation{DBLP:conf/emnlp/Kim14}
 \citation{SchroffKP15,pmlr-v48-liud16}
-\newlabel{sec:features}{{4.3}{5}{Input Features}{subsection.4.3}{}}
+\newlabel{eq:contrastive}{{3}{5}{Loss / Optimization}{equation.4.3}{}}
+\newlabel{sec:clustering}{{5}{5}{Neural Clustering}{section.5}{}}
 \citation{journals/tacl/YangCF15}
-\newlabel{fig:ccnn}{{2}{6}{Conjoined Convolutional Neural Network's Architecture. The left half shares the same weights with the right half. Blocks A, C, and F represent 32, 64, and 128 kernels, respectively. The kernels' size is 1x3. Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout. Blocks E and H represent MaxPooling with kernel size 1x2. The Lambda function in the center represents the Euclidean Distance of the fully-merged univariate vectors}{figure.2}{}}
-\newlabel{eq:contrastive}{{3}{6}{Loss / Optimization}{equation.4.3}{}}
-\newlabel{sec:clustering}{{5}{6}{Neural Clustering}{section.5}{}}
+\newlabel{fig:ccnn}{{2}{6}{Conjoined Convolutional Neural Network's Architecture. The left half shares the same weights with the right half. Blocks A, C, and F represent 32, 64, and 128 kernels, respectively. The kernels' size is 1x3. Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout. Blocks E and H represent MaxPooling with kernel size 1x2. The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors}{figure.2}{}}
 \citation{Pradhan+etal:14a}
+\newlabel{tab:others}{{2}{7}{Comparison against other systems. FFNN denotes a Feed-Forward Neural Network Mention-Pair Model. AGG denotes Agglomerative Clustering. NC denotes our Neural Clustering model}{table.2}{}}
+\citation{Choubey2017EventCR}
 \bibdata{naaclhlt2018}
-\bibcite{Allan:1998}{{1}{1998}{{Allan et~al.}}{{Allan, Carbonell, Doddington, Yamron, Yang, Umass, Cmu, Cmu, Cmu, Cmu, Dragon, Darpa, Cmu, Cmu, Umass, Cmu, Dragon, Dragon, Umass, Cmu, Umass, and Umass}}}
 \newlabel{fig:allfeatures}{{3}{8}{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using ECB+ gold test mentions and all combinations of features}{figure.3}{}}
+\bibcite{Allan:1998}{{1}{1998}{{Allan et~al.}}{{Allan, Carbonell, Doddington, Yamron, Yang, Umass, Cmu, Cmu, Cmu, Cmu, Dragon, Darpa, Cmu, Cmu, Umass, Cmu, Dragon, Dragon, Umass, Cmu, Umass, and Umass}}}
 \bibcite{Bagga:1999:CEC:1608810.1608812}{{2}{1999}{{Bagga and Baldwin}}{{}}}
-\bibcite{Bejan:2010:UEC:1858681.1858824}{{3}{2010}{{Bejan and Harabagiu}}{{}}}
-\bibcite{Bengtson:2008:UVF:1613715.1613756}{{4}{2008}{{Bengtson and Roth}}{{}}}
-\bibcite{SiameseNet}{{5}{1994}{{Bromley et~al.}}{{Bromley, Guyon, LeCun, S\"{a}ckinger, and Shah}}}
-\bibcite{chollet2015}{{6}{2015}{{Chollet}}{{}}}
-\bibcite{Choubey2017EventCR}{{7}{2017}{{Choubey and Huang}}{{}}}
-\bibcite{DBLP:journals/corr/ClarkM16a}{{8}{2016{a}}{{Clark and Manning}}{{}}}
-\bibcite{clark2016improving}{{9}{2016{b}}{{Clark and Manning}}{{}}}
-\bibcite{ECB+}{{10}{2014}{{Cybulska and Vossen}}{{}}}
-\bibcite{Daniel:2003}{{11}{2003}{{Daniel et~al.}}{{Daniel, Radev, and Allison}}}
-\bibcite{DBLP:conf/emnlp/DurrettK13}{{12}{2013}{{Durrett and Klein}}{{}}}
-\bibcite{DBLP:conf/acl/GehringAGD17}{{13}{2017}{{Gehring et~al.}}{{Gehring, Auli, Grangier, and Dauphin}}}
-\bibcite{Koch2015SiameseNN}{{14}{2015}{{Gregory~Koch}}{{}}}
-\bibcite{Hochreiter:1997:LSM:1246443.1246450}{{15}{1997}{{Hochreiter and Schmidhuber}}{{}}}
-\bibcite{Humphreys:1997}{{16}{1997}{{Humphreys et~al.}}{{Humphreys, Gaizauskas, and Azzam}}}
-\newlabel{tab:others}{{2}{9}{Comparison against Others' Systems}{table.2}{}}
-\bibcite{DBLP:conf/emnlp/Kim14}{{17}{2014}{{Kim}}{{}}}
-\bibcite{pmlr-v48-liud16}{{18}{2016}{{Liu et~al.}}{{Liu, Wen, Yu, and Yang}}}
-\bibcite{manning-EtAl:2014:P14-5}{{19}{2014}{{Manning et~al.}}{{Manning, Surdeanu, Bauer, Finkel, Bethard, and McClosky}}}
-\bibcite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}{{20}{2009}{{Mayfield and et~al.}}{{}}}
-\bibcite{Narayanan:2004:QAB:1220355.1220455}{{21}{2004}{{Narayanan and Harabagiu}}{{}}}
-\bibcite{pennington2014glove}{{22}{2014}{{Pennington et~al.}}{{Pennington, Socher, and Manning}}}
-\bibcite{Pradhan+etal:14a}{{23}{2014}{{Pradhan et~al.}}{{Pradhan, Luo, Recasens, Hovy, Ng, and Strube}}}
-\bibcite{SchroffKP15}{{24}{2015}{{Schroff et~al.}}{{Schroff, Kalenichenko, and Philbin}}}
-\bibcite{Soon:2001:MLA:972597.972602}{{25}{2001}{{Soon et~al.}}{{Soon, Ng, and Lim}}}
-\bibcite{DBLP:journals/corr/WisemanRS16}{{26}{2016{a}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
-\bibcite{DBLP:conf/naacl/WisemanRS16}{{27}{2016{b}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
-\bibcite{DBLP:conf/acl/WisemanRSW15}{{28}{2015}{{Wiseman et~al.}}{{Wiseman, Rush, Shieber, and Weston}}}
-\bibcite{journals/tacl/YangCF15}{{29}{2015}{{Yang et~al.}}{{Yang, Cardie, and Frazier}}}
-\bibcite{DBLP:journals/corr/YuV17}{{30}{2017}{{Yu and Vu}}{{}}}
+\bibcite{Bengtson:2008:UVF:1613715.1613756}{{3}{2008}{{Bengtson and Roth}}{{}}}
+\bibcite{SiameseNet}{{4}{1994}{{Bromley et~al.}}{{Bromley, Guyon, LeCun, S\"{a}ckinger, and Shah}}}
+\bibcite{chollet2015}{{5}{2015}{{Chollet}}{{}}}
+\bibcite{Choubey2017EventCR}{{6}{2017}{{Choubey and Huang}}{{}}}
+\bibcite{DBLP:journals/corr/ClarkM16a}{{7}{2016{a}}{{Clark and Manning}}{{}}}
+\bibcite{clark2016improving}{{8}{2016{b}}{{Clark and Manning}}{{}}}
+\bibcite{ECB+}{{9}{2014}{{Cybulska and Vossen}}{{}}}
+\bibcite{Daniel:2003}{{10}{2003}{{Daniel et~al.}}{{Daniel, Radev, and Allison}}}
+\bibcite{DBLP:conf/emnlp/DurrettK13}{{11}{2013}{{Durrett and Klein}}{{}}}
+\bibcite{DBLP:conf/acl/GehringAGD17}{{12}{2017}{{Gehring et~al.}}{{Gehring, Auli, Grangier, and Dauphin}}}
+\bibcite{Koch2015SiameseNN}{{13}{2015}{{Gregory~Koch}}{{}}}
+\bibcite{Hochreiter:1997:LSM:1246443.1246450}{{14}{1997}{{Hochreiter and Schmidhuber}}{{}}}
+\bibcite{Humphreys:1997}{{15}{1997}{{Humphreys et~al.}}{{Humphreys, Gaizauskas, and Azzam}}}
+\bibcite{DBLP:conf/emnlp/Kim14}{{16}{2014}{{Kim}}{{}}}
+\bibcite{pmlr-v48-liud16}{{17}{2016}{{Liu et~al.}}{{Liu, Wen, Yu, and Yang}}}
+\bibcite{manning-EtAl:2014:P14-5}{{18}{2014}{{Manning et~al.}}{{Manning, Surdeanu, Bauer, Finkel, Bethard, and McClosky}}}
+\bibcite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}{{19}{2009}{{Mayfield and et~al.}}{{}}}
+\bibcite{Narayanan:2004:QAB:1220355.1220455}{{20}{2004}{{Narayanan and Harabagiu}}{{}}}
+\bibcite{pennington2014glove}{{21}{2014}{{Pennington et~al.}}{{Pennington, Socher, and Manning}}}
+\bibcite{Pradhan+etal:14a}{{22}{2014}{{Pradhan et~al.}}{{Pradhan, Luo, Recasens, Hovy, Ng, and Strube}}}
+\bibcite{SchroffKP15}{{23}{2015}{{Schroff et~al.}}{{Schroff, Kalenichenko, and Philbin}}}
+\bibcite{Soon:2001:MLA:972597.972602}{{24}{2001}{{Soon et~al.}}{{Soon, Ng, and Lim}}}
+\bibcite{DBLP:journals/corr/WisemanRS16}{{25}{2016{a}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
+\bibcite{DBLP:conf/naacl/WisemanRS16}{{26}{2016{b}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
+\bibcite{DBLP:conf/acl/WisemanRSW15}{{27}{2015}{{Wiseman et~al.}}{{Wiseman, Rush, Shieber, and Weston}}}
+\bibcite{journals/tacl/YangCF15}{{28}{2015}{{Yang et~al.}}{{Yang, Cardie, and Frazier}}}
+\bibcite{DBLP:journals/corr/YuV17}{{29}{2017}{{Yu and Vu}}{{}}}
 \bibstyle{acl_natbib}

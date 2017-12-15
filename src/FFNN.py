@@ -17,7 +17,9 @@ from itertools import product
 class FFNN:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
-		self.ChoubeyFilter = True
+		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
+		self.sameLemmaBaseline = True # if True, perform SameLemma
+
 		# print stuff
 		print("args:", str(args))
 		print("tf version:",str(tf.__version__))
@@ -210,6 +212,8 @@ class FFNN:
 		predTestDMs = set()
 
 		# stores predictions
+		# NOTE: although i'm using the variable 'HM', this is robust; it can handle ECB data too,
+		#       not just HDDCRP data (i had to name the variable something and couldn't name it DM and HM)
 		docToHMPredictions = defaultdict(lambda : defaultdict(float))
 		docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
 
@@ -315,18 +319,36 @@ class FFNN:
 
 			# constructs our base clusters (singletons)
 			ourDocClusters = {} 
-			for i in range(len(docToHMs[doc_id])):
-				hm = docToHMs[doc_id][i]
-				a = set()
-				a.add(hm)
-				ourDocClusters[i] = a
 
+			# perform SameLemma baseline
+			if self.sameLemmaBaseline:
+				lemmaToSetOfHMs = defaultdict(set)
+
+				for i in range(len(docToHMs[doc_id])):
+					hm = docToHMs[doc_id][i]
+					men = self.corpus.dmToMention[hm]
+					lemmaString = ""
+					for t in men.tokens:
+						lemma = self.helper.getBestStanToken(t.stanTokens).lemma
+						lemmaString += lemma
+					lemmaToSetOfHMs[lemmaString].add(hm)
+				i = 0
+				print("lemmaToSetOfHMs:",str(lemmaToSetOfHMs))
+				for lemma in lemmaToSetOfHMs:
+					ourDocClusters[i] = lemmaToSetOfHMs[lemma]
+					i += 1
+			else:
+				for i in range(len(docToHMs[doc_id])):
+					hm = docToHMs[doc_id][i]
+					a = set()
+					a.add(hm)
+					ourDocClusters[i] = a
 			#if len(docToHMs[doc_id]) == 1:
 			#	print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
 
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
-			while len(ourDocClusters.keys()) > 1:
+			while len(ourDocClusters.keys()) > 1 and not self.sameLemmaBaseline:
 				# find best merge
 				closestDist = 999999
 				closestClusterKeys = (-1,-1)

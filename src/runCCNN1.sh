@@ -1,18 +1,18 @@
 #!/bin/bash
 featureMap=(2 4)
-numLayers=(2) # 3) # 1 3
-numEpochs=(5) # 20)
+numLayers=(1) # 3) # 1 3
+numEpochs=(1) # 20)
 windowSize=(0)
-numNeg=(6)
-batchSize=(128) # 128) # 64 128
+numNeg=(1)
+batchSize=(256) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(32)
-filterMultiplier=(2.0) # 2.0)
+numFilters=(1)
+filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg

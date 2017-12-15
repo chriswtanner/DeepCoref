@@ -38,7 +38,7 @@
 
 \newcommand\BibTeX{B{\sc ib}\TeX}
 
-\title{Toward Featureless Event Coreference Resolution via Conjoined Convolutional Networks}
+\title{Toward Featureless Event Coreference Resolution via Conjoined Convolutional Neural Networks}
 
 \author{Chris Tanner \textnormal{and} Eugene Charniak\\
 Brown Linguistic Laboratory of Information Processing \\
@@ -77,7 +77,7 @@ Specifically, coreference systems aim to find a globally-optimal fit of mentions
 
 In this work, we use a novel mention-pair model that is designed to discriminate between pairs of input features: Siamese Convolutional Neural Networks.  We feel awkward using the term siamese, so we will henceforth refer to our model as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace a common weakness of mention-pair models with an approach resembling the main strength of entity/event-level models. Specifically, we aim to combine all linked mention pairs into a cluster via a neural, east-first clustering approach which factors in a small, but effective, notion of the entire cluster at large.
 
-Additionally, coreference research systems typically use a plethora of relatively expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, part-of-speech, etc.  Although some research papers list their system's learned feature weights \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalistic approach and illustrates the effects of using few features.  We aim to address this by starting with a basic lemma-embedding feature and then evaluate the effectiveness of adding other commonly used features.
+Additionally, coreference research systems typically use a plethora of relatively expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, etc.  Although some research papers list their system's learned feature weights \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalist approach and illustrates the effects of using few features.  We aim to address this by starting with a basic lemma-embedding feature and then evaluate the effectiveness of adding other commonly used features.
 
 Finally, in general, \textit{event} coreference resolution has received drastically less attention than \textit{entity} coreference.  However, in this paper, we are exclusively interested in within-doc event coreference.
 
@@ -111,7 +111,7 @@ Clark and Manning \shortcite{clark2016improving,DBLP:journals/corr/ClarkM16a} al
 
 \subsection{Systems using ECB+ Corpus}
 % most related
-For our research, we make use of the ECB+ corpus \cite{ECB+}, an extension of EventCorefBank (ECB) \cite{Bejan:2010:UEC:1858681.1858824}, which we further describe in Section \ref{sec:corpus}.  This rich corpus provides annotations for both entities and events, yet most research chooses to focus on using \textit{either} events \textit{or} entities, not both.  To the best of our knowledge, there are only two papers which focus on the event mentions of ECB+: The Hierarchical Distance-dependent Chinese Restaurant Process (HDDCRP) model by Yang, et. al. \shortcite{journals/tacl/YangCF15} and Choubey's and Huang's Iteratively-Unfolding approach \shortcite{Choubey2017EventCR}.
+For our research, we make use of the ECB+ corpus \cite{ECB+}, which we further describe in Section \ref{sec:corpus}.  This rich corpus provides annotations for both entities and events, yet most research chooses to focus on using \textit{either} events \textit{or} entities, not both.  To the best of our knowledge, there are only two papers which focus on the event mentions of ECB+: The Hierarchical Distance-dependent Chinese Restaurant Process (HDDCRP) model by Yang, et. al. \shortcite{journals/tacl/YangCF15} and Choubey's and Huang's Iteratively-Unfolding approach \shortcite{Choubey2017EventCR}.
 
 \subsubsection{HDDCRP Model}
 \label{sec:HDDCRP}
@@ -126,7 +126,7 @@ Then, in a Chinese-restaurant-process fashion, they probabilistically link toget
 \subsubsection{Neural Iteratively-Unfolding Model}
 \label{sec:Choubey}
 % Choubey
-Recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model for event coreference.  Their system also fits into the mention-pair paradigm, whereby mentions are predicted by a feed-forward neural network. Their within-doc model's features are based on the cosine similarity and euclidean distance of input-pair embeddings.  Their cross-document model is identical, but with context embeddings added to the input.  The authors asserted that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context, which is an important finding.  However, similar to the weakness of the HDDCRP model, they merge clusters which contain \textit{any} mention-pair whose predicted score is below a given threshold, independent of mentions' relation to the cluster at large.
+Recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first neural model for event coreference.  Their system also fits into the mention-pair paradigm, whereby mentions are predicted by a feed-forward neural network. Their within-doc model's features are based on the cosine similarity and Euclidean distance of input-pair embeddings.  Their cross-document model is identical, but with context embeddings added to the input.  The authors asserted that when using the ECB+ corpus, within-doc coreference did not benefit from using mention context, which is an important finding.  However, similar to the weakness of the HDDCRP model, they merge clusters which contain \textit{any} mention-pair whose predicted score is below a given threshold, independent of mentions' relation to the cluster at large.
 
 \section{System Overview}
 \subsection{Mention Identification}
@@ -172,10 +172,9 @@ We exclusively make use of the ECB+ corpus \cite{ECB+}, which is the largest ava
 \label{sec:CCNN}
 \subsection{Motivation}
 In the training data, the mentions that belong to the same gold cluster often have little variance amongst their text.  This, coupled with Choubey's, et. al. \shortcite{Choubey2017EventCR} conclusion that context does not improve within-doc performance for our corpus, lends us to believe that an event-level model would be unnecessary and probably worse than a mention-pair model.  Thus, we continue the trend of using a mention-pair model for event within-doc coreference.
-%As a recap, there has yet to exist a deep learning event-level model for event coreference resolution.  Although it is tempting to explore this option due to the success of deep learning entity-based models, we were motivated for a few reasons to develop a model that fits the mention-pair paradigm: not only has the previous work on the ECB+ corpus shown strength from using mention-pair models, but analyzing the training set data illustrates that most golden co-referent clusters contain little variance in the lemma-representation of each mention (see Figure \ref{fig:lemmaPower}).  Since there is such high homogeneity on an intra-cluster level, it suggests that entity-level representations might not offer much benefit.  Naturally, one could argue that intra-cluster representation is not conclusive evidence; that is, the context of mentions, which could differ drastically for each co-referent mention, might be beneficial.  However, as Choubey, et. al. \shortcite{Choubey2017EventCR} concluded, context seems to offer not benefit at all for within-doc coreference on the ECB+ corpus.  Thus, we are interested in developing a powerful pairwise-prediction model, such as a Conjoined Neural Network \cite{SiameseNet}.
 
 \subsection{Overview}
-Conjoined Neural Networks (a.k.a. Siamese Networks) were first introduced by Bromly and LeCun \shortcite{SiameseNet} for the task of determining if two input items (hand signatures) were in fact of the same class or not.  Specifically, a Conjoined Network can be defined as two identical neural networks, each of which accepts distinct inputs, which are joined by a single loss function over their highest-level features.  The loss function computes a similarity score (e.g., euclidean distance) for an input pair.  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs will be mapped appropriately, otherwise, they could be mapped to hidden representations that are disproportionately dissimilar from their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
+Conjoined Neural Networks (a.k.a. Siamese Networks) were first introduced by Bromly and LeCun \shortcite{SiameseNet} for the task of determining if two input items (hand signatures) were from the same person or not.  Specifically, a Conjoined Network can be defined as two identical neural networks, each of which accepts distinct inputs, which are joined by a single loss function over their highest-level features.  The loss function computes a similarity score (e.g., euclidean distance) for an input pair.  The two networks are said to be conjoined because they share the same weights and thus work together as one network that learns how to discriminate.  The benefits of tying the weights are that it: (1) ensures that similar inputs will be mapped appropriately, otherwise, they could be mapped to hidden representations that are disproportionately dissimilar from their input representations; and (2) forces the network to be symmetric.  Namely, if we were to abstractly view the Conjoined Network as a function, then:
 
 \vspace{4mm}
 
@@ -194,7 +193,7 @@ As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) hav
 Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features\footnote{We experimented with extending our CCNN model by adding relational features as a merged-layer at the highest neural level.  However, doing so provided no benefit.} that are common in other coreference systems (e.g., SameLemma, Jaccard similarity of mentions' context, first common WordNet parent, etc).  We used Stanford CoreNLP \cite{manning-EtAl:2014:P14-5} to extract the following features, which we thoroughly tested in different ways:
 \begin{itemize}
   \item \textbf{Part-of-Speech:} LSTM-learned POS embeddings; and 1-hot representations.
-  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each token, where the embedding came from running GloVe \cite{pennington2014glove} on our corpus, or using their provided pre-trained 6 billion and 840 billion token crawls.
+  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each token, where the embedding came from running GloVe \cite{pennington2014glove} on our corpus, or using their provided pre-trained 840 billion token crawl.
   \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each token, and we represent it via the aforementioned lemma embeddings.
   \item \textbf{Character Embeddings:} we represent each token as a concatenation of its character embeddings, where we experimented with 20-dimensional character embeddings being either random or pre-trained.
   \item \textbf{Word Embeddings:} the same embeddings that we use for the lemma feature, only the token is represented by its actual word, not lemma.
@@ -204,9 +203,7 @@ Note, since mentions are of varying token length (see Table \ref{tab:ECB1}), we 
 $m_{emb}[i] = \frac{\sum_{t \in T}t_{emb}[i]}{|T|}$, where $t$ is a token in the set of tokens $T$ that comprise $m$.
 
 \subsection{Architecture}
-We define the full embedding for a given token $t$ as $t_{emb} = t_{f_{1}} \oplus t_{f_{2}} \oplus \ldots \oplus t_{f_{n}},$
-
-where $\oplus$ represents vector concatenation and $t_{f_{i}}$ represents a specific input feature vector.
+We define the full embedding for a given token $t$ as $t_{emb} = t_{f_{1}} \oplus t_{f_{2}} \oplus \ldots \oplus t_{f_{n}},$ where $\oplus$ represents vector concatenation and $t_{f_{i}}$ represents a specific input feature vector.
 
 Naturally, we may want to convolve over the context of mention $m$, too, by including the $N$ words before and after $m$.  Thus, our input for mention $m$ is a matrix $M$, and a la Kim \shortcite{DBLP:conf/emnlp/Kim14}, we zero-pad unfilled windows.
 
@@ -229,12 +226,12 @@ We use 32 kernels (we experimented with powers of 2, from 2-256), along with ReL
 \begin{figure*}[h]
 \centering
 	\includegraphics[width=1\textwidth]{architecture.pdf}
-	\caption{Conjoined Convolutional Neural Network's Architecture.  The left half shares the same weights with the right half.  Blocks A, C, and F represent 32, 64, and 128 kernels, respectively.  The kernels' size is 1x3.  Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout.  Blocks E and H represent MaxPooling with kernel size 1x2.  The Lambda function in the center represents the Euclidean Distance of the fully-merged univariate vectors.}
+	\caption{Conjoined Convolutional Neural Network's Architecture.  The left half shares the same weights with the right half.  Blocks A, C, and F represent 32, 64, and 128 kernels, respectively.  The kernels' size is 1x3.  Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout.  Blocks E and H represent MaxPooling with kernel size 1x2.  The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors.}
 	\label{fig:ccnn}
 \end{figure*}
 
 \subsection{Loss / Optimization}
-Our goal is to maximize discriminability of different event mentions, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}. Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.  We used Adagrad for optimization. RMS yielded effectively identical results.
+Our goal is to maximize discriminability of different event mentions, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}. Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.  We use Adagrad for optimization.
 \begin{equation}
 \begin{aligned}
 L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
@@ -275,9 +272,9 @@ The first three features serve to better represent the cluster at large.  For ex
 
 At testing time, we evaluate every $(m_i, C_y)$ pair.  
 
-We define $f$ as a feed-forward neural network with 1 hidden layer of 25 units.  We use ReLU activation without dropout, and our model predicts the probability of a positive merge via a two-class softmax function.  Our loss function is weighted binary cross-entropy, to account for the class imbalance situation that most mentions should not be merged with most clusters.  We optimize with Adagrad.  In an easy-first manner, at each iteration, we merge only the $(m_i,C_y)$ pair that yielded the highest score (likelihood of a positive merge).  Then, we re-evaluate all (mention, cluster) pairs and repeat this process until the model no longer predicts any merge.  Thus, unlike the aforementioned models, we do not require an additional parameter for our stopping criterion.
+We define $f$ as a feed-forward neural network\footnote{We used 1 hidden layer of 25 units, ReLU activation without dropout, and Adagrad as our optimizer} which predicts the probability of a positive merge via a two-class softmax function.  Our loss function is weighted binary cross-entropy, to account for the class imbalance situation that most mentions should not be merged with most clusters.  In an easy-first manner, at each iteration, we merge only the $(m_i,C_y)$ pair that yielded the highest score (likelihood of a positive merge).  Then, we re-evaluate all (mention, cluster) pairs and repeat this process until the model no longer predicts any merge.  Thus, unlike the aforementioned models, we do not require an additional parameter for our stopping criterion.
 
-Since our neural classifier requires as training data the mention-pair scores predicted by the CCNN, our model is limited to using the dev set's scores as training data.  We also considered (1) adjusting the train/dev set sizes, yielding more data on which our clustering model could train; and (2) cross-validation.  Yet, the original train/dev/test split performed the best, signifying that it is most important for the CCNN model to have as much training data as possible, even at the expense of the Neural Clustering model having less training data.
+Since our neural classifier requires as training data the mention-pair scores predicted by the CCNN, our model is limited to using the dev set's scores as training data.  We also considered (1) adjusting the train/dev set sizes, yielding more data on which our clustering model could train; and (2) cross-validation.  Yet, the original train/dev/test split performed the best, signifying that it is important for the CCNN model to have as much training data as possible, even at the expense of the Neural Clustering model having less training data.
 
 \section{Results}
 As a recap, our research concerns three independent axis of investigation:
@@ -287,10 +284,9 @@ As a recap, our research concerns three independent axis of investigation:
 \item \textbf{Clustering:} can we outperform Agglomerative via our Neural Clustering model?
 \end{itemize}
 
-Our metric is CoNLL F1 score, which is a clustering-based metric that combines the F1 scores of MUC, $B^{3}$, and $CEAF_{e}$, and we use the official scorer program (v8.01) \cite{Pradhan+etal:14a}.
+Our metric is CoNLL F1 score, which is a clustering-based metric that combines the F1 scores of MUC, $B^{3}$, and $CEAF_{e}$, and we use the official scorer script (v8.01) \cite{Pradhan+etal:14a}.
 
-
-We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We used the gold mentions identified in the ECB+ test set and exhaustively tried (1) all combinations of features; (2) CCNN compared to a Feed-Forward Neural Network; and (3) clustering with our Neural Clustering versus Agglomerative\footnote{We chose the stopping threshold $\alpha=0.48$ based on the best-performing value found on the dev set.}.  All results are illustrated in Figure \ref{fig:allfeatures}, which shows that our CCNN model always outperforms the feed-forward neural network, and that our Neural Clustering outperforms Agglomerative Clustering.
+We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We used the gold mentions identified in the ECB+ test set and exhaustively tried (1) all combinations of features; (2) CCNN compared to a Feed-Forward Neural Network\footnote{Given two mentions $i$ and $j$, with corresponding feature vectors $f_i$ and $f_j$, their input to the Feed-Forward Neural Network is the vector $\|f_{i} - f_{j}\|$}; and (3) clustering with our Neural Clustering versus Agglomerative\footnote{We chose the stopping threshold $\alpha=0.48$ based on the best-performing value found on the dev set.}.  All results are illustrated in Figure \ref{fig:allfeatures} and Table \ref{tab:others}, which shows that our CCNN model outperforms the feed-forward neural network, and that our Neural Clustering outperforms Agglomerative Clustering.
 
 \begin{figure*}[h]
 \centering
@@ -299,46 +295,63 @@ We were interested in the five common, non-relational embedding features which a
 	\label{fig:allfeatures}
 \end{figure*}
 
+\begin{table}[h]
+\centering
+\tabcolsep=0.11cm
+\begin{tabular}{|r|ccc|c|}
+ \hline
+ \multicolumn{5}{|c|}{Test Set: ECB+ Gold Mentions} \\
+ \hline
+& MUC & B$^3$ & CEAF & CoNLL F1\\
+ \hline
+ SameLemma& 58.3 & 83.0 & 75.9 & 72.4\\
+FFNN+AGG & 60.2 & 85.9 & 78.6 & 74.9 \\
+FFNN+NC & 60.9 & 86.7 &  79.6 & 75.7 \\
+CCNN+AGG & 70.6 & 89.4 & 83.7  & 81.2\\
+\textbf{CCNN+NC}  & 71.2 & 89.3 & 83.9 & \textbf{81.5} \\
+\hline
+\hline
+ \multicolumn{5}{|c|}{Test Set: HDDCRP's Predicted Mentions} \\
+ \hline
+ SameLemma& 40.4 & 66.4 & 66.2 & 57.7\\
+ HDDCRP & 53.4 & 75.4 & 71.7  & 66.8\\
+ \textbf{CCNN+NC} & 54.0 & 75.6 & 72.1  & \textbf{67.2}\\
+ \hline
+\hline
+ \multicolumn{5}{|c|}{Test Set: Choubey's et. al. Mentions} \\
+ \hline
+ SameLemma& 48.8 & 66.7 & 65.1 & 60.2\\
+ Choubey & 62.6 & 72.4 & 71.8  & 68.9\\
+ \textbf{CCNN+NC} & 67.4 & 73.0 & 69.7  & \textbf{70.0}\\
+ \hline
+\end{tabular}
+\caption{Comparison against other systems.  FFNN denotes a Feed-Forward Neural Network Mention-Pair Model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
+\label{tab:others}
+\end{table}
+
 \textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  Using the embeddings of the lemmas, especially with the power of the CCNN, provides much more expression than the mere boolean feature of \textit{SameLemma}.  Our best results for this feature came from using the pre-trained 840 billion-token GloVe embeddings.
 
 \textbf{Character Embeddings} were effective for the same reason String Edit Distance is often a strong feature: there tends to be a direct correlation between the textual similarity of mentions and their likelihood of being co-referent. Both random character embeddings and pre-trained ones yielded the same performance, suggesting that the power comes from the uniqueness of characters, not any \textit{meaning} conveyed in the characters.
 
 Combining Lemma Embeddings with Character Embeddings yielded \textbf{our highest performance -- 81.5 CoNLL F1 score.}  As this is the first event coreference system to test on the ECB+ golden test mentions, we denote this score as the new baseline to which to compare future systems.
 
-It is clear that Lemma + Character Embeddings are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature.  However, combining POS with either Lemma Embeddings or Character Embeddings offered strong results. 
+It is clear that Lemma + Character Embeddings are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma Embeddings or Character Embeddings offered strong results. 
 %Interestingly, the Iteratively-Unfolding model used Lemma + POS \shortcite{Choubey2017EventCR}.
 
-Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given 0 weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.
+Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.
+
+Interestingly, in all experiments, our results were inversely correlated with the amount of context our CCNN used.  That is, our best performance came when we used no context, only the mention words.  This agrees with the Choubey's, et. al. findings \shortcite{Choubey2017EventCR}.
 
 \subsection{Comparison to Other Systems}
 \textbf{HDDCRP} chose to not use the gold test mentions provided by ECB+.  Instead, they used a semantic role labeller to identify all test mentions.
 To compare against their system, we worked with the HDDCRP source code and data to ensure we accurately use their same mentions.  Independent of clustering performance: of the 3,290 gold mentions in ECB+, their system failed to identify/use 676 of them.  Of their 3,109 predicted mentions, 495 were false positives and in fact not actual gold mentions.  Since their system uses these imperfect mentions, yet tests the coreference performance against the gold mentions, their system encounters a steep performance loss by default.  With complete confidence, we fairly compare our system with theirs by using the same, imperfectly-predicted mentions.  We outperform their system on this exact test set, as shown in Table \ref{tab:others}.
 
-\textbf{Iteratively-Unfolding} attempted to use the same predicted test mentions as HDDCRP.  As mentioned in Section \ref{sec:mentionid}, they removed false positives and singleton-mentions which belong to events that are only found within the given document (no cross-doc references).  After numerous correspondences, we compare our system against the same set of test mentions they used, and the results are also shown in Figure \ref{tab:others}.
+\textbf{Iteratively-Unfolding} attempted to use the same predicted test mentions as HDDCRP.  However, their test set actually differed, as detailed in Section \ref{sec:mentionid}.  We compare against theirs in Table \ref{tab:others}.
 
-\begin{table*}[h]
-\centering
-\begin{tabular}{|c|c|c|c|c|}
- \hline
- \multicolumn{5}{|c|}{Test Set: ECB+ Gold Mentions} \\
- \hline
-& MUC & B$^3$ & CEAF$_{e}$ & CoNLL\\
- \hline
- SameLemma & & & \\
-FFNN + AGG   & AF    &AFG&   004\\
-FFNN + NC &   AX  & ALA   &248\\
-CCNN + AGG &AL & ALB&  008\\
-CCNN + NC &DZ & DZA&  012\\
-\hline
-\end{tabular}
-\caption{Comparison against Others' Systems}
-\label{tab:others}
-\end{table*}
-
-For event within-doc coreference, our system outperforms both HDDCRP and Iteratively-Unfolding.  Notably, both systems also perform cross-document coreference in a manner that helps inform and improve their within-doc performance; yet, we demonstrate state-of-the-art results without using this information.
+For event within-doc coreference, our system outperforms both HDDCRP and Iteratively-Unfolding.  Notably, both systems also perform cross-document coreference in a manner that helps inform and improve their within-doc performance; yet, we demonstrate state-of-the-art results without using this process.
 
 \section{Conclusion}
-In summary, we researched within-doc event coreference resolution, and our approach was to use a mention-pair model, followed by a neural clustering model.  Specifically, for our mention-pair model, we developed a novel Conjoined Convolutional Neural Network (CCNN). Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} pair of mentions satisfying a criterion, we used simple mention-cluster features which represent clusters more holistically.  Our system achieved state-of-the-art performance of 67.2 CoNLL F1 on a common test set, and we set a new baseline of 81.5 CoNLL F1 for the entire ECB+ test set.   
+In summary, we researched within-doc event coreference resolution, and our approach was novel by using a Conjoined Convolutional Neural Network as a mention-pair model, followed by a neural clustering model.  Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} pair of mentions satisfying a criterion, we used simple mention-cluster features which represent clusters more holistically.  Our system achieved state-of-the-art performance of 67.2 CoNLL F1 on a common test set, and we set a new baseline of 81.5 CoNLL F1 for the entire ECB+ test set.   
 
 % include your own bib file like this:
 %\bibliographystyle{acl}

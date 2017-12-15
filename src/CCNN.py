@@ -24,9 +24,9 @@ from array import array
 
 class CCNN:
     def __init__(self, args, corpus, helper, hddcrp_parsed):
-        self.calculateMax = False
-        self.useRelationalFeatures = False
-        self.NNBasic = False
+        self.calculateMax = False # find the max pairwise performance
+        self.useRelationalFeatures = False # the merged layer right before final output
+        self.NNBasic = False # if True, instead of a CCNN, actually just use a FF
         self.args = args
 
         print("args:", str(args))
