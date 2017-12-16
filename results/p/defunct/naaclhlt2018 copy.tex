@@ -26,7 +26,7 @@
 \newcommand{\argmin}[1]{\underset{#1}{\operatorname{argmin}}\;}
 \newcommand{\argmax}[1]{\underset{#1}{\operatorname{argmax}}\;}
 %\aclfinalcopy % Uncomment this line for the final submission
-\def\aclpaperid{***} %  Enter the acl Paper ID here
+\def\aclpaperid{434} %  Enter the acl Paper ID here
 
 %\setlength\titlebox{5cm}
 % You can expand the titlebox if you need extra space
@@ -50,7 +50,7 @@ Brown Linguistic Laboratory of Information Processing \\
 \maketitle
 \begin{abstract}
 % motivation / others' weaknesses
-Coreference resolution systems for entities and/or events almost always make use of many linguistic, parsing-based features.  In contrast, (1) we introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word-/char- embeddings, achieving 67.2 CoNLL F1 score on a common ECB+ test set, along with setting a new baseline of 81.5 for the test set at large. (2) We exhaustively illustrate the performance of other commonly-used features.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Conjoined Convolutional Neural Network.  Last, (3) we cluster the event mentions with a simple, but novel, neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made exclusively from min-pairwise decisions.
+Coreference resolution systems for entities and/or events almost always make use of many linguistic, parsing-based features.  In contrast, (1) we introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word embeddings, achieving 66.9 CoNLL F1 score on a common ECB+ test set, along with setting a new baseline of 81.2 for the test set at large. (2) We exhaustively illustrate the performance of other commonly-used features.  The crux of our system is that it first makes pairwise event-coreference predictions by using a Conjoined Convolutional Neural Network.  Last, (3) we cluster the event mentions with a simple, but novel, neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made exclusively from min-pairwise decisions.
 \end{abstract}
 
 \section{Introduction}
@@ -137,7 +137,7 @@ The Iteratively-Unfolding system also aimed to test on the HDDCRP predicted ment
 We evaluate our systems having used the: (1) gold mentions; (2) HDDCRP-predicted mentions; (3) Iteratively-Unfolding-predicted mentioned.
 
 \subsection{Reproducibility}
-We provide our code online\footnote{\url{WILL_INSERT_GITHUB_LINK}}, which is written in Keras \cite{chollet2015} and is easily runnable on any of the aforementioned sets of mentions and evaluations.  Additionally, our code runs in just a few minutes on a single Titan X GPU.
+We provide our code online,\footnote{\url{WILL_INSERT_GITHUB_LINK}} which is written in Keras \cite{chollet2015} and is easily runnable on any of the aforementioned sets of mentions and evaluations.  Additionally, our code runs in just a few minutes on a single Titan X GPU.
 \subsection{Models}
 Our system is comprised of two neural models:
 \begin{itemize}
@@ -146,7 +146,7 @@ Our system is comprised of two neural models:
 \end{itemize}
 \subsection{Corpus}
 \label{sec:corpus}
-We use the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories -- each of which has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains two sub-topics: one about Lindsay Lohan checking into a rehab center, the other about Tara Reid doing so.  Each sub-topic contains roughly 10 short text documents which all concern the same given sub-topic.  We maintained the same train/dev/test splits as previous researchers\footnote{Training set contains topics 1-20, the dev set contains topics 21-23, and the test set has topics 24-43.}  A sample of the corpus in shown in Figure \ref{fig:corpus}, and statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
+We use the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories -- each of which has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains two sub-topics: one about Lindsay Lohan checking into a rehab center, the other about Tara Reid doing so.  Each sub-topic contains roughly 10 short text documents which all concern the same given sub-topic.  We maintained the same train/dev/test splits as previous researchers.\footnote{Training set contains topics 1-20, the Dev set contains topics 21-23, and the Test set has topics 24-43.}  A sample of the corpus in shown in Figure \ref{fig:corpus}, and statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
 
 \begin{table}
 \centering
@@ -190,7 +190,7 @@ As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) hav
 Since our CCNN needs each mention to be represented exclusively by its own input, we used none of the relational features\footnote{We experimented with extending our CCNN model by adding relational features as a merged-layer at the highest neural level.  However, doing so provided no benefit.} that are common in other coreference systems (e.g., SameLemma, Jaccard similarity of mentions' context, first common WordNet parent, etc).  We used Stanford CoreNLP \cite{manning-EtAl:2014:P14-5} to extract the following features, which we thoroughly tested in different ways:
 \begin{itemize}
   \item \textbf{Part-of-Speech:} LSTM-learned POS embeddings; and 1-hot representations.
-  \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each token, where the embedding came from running GloVe \cite{pennington2014glove} on our corpus, or using their provided pre-trained 840 billion token crawl.
+  \item \textbf{Lemmatization}: Lemmatized each token and represented it by pre-trained GloVe \cite{pennington2014glove} word embeddings.\footnote{300-dimensions; built from an 840 billion token crawl.}
   \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each token, and we represent it via the aforementioned lemma embeddings.
   \item \textbf{Character Embeddings:} we represent each token as a concatenation of its character embeddings, where we experimented with 20-dimensional character embeddings being either random or pre-trained.
   \item \textbf{Word Embeddings:} the same embeddings used for the lemma feature, only the token is represented by its actual word, not lemma.
@@ -271,24 +271,24 @@ At testing time, we evaluate every $(m_i, C_y)$ pair.
 
 We define $f$ as a feed-forward neural network\footnote{We used 1 hidden layer of 25 units, ReLU activation without dropout, and Adagrad as our optimizer} which predicts the probability of a positive merge via a two-class softmax function.  Our loss function is weighted binary cross-entropy, to account for the class imbalance situation that most mentions should not be merged with most clusters.  In an easy-first manner, at each iteration, we merge only the $(m_i,C_y)$ pair that yielded the highest score (likelihood of a positive merge).  Then, we re-evaluate all (mention, cluster) pairs and repeat this process until the model no longer predicts any merge.  Thus, unlike the aforementioned models, we do not require an additional parameter for our stopping criterion.
 
-Since our neural classifier requires as training data the mention-pair scores predicted by the CCNN, our model is limited to using the dev set's scores as training data.  We also considered (1) adjusting the train/dev set sizes, yielding more data on which our clustering model could train; and (2) cross-validation.  Yet, the original train/dev/test split performed the best, signifying that it is important for the CCNN model to have as much training data as possible, even at the expense of the Neural Clustering model having less training data.
+Since our neural classifier requires as training data the mention-pair scores predicted by the CCNN, our model is limited to using the Dev Set's scores as training data.  We also considered (1) adjusting the Train/Dev set sizes, yielding more data on which our clustering model could train; and (2) cross-validation.  Yet, the original train/dev/test split performed the best, signifying that it is important for the CCNN model to have as much training data as possible, even at the expense of the Neural Clustering model having less training data.
 
 \section{Results}
 As a recap, our research concerns three independent axis of investigation:
 \begin{itemize}
 \item \textbf{Features:} which features are most useful, and can we use few features?
-\item \textbf{Mention-Pair Model:} how well does CCNN perform against a standard neural network?
+\item \textbf{Mention-Pair Model:} how well does CCNN perform against a standard feed-forward neural network\footnote{Given two mentions $i$ and $j$, with corresponding feature vectors $f_i$ and $f_j$, their input to the Feed-Forward Neural Network is the vector $\|f_{i} - f_{j}\|$} (FFNN)?
 \item \textbf{Clustering:} can we outperform Agglomerative via our Neural Clustering model?
 \end{itemize}
 
 Our metric is CoNLL F1 score, which is a clustering-based metric that combines the F1 scores of MUC, $B^{3}$, and $CEAF_{e}$, and we use the official scorer script (v8.01) \cite{Pradhan+etal:14a}.
 
-We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We used the gold mentions identified in the ECB+ test set and exhaustively tried (1) all combinations of features; (2) CCNN compared to a Feed-Forward Neural Network\footnote{Given two mentions $i$ and $j$, with corresponding feature vectors $f_i$ and $f_j$, their input to the Feed-Forward Neural Network is the vector $\|f_{i} - f_{j}\|$}; and (3) clustering with our Neural Clustering versus Agglomerative\footnote{We chose the stopping threshold $\alpha=0.48$ based on the best-performing value found on the dev set.}.  All results are illustrated in Figure \ref{fig:allfeatures} and Table \ref{tab:others}, which shows that our CCNN model outperforms the feed-forward neural network, and that our Neural Clustering outperforms Agglomerative Clustering.
+We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We tested all combinations of features on the Dev Set, and Lemma yielded the best results (see Figure \ref{fig:allfeatures}).  Thus, our CCNN + Neural Clustering system used only the Lemma feature, and we evaluated it against other systems, as illustrated in Table \ref{tab:others}.  The results further show that our CCNN model outperforms a FFNN, and that our Neural Clustering outperforms Agglomerative Clustering.  Using just the lemma feature, we achieved a CoNLL F1 score of \textbf{81.2} on the ECB+ Test Set.  We denote this score as the new baseline to which to compare future systems.
 
 \begin{figure*}[h]
 \centering
-	\includegraphics[width=0.80\textwidth]{features.pdf}
-	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features.}
+	\includegraphics[width=0.90\textwidth]{features.pdf}
+	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features.  The CCNN mention-pair predictions for the Dev Set are normally used to train our Neural Clustering model.  So, in order to fairly evaluate our Neural Clustering on the \textit{Dev Set} Mentions, we removed Topics 18-20 from the CCNN's Training Set and used them to train our Neural Clustering.}
 	\label{fig:allfeatures}
 \end{figure*}
 
@@ -297,43 +297,40 @@ We were interested in the five common, non-relational embedding features which a
 \tabcolsep=0.11cm
 \begin{tabular}{|r|ccc|c|}
  \hline
- \multicolumn{5}{|c|}{Test Set: ECB+ Gold Mentions} \\
+ \multicolumn{5}{|c|}{Test Set: ECB+ Gold Test Mentions} \\
  \hline
 & MUC & B$^3$ & CEAF & CoNLL F1\\
  \hline
  SameLemma& 58.3 & 83.0 & 75.9 & 72.4\\
-FFNN+AGG & 60.2 & 85.9 & 78.6 & 74.9 \\
-FFNN+NC & 60.9 & 86.7 &  79.6 & 75.7 \\
-CCNN+AGG & 70.6 & 89.4 & 83.7  & 81.2\\
-\textbf{CCNN+NC}  & 71.2 & 89.3 & 83.9 & \textbf{81.5} \\
+FFNN+AGG & 59.9 & 85.6 & 78.4 & 74.6 \\
+FFNN+NC & 60.7 & 86.7 &  79.4 & 75.6 \\
+CCNN+AGG & 70.5 & 89.1 & 83.5  & 81.0\\
+\textbf{CCNN+NC}  & 70.9 & 88.9 & 83.6 & \textbf{81.2} \\
 \hline
 \hline
  \multicolumn{5}{|c|}{Test Set: HDDCRP's Predicted Mentions} \\
  \hline
  SameLemma& 40.4 & 66.4 & 66.2 & 57.7\\
  HDDCRP & 53.4 & 75.4 & 71.7  & 66.8\\
- \textbf{CCNN+NC} & 54.0 & 75.6 & 72.1  & \textbf{67.2}\\
+ \textbf{CCNN+NC} & 53.7 & 75.2 & 71.9  & \textbf{66.9}\\
  \hline
 \hline
  \multicolumn{5}{|c|}{Test Set: Choubey's et. al. Mentions} \\
  \hline
  SameLemma& 48.8 & 66.7 & 65.1 & 60.2\\
  Choubey & 62.6 & 72.4 & 71.8  & 68.9\\
- \textbf{CCNN+NC} & 67.4 & 73.0 & 69.7  & \textbf{70.0}\\
+ \textbf{CCNN+NC} & 67.3 & 73.0 & 69.5  & \textbf{69.9}\\
  \hline
 \end{tabular}
-\caption{Comparison against other systems, using our best combination of features (lemma + char). FFNN denotes a Feed-Forward Neural Network Mention-Pair Model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
+\caption{Comparison against other systems, using only the Lemma Embedding feature. FFNN denotes a Feed-Forward Neural Network Mention-Pair model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
 \label{tab:others}
 \end{table}
 
-\textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  Using the embeddings of the lemmas, especially with the power of the CCNN, provides much more expression than the mere boolean feature of \textit{SameLemma}.  Our best results for this feature came from using the pre-trained 840 billion-token GloVe embeddings.
+\textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  Using the embeddings of the lemmas, especially with the power of the CCNN, provides much more expression than the mere boolean feature of \textit{SameLemma}.
 
 \textbf{Character Embeddings} were effective for the same reason String Edit Distance is often a strong feature: there tends to be a direct correlation between the textual similarity of mentions and their likelihood of being co-referent. Both random character embeddings and pre-trained ones yielded the same performance, suggesting that the power comes from the uniqueness of characters, not any \textit{meaning} conveyed in the characters.
 
-Combining Lemma Embeddings with Character Embeddings yielded \textbf{our highest performance -- 81.5 CoNLL F1 score.}  As this is the first event coreference system to test on the ECB+ golden test mentions, we denote this score as the new baseline to which to compare future systems.
-
-It is clear that Lemma + Character Embeddings are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
-%Interestingly, the Iteratively-Unfolding model used Lemma + POS \shortcite{Choubey2017EventCR}.
+Combining Lemma + Character Embeddings gave even higher performance on the ECB+ Test Set, illustrating that these two features are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
 
 Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.
 
@@ -348,7 +345,7 @@ To compare against their system, we worked with the HDDCRP source code and data 
 For event within-doc coreference, our system outperforms both HDDCRP and Iteratively-Unfolding.  Notably, both systems also perform cross-document coreference in a manner that helps inform and improve their within-doc performance; yet, we demonstrate state-of-the-art results without using this process.
 
 \section{Conclusion}
-In summary, we researched within-doc event coreference resolution, and our approach was novel by using a Conjoined Convolutional Neural Network as a mention-pair model, followed by a neural clustering model.  Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} pair of mentions satisfying a criterion, we used simple mention-cluster features which represent clusters more holistically.  Our system achieved state-of-the-art performance of 67.2 CoNLL F1 on a common test set, and we set a new baseline of 81.5 CoNLL F1 for the entire ECB+ test set.   
+In summary, we researched within-doc event coreference resolution, and our approach was novel by using a Conjoined Convolutional Neural Network as a mention-pair model, followed by a neural clustering model.  Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} pair of mentions satisfying a criterion, we used simple mention-cluster features which represent clusters more holistically.  Our system achieved state-of-the-art performance of 66.9 CoNLL F1 on a common test set, and we set a new baseline of 81.2 CoNLL F1 for the entire ECB+ test set.   
 
 % include your own bib file like this:
 %\bibliographystyle{acl}

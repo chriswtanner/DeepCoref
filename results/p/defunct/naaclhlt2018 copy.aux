@@ -61,10 +61,10 @@
 \newlabel{sec:clustering}{{5}{5}{Neural Clustering}{section.5}{}}
 \newlabel{fig:ccnn}{{2}{6}{Conjoined Convolutional Neural Network's Architecture. The left half shares the same weights with the right half. Blocks A, C, and F represent 32, 64, and 128 kernels, respectively. The kernel size is 1x3, and different colors denote distinct kernels. Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout. Blocks E and H represent MaxPooling with kernel size 1x2. The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors}{figure.2}{}}
 \citation{Pradhan+etal:14a}
-\newlabel{tab:others}{{2}{7}{Comparison against other systems, using our best combination of features (lemma + char). FFNN denotes a Feed-Forward Neural Network Mention-Pair Model. AGG denotes Agglomerative Clustering. NC denotes our Neural Clustering model}{table.2}{}}
+\newlabel{tab:others}{{2}{7}{Comparison against other systems, using only the Lemma Embedding feature. FFNN denotes a Feed-Forward Neural Network Mention-Pair model. AGG denotes Agglomerative Clustering. NC denotes our Neural Clustering model}{table.2}{}}
 \citation{Choubey2017EventCR}
 \bibdata{naaclhlt2018}
-\newlabel{fig:allfeatures}{{3}{8}{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features}{figure.3}{}}
+\newlabel{fig:allfeatures}{{3}{8}{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features. The CCNN mention-pair predictions for the Dev Set are normally used to train our Neural Clustering model. So, in order to fairly evaluate our Neural Clustering on the \textit {Dev Set} Mentions, we removed Topics 18-20 from the CCNN's Training Set and used them to train our Neural Clustering}{figure.3}{}}
 \bibcite{Allan:1998}{{1}{1998}{{Allan et~al.}}{{Allan, Carbonell, Doddington, Yamron, Yang, Umass, Cmu, Cmu, Cmu, Cmu, Dragon, Darpa, Cmu, Cmu, Umass, Cmu, Dragon, Dragon, Umass, Cmu, Umass, and Umass}}}
 \bibcite{Bagga:1999:CEC:1608810.1608812}{{2}{1999}{{Bagga and Baldwin}}{{}}}
 \bibcite{Bengtson:2008:UVF:1613715.1613756}{{3}{2008}{{Bengtson and Roth}}{{}}}
@@ -78,20 +78,19 @@
 \bibcite{DBLP:conf/emnlp/DurrettK13}{{11}{2013}{{Durrett and Klein}}{{}}}
 \bibcite{DBLP:conf/acl/GehringAGD17}{{12}{2017}{{Gehring et~al.}}{{Gehring, Auli, Grangier, and Dauphin}}}
 \bibcite{Koch2015SiameseNN}{{13}{2015}{{Gregory~Koch}}{{}}}
-\bibcite{Hochreiter:1997:LSM:1246443.1246450}{{14}{1997}{{Hochreiter and Schmidhuber}}{{}}}
-\bibcite{Humphreys:1997}{{15}{1997}{{Humphreys et~al.}}{{Humphreys, Gaizauskas, and Azzam}}}
-\bibcite{DBLP:conf/emnlp/Kim14}{{16}{2014}{{Kim}}{{}}}
-\bibcite{pmlr-v48-liud16}{{17}{2016}{{Liu et~al.}}{{Liu, Wen, Yu, and Yang}}}
-\bibcite{manning-EtAl:2014:P14-5}{{18}{2014}{{Manning et~al.}}{{Manning, Surdeanu, Bauer, Finkel, Bethard, and McClosky}}}
-\bibcite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}{{19}{2009}{{Mayfield and et~al.}}{{}}}
-\bibcite{Narayanan:2004:QAB:1220355.1220455}{{20}{2004}{{Narayanan and Harabagiu}}{{}}}
-\bibcite{pennington2014glove}{{21}{2014}{{Pennington et~al.}}{{Pennington, Socher, and Manning}}}
-\bibcite{Pradhan+etal:14a}{{22}{2014}{{Pradhan et~al.}}{{Pradhan, Luo, Recasens, Hovy, Ng, and Strube}}}
-\bibcite{SchroffKP15}{{23}{2015}{{Schroff et~al.}}{{Schroff, Kalenichenko, and Philbin}}}
-\bibcite{Soon:2001:MLA:972597.972602}{{24}{2001}{{Soon et~al.}}{{Soon, Ng, and Lim}}}
-\bibcite{DBLP:journals/corr/WisemanRS16}{{25}{2016{a}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
-\bibcite{DBLP:conf/naacl/WisemanRS16}{{26}{2016{b}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
-\bibcite{DBLP:conf/acl/WisemanRSW15}{{27}{2015}{{Wiseman et~al.}}{{Wiseman, Rush, Shieber, and Weston}}}
-\bibcite{journals/tacl/YangCF15}{{28}{2015}{{Yang et~al.}}{{Yang, Cardie, and Frazier}}}
-\bibcite{DBLP:journals/corr/YuV17}{{29}{2017}{{Yu and Vu}}{{}}}
+\bibcite{Humphreys:1997}{{14}{1997}{{Humphreys et~al.}}{{Humphreys, Gaizauskas, and Azzam}}}
+\bibcite{DBLP:conf/emnlp/Kim14}{{15}{2014}{{Kim}}{{}}}
+\bibcite{pmlr-v48-liud16}{{16}{2016}{{Liu et~al.}}{{Liu, Wen, Yu, and Yang}}}
+\bibcite{manning-EtAl:2014:P14-5}{{17}{2014}{{Manning et~al.}}{{Manning, Surdeanu, Bauer, Finkel, Bethard, and McClosky}}}
+\bibcite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}{{18}{2009}{{Mayfield and et~al.}}{{}}}
+\bibcite{Narayanan:2004:QAB:1220355.1220455}{{19}{2004}{{Narayanan and Harabagiu}}{{}}}
+\bibcite{pennington2014glove}{{20}{2014}{{Pennington et~al.}}{{Pennington, Socher, and Manning}}}
+\bibcite{Pradhan+etal:14a}{{21}{2014}{{Pradhan et~al.}}{{Pradhan, Luo, Recasens, Hovy, Ng, and Strube}}}
+\bibcite{SchroffKP15}{{22}{2015}{{Schroff et~al.}}{{Schroff, Kalenichenko, and Philbin}}}
+\bibcite{Soon:2001:MLA:972597.972602}{{23}{2001}{{Soon et~al.}}{{Soon, Ng, and Lim}}}
+\bibcite{DBLP:journals/corr/WisemanRS16}{{24}{2016{a}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
+\bibcite{DBLP:conf/naacl/WisemanRS16}{{25}{2016{b}}{{Wiseman et~al.}}{{Wiseman, Rush, and Shieber}}}
+\bibcite{DBLP:conf/acl/WisemanRSW15}{{26}{2015}{{Wiseman et~al.}}{{Wiseman, Rush, Shieber, and Weston}}}
+\bibcite{journals/tacl/YangCF15}{{27}{2015}{{Yang et~al.}}{{Yang, Cardie, and Frazier}}}
+\bibcite{DBLP:journals/corr/YuV17}{{28}{2017}{{Yu and Vu}}{{}}}
 \bibstyle{acl_natbib}
