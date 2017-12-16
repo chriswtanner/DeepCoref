@@ -287,7 +287,7 @@ We were interested in the five common, non-relational embedding features which a
 
 \begin{figure*}[h]
 \centering
-	\includegraphics[width=0.90\textwidth]{features.pdf}
+	\includegraphics[width=0.82\textwidth]{features.pdf}
 	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features.  The CCNN mention-pair predictions for the Dev Set are normally used to train our Neural Clustering model.  So, in order to fairly evaluate our Neural Clustering on the \textit{Dev Set} Mentions, we removed Topics 18-20 from the CCNN's Training Set and used them to train our Neural Clustering.}
 	\label{fig:allfeatures}
 \end{figure*}
@@ -322,7 +322,7 @@ CCNN+AGG & 70.5 & 89.1 & 83.5  & 81.0\\
  \textbf{CCNN+NC} & 67.3 & 73.0 & 69.5  & \textbf{69.9}\\
  \hline
 \end{tabular}
-\caption{Comparison against other systems, using only the Lemma Embedding feature. FFNN denotes a Feed-Forward Neural Network Mention-Pair model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
+\caption{Comparison against other systems, while our models use only the Lemma Embedding feature.  \textbf{Note:} CCNN+NC achieves even stronger results when using Lemma+Char features (\textbf{81.5, 67.2,} and \textbf{70.0} for the three sections, respectively). FFNN denotes a Feed-Forward Neural Network Mention-Pair model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
 \label{tab:others}
 \end{table}
 
@@ -330,7 +330,7 @@ CCNN+AGG & 70.5 & 89.1 & 83.5  & 81.0\\
 
 \textbf{Character Embeddings} were effective for the same reason String Edit Distance is often a strong feature: there tends to be a direct correlation between the textual similarity of mentions and their likelihood of being co-referent. Both random character embeddings and pre-trained ones yielded the same performance, suggesting that the power comes from the uniqueness of characters, not any \textit{meaning} conveyed in the characters.
 
-Combining Lemma + Character Embeddings gave even higher performance on the ECB+ Test Set, illustrating that these two features are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
+Combining Lemma + Character Embeddings gave even higher performance on all three Test Sets, illustrating that these two features are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
 
 Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.
 
