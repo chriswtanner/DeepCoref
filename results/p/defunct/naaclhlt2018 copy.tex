@@ -23,11 +23,9 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{graphicx}
-%\DeclareMathOperator*{\argmax}{argmax}
-%\DeclareMathOperator*{\argmin}{argmin}
 \newcommand{\argmin}[1]{\underset{#1}{\operatorname{argmin}}\;}
 \newcommand{\argmax}[1]{\underset{#1}{\operatorname{argmax}}\;}
-\aclfinalcopy % Uncomment this line for the final submission
+%\aclfinalcopy % Uncomment this line for the final submission
 \def\aclpaperid{***} %  Enter the acl Paper ID here
 
 %\setlength\titlebox{5cm}
@@ -75,7 +73,7 @@ Specifically, coreference systems aim to find a globally-optimal fit of mentions
 
 \textbf{Entity/Event-level} models differ in that they focus on building a global representation of each underlying entity or event, the basis of which determines each mention's membership -- as opposed to operating on a mention-level basis \cite{DBLP:journals/corr/WisemanRS16,clark2016improving}.
 
-In this work, we use a novel mention-pair model that is designed to discriminate between pairs of input features: Siamese Convolutional Neural Networks.  We feel awkward using the term siamese, so we will henceforth refer to our model as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace a common weakness of mention-pair models with an approach resembling the main strength of entity/event-level models. Specifically, we aim to combine all linked mention pairs into a cluster via a neural, east-first clustering approach which factors in a small, but effective, notion of the entire cluster at large.
+In this work, we use a novel mention-pair model that is designed to discriminate between pairs of input features: Siamese Convolutional Neural Networks.  We feel awkward using the term ``siamese,'' so we will henceforth refer to our model as our newly-coined term, Conjoined Convolutional Neural Networks (or CCNN).  Further, we aim to replace a common weakness of mention-pair models with an approach resembling the main strength of entity/event-level models. Specifically, we aim to combine all linked mention pairs into a cluster via a neural, easy-first clustering approach which factors in a small, but effective, notion of the entire cluster at large.
 
 Additionally, coreference research systems typically use a plethora of relatively expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, etc.  Although some research papers list their system's learned feature weights \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalist approach and illustrates the effects of using few features.  We aim to address this by starting with a basic lemma-embedding feature and then evaluate the effectiveness of adding other commonly used features.
 
@@ -105,8 +103,7 @@ In the present day, Deep Learning is revolutionarily affecting NLP; however, the
 \subsection{Deep Learning Approaches}
 To the best of our knowledge, there are only five publications which apply deep learning to coreference resolution, four of which focus on entity coreference.
 
-Sam Wiseman, et. al. \shortcite{DBLP:conf/acl/WisemanRSW15,DBLP:conf/naacl/WisemanRS16} trained a mention-ranking model with a heuristic loss function that assigns different costs based on the types of errors made, and their latter work used mention-ranking predictions towards an entity-level model via LSTM hidden states \cite{Hochreiter:1997:LSM:1246443.1246450}.
-
+Sam Wiseman, et. al. \shortcite{DBLP:conf/acl/WisemanRSW15,DBLP:conf/naacl/WisemanRS16} trained a mention-ranking model with a heuristic loss function that assigns different costs based on the types of errors made, and their latter work used mention-ranking predictions towards an entity-level model.
 Clark and Manning \shortcite{clark2016improving,DBLP:journals/corr/ClarkM16a} also built both a mention-ranking model and an entity-level model, the former of which was novel in using reinforcement learning to find the optimal loss values for the same four distinct error types defined in Wiseman's, et. al. \shortcite{DBLP:conf/acl/WisemanRSW15} work.
 
 \subsection{Systems using ECB+ Corpus}
@@ -131,7 +128,7 @@ Recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first 
 \section{System Overview}
 \subsection{Mention Identification}
 \label{sec:mentionid}
-Coreference systems are predicated upon having entity/event mentions identified.  In fact, this identification process is the focus of a different line of research: entity recognition and event detection.  This separation of tasks allows coreference systems to be evaluated precisely on their ability to cluster together appropriate mentions, independent from the mention detection.  Thus, it is common practice for coreference systems to either: (1) use gold mentions that are defined by the true annotations in the corpus, or (2) use an off-the-shelf entity recognition system.  We do both; the majority of our results are shown with having used gold ECB+ test mentions.  Yet, to ensure we developed a competitive system, it was imperative that we compare our system to the HDDCRP and Iterative-Unfolding models.
+Coreference systems are predicated upon having entity/event mentions identified.  In fact, this identification process is the focus of a different line of research: entity recognition and event detection.  This separation of tasks allows coreference systems to be evaluated precisely on their ability to cluster together appropriate mentions, independent from the mention detection.  Thus, it is common practice for coreference systems to either: (1) use gold mentions that are defined by the true annotations in the corpus, or (2) use an off-the-shelf entity recognition system.  We do both; the majority of our results are shown using gold ECB+ test mentions.  Yet, to ensure we developed a competitive system, we also used the same test mentions as the HDDCRP and Iterative-Unfolding models.
 
 The HDDCRP model used a pre-existing event detection system to identify mentions, then they filtered many of those, yielding their system with an imperfect but reasonable set of mentions that shares a moderate overlap with the gold test mentions.  Determining the exact mentions that were used by HDDCRP was one of the most challenging and time-consuming processes of our research.
 
@@ -149,7 +146,7 @@ Our system is comprised of two neural models:
 \end{itemize}
 \subsection{Corpus}
 \label{sec:corpus}
-We exclusively make use of the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories -- each of which has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains two sub-topics: one about Lindsay Lohan checking into a rehab center, the other about Tara Reid doing so.  Each sub-topic contains roughly 10 short text documents which all concern the same given sub-topic.  We maintained the same train/dev/test splits as previous researchers\footnote{Training set contains topics 1-20, the dev set contains topics 21-23, and the test set has topics 24-43.}  A sample of the corpus in shown in Figure \ref{fig:corpus}, and statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
+We use the ECB+ corpus \cite{ECB+}, which is the largest available dataset with annotations for event coreference.  The corpus is comprised of 43 distinct \textit{topics} -- categories or news stories -- each of which has 2 sub-topics which are similar in nature but distinctly different from each other.  For example, Topic 1 contains two sub-topics: one about Lindsay Lohan checking into a rehab center, the other about Tara Reid doing so.  Each sub-topic contains roughly 10 short text documents which all concern the same given sub-topic.  We maintained the same train/dev/test splits as previous researchers\footnote{Training set contains topics 1-20, the dev set contains topics 21-23, and the test set has topics 24-43.}  A sample of the corpus in shown in Figure \ref{fig:corpus}, and statistics are listed in Table \ref{tab:ECB1}, where it is clear that the majority of gold mentions are one token in length (e.g, \textit{announced}).
 
 \begin{table}
 \centering
@@ -196,7 +193,7 @@ Since our CCNN needs each mention to be represented exclusively by its own input
   \item \textbf{Lemmatization}: 300-length word embeddings for the lemma of each token, where the embedding came from running GloVe \cite{pennington2014glove} on our corpus, or using their provided pre-trained 840 billion token crawl.
   \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each token, and we represent it via the aforementioned lemma embeddings.
   \item \textbf{Character Embeddings:} we represent each token as a concatenation of its character embeddings, where we experimented with 20-dimensional character embeddings being either random or pre-trained.
-  \item \textbf{Word Embeddings:} the same embeddings that we use for the lemma feature, only the token is represented by its actual word, not lemma.
+  \item \textbf{Word Embeddings:} the same embeddings used for the lemma feature, only the token is represented by its actual word, not lemma.
 \end{itemize}
 Note, since mentions are of varying token length (see Table \ref{tab:ECB1}), we need a convention to standardize the vector-length (e.g., to 300 dimension).  We experimented with summing all token embeddings in place, averaging, and concatenated to a particular $N$-length size.  For clarity, \textit{averaging} for a given mention $m$'s embedding is calculated via:
 
@@ -221,12 +218,12 @@ where $b \in \mathbb{R}$ is an added bias term.  The kernel runs over every poss
 
 \vspace{3mm}
 
-We use 32 kernels (we experimented with powers of 2, from 2-256), along with ReLU as our activation function.  Dropout of 0.1 is then applied.  Next, we repeat this processing by adding convolution and dropout again, then we apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$ for each kernel. Last, we merge all kernels' univariate vectors into 1 final layer, apply dropout again, and feed into ReLU which yields a two-class softmax prediction.  The full architecture is shown in Figure \ref{fig:ccnn}.
+We start with 32 kernels, along with ReLU as our activation function.  Dropout of 0.1 is then applied.  Next, we repeat this processing by adding convolution and dropout again, then we apply max-pooling to get a single $\hat{c} = max\{\textbf{c\}} \in \mathbb{R}$ for each kernel. Last, we merge all kernels' univariate vectors into 1 final layer, then we use ReLU to yield a two-class softmax prediction.  The full architecture is shown in Figure \ref{fig:ccnn}.
 
 \begin{figure*}[h]
 \centering
 	\includegraphics[width=1\textwidth]{architecture.pdf}
-	\caption{Conjoined Convolutional Neural Network's Architecture.  The left half shares the same weights with the right half.  Blocks A, C, and F represent 32, 64, and 128 kernels, respectively.  The kernels' size is 1x3.  Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout.  Blocks E and H represent MaxPooling with kernel size 1x2.  The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors.}
+	\caption{Conjoined Convolutional Neural Network's Architecture.  The left half shares the same weights with the right half.  Blocks A, C, and F represent 32, 64, and 128 kernels, respectively.  The kernel size is 1x3, and different colors denote distinct kernels.  Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout.  Blocks E and H represent MaxPooling with kernel size 1x2.  The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors.}
 	\label{fig:ccnn}
 \end{figure*}
 
@@ -290,8 +287,8 @@ We were interested in the five common, non-relational embedding features which a
 
 \begin{figure*}[h]
 \centering
-	\includegraphics[width=0.9\textwidth]{features.pdf}
-	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using ECB+ gold test mentions and all combinations of features.}
+	\includegraphics[width=0.80\textwidth]{features.pdf}
+	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features.}
 	\label{fig:allfeatures}
 \end{figure*}
 
@@ -325,7 +322,7 @@ CCNN+AGG & 70.6 & 89.4 & 83.7  & 81.2\\
  \textbf{CCNN+NC} & 67.4 & 73.0 & 69.7  & \textbf{70.0}\\
  \hline
 \end{tabular}
-\caption{Comparison against other systems.  FFNN denotes a Feed-Forward Neural Network Mention-Pair Model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
+\caption{Comparison against other systems, using our best combination of features (lemma + char). FFNN denotes a Feed-Forward Neural Network Mention-Pair Model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
 \label{tab:others}
 \end{table}
 
@@ -335,7 +332,7 @@ CCNN+AGG & 70.6 & 89.4 & 83.7  & 81.2\\
 
 Combining Lemma Embeddings with Character Embeddings yielded \textbf{our highest performance -- 81.5 CoNLL F1 score.}  As this is the first event coreference system to test on the ECB+ golden test mentions, we denote this score as the new baseline to which to compare future systems.
 
-It is clear that Lemma + Character Embeddings are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma Embeddings or Character Embeddings offered strong results. 
+It is clear that Lemma + Character Embeddings are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
 %Interestingly, the Iteratively-Unfolding model used Lemma + POS \shortcite{Choubey2017EventCR}.
 
 Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.

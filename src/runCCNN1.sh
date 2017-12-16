@@ -1,18 +1,18 @@
 #!/bin/bash
 featureMap=(2 4)
-numLayers=(1) # 3) # 1 3
-numEpochs=(1) # 20)
+numLayers=(2) # 3) # 1 3
+numEpochs=(3) # 20)
 windowSize=(0)
-numNeg=(1)
-batchSize=(256) # 128) # 64 128
+numNeg=(5)
+batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(1)
-filterMultiplier=(1.0) # 2.0)
+numFilters=(32)
+filterMultiplier=(2.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
@@ -23,7 +23,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(23) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
+devDir=(20) # 2 3 4 5 6 7 8 9 10 11 12 13 14 16 18 19 20 21 22 23 24 25)
 
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`

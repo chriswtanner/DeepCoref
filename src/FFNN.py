@@ -18,7 +18,7 @@ class FFNN:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.sameLemmaBaseline = True # if True, perform SameLemma
+		self.sameLemmaBaseline = False # if True, perform SameLemma
 
 		# print stuff
 		print("args:", str(args))
