@@ -114,7 +114,7 @@ do
 																											# qsub -pe smp 8 -l vlong -o
 																											fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_co${co}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}_dd${dd}_fn${fn}_fp${fp}_fo${fo}.out
 																											echo ${fout}
-																											if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2.local" ]
+																											if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2" ]
 																											then
 																												echo "* kicking off runCCNN2 natively"
 																												./runCCNN2.sh FULL gpu ${nl} ${pool} ${ne} ${ws} ${neg} ${bs} ${s} ${emb} ${hdd} ${dr} ${co} ${cm} ${nf} ${fm} ${fpos} ${pt} ${lt} ${dt} ${ct} ${st} ${ws2} ${vs} ${sl} ${dd} ${fn} ${fp} ${fo} # > ${fout}												

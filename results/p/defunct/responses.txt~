@@ -1,0 +1,3 @@
+First, thank you very much, as it’s clear you spent time and effort to thoroughly understand and review the paper!
+
+I wish to clarify an important issue which may be a misunderstanding regarding your “Based on the text […]” comment (weakness #1): since our works concerns two models which operate in a serial manner, I realize the wording can be tricky.  In short, we were very careful to never test on training data.  The corpus has 43 topics (aka directories).  The CCNN (1st model) trains on mention-pairs from topics 1-17, then makes mention-pair predictions for topics 18-43 (e.g., (mention1,mention2) = 0.23)) .  Next, the Neural Cluster model uses the predicted mention-pair scores in topics 18-20 as training data to learn how to cluster.  
