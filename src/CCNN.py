@@ -23,7 +23,7 @@ from get_coref_metrics import *
 from array import array
 
 class CCNN:
-    def __init__(self, args, corpus, helper, hddcrp_parsed):
+    def __init__(self, args, corpus, helper, hddcrp_parsed, isWDModel):
         self.calculateMax = False # find the max pairwise performance
         self.useRelationalFeatures = False # the merged layer right before final output
         self.NNBasic = False # if True, instead of a CCNN, actually just use a FF
@@ -41,6 +41,7 @@ class CCNN:
         self.corpus = corpus
         self.helper = helper
         self.hddcrp_parsed = hddcrp_parsed
+        self.isWDModel = isWDModel # if True, do our original model; if False, do CD training
 
         # just for understanding the data more
         self.lemmas = set()
@@ -1226,7 +1227,7 @@ class CCNN:
                     if parentLemma == "ROOT":
                         curEmb = [1]*self.embeddingLength
                     else:
-                        curEmb = self.wordTypeToEmbedding[parentLemma]
+                        curEmb = self.wordTypeToEmbedding[constructECBTrainingparentLemma]
                     
                     isOOV = True
                     for _ in curEmb:
@@ -1372,15 +1373,17 @@ class CCNN:
     def createData(self, subset, dirs=None):
 
         if subset == "train":
-            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBTraining(dirs)
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBTraining(dirs, self.isWDModel)
+
         elif subset == "dev":
-            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, False)
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, False, self.isWDModel)
         elif subset == "test":
             # this is not a mistake; constructECBDev() merely fetches all examples (no negative-subsampling),
             # so it's okay to re-use it to get the testing data
-            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, True)  
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, True, self.isWDModel)
         elif subset == "hddcrp":
-            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructHDDCRPTest(self.hddcrp_parsed) # could be gold test or predicted test mentions
+            (tokenListPairs, mentionIDPairs, labels) = self.helper.constructHDDCRPTest(self.hddcrp_parsed, self.isWDModel) # could be gold test or predicted test mentions
+
         else:
             print("* ERROR: unknown passed-in 'subset' param")
             exit(1)

@@ -198,6 +198,8 @@ class HDDCRPParser:
 		self.docToUIDs = defaultdict(list)
 		self.hm_idToHMention = {}
 
+		self.dirToDocs = defaultdict(set)
+
 		REFToStartTuple = defaultdict(list)
 		tokenIndex = 0
 		sentenceNum = 0
@@ -221,6 +223,8 @@ class HDDCRPParser:
 				sentenceNum += 1
 			elif len(tokens) == 5:
 				doc, _, tokenNum, text, ref_ = tokens
+
+				dir_num = doc[0:doc.find("_")]
 
 				# the construction sets a member variable "uid" = doc_id, sentence_id, token_num
 				curToken = HToken(doc, sentenceNum, tokenNum, text.lower())
@@ -277,6 +281,7 @@ class HDDCRPParser:
 						self.MUIDToHMentions[MUID] = curMention
 						self.hm_idToHMention[hm_id] = curMention
 						self.DOCREFToHM_IDs[(doc,ref_id)].add(hm_id)
+						self.dirToDocs[dir_num].add(doc)
 						hm_id += 1
 
 					isFirst = False

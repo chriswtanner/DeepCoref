@@ -10,12 +10,13 @@ from get_coref_metrics import *
 from random import random
 from random import randint
 class ECBHelper:
-
+##pos: 2263
+#neg: 4526
 	def __init__(self, args, corpus, hddcrp_parsed): # goldTruthFile, goldLegendFile, isVerbose):
 		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 		#self.devDirs = [23,24,25]
-
-		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22] #,23,24,25]
+		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
 		for _ in self.nonTestingDirs:
@@ -240,7 +241,7 @@ class ECBHelper:
 			self.posToGloveEmbedding[pos] = emb
 		f.close()
 
-	def constructECBDev(self, dirs, isTest=False): # the last param determins if we're working on ECBTest
+	def constructECBDev(self, dirs, isTest, isWDModel): # the 2nd-to-last param determines if we're working on ECBTest
 		print("* in constructECBDev()")
 		devTokenListPairs = []
 		mentionIDPairs = []
@@ -252,52 +253,101 @@ class ECBHelper:
 			if dirNum not in dirs:
 				continue
 
-			for doc_id in self.corpus.dirToDocs[dirNum]:
-				docDMs = []
-				for ref in self.corpus.docToREFs[doc_id]:
-					for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
-						if dm not in docDMs:
-							docDMs.append(dm)
+			if isWDModel:
+				for doc_id in self.corpus.dirToDocs[dirNum]:
+					docDMs = []
+					for ref in self.corpus.docToREFs[doc_id]:
+						for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
+							if dm not in docDMs:
+								docDMs.append(dm)
 
-				# we only have 1 DM in the doc, but we want to add it if we're w/ the test set
-				if isTest and len(docDMs) == 1:
-					dm1 = docDMs[0]
-					tokenList1 = self.corpus.dmToMention[dm1].tokens
-					devTokenListPairs.append((tokenList1,tokenList1))
-					mentionIDPairs.append((dm1,dm1))
-					labels.append(1)
-				else:
-					added = set()
-					for dm1 in docDMs:
-						for dm2 in docDMs:
-							if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
-								continue
+					# we only have 1 DM in the doc, but we want to add it if we're w/ the test set
+					if isTest and len(docDMs) == 1:
+						dm1 = docDMs[0]
+						tokenList1 = self.corpus.dmToMention[dm1].tokens
+						devTokenListPairs.append((tokenList1,tokenList1))
+						mentionIDPairs.append((dm1,dm1))
+						labels.append(1)
+					else:
+						added = set()
+						for dm1 in docDMs:
+							for dm2 in docDMs:
+								if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+									continue
 
-							# sets dm1's
-							tokenList1 = []
-							if dm1 in DMToTokenLists.keys():
-								tokenList1 = DMToTokenLists[dm1]
-							else:
-								tokenList1 = self.corpus.dmToMention[dm1].tokens
-								DMToTokenLists[dm1] = tokenList1
-							
-							# sets dm2's
-							tokenList2 = []
-							if dm2 in DMToTokenLists.keys():
-								tokenList2 = DMToTokenLists[dm2]
-							else:
-								tokenList2 = self.corpus.dmToMention[dm2].tokens
-								DMToTokenLists[dm2] = tokenList2
+								# sets dm1's
+								tokenList1 = []
+								if dm1 in DMToTokenLists.keys():
+									tokenList1 = DMToTokenLists[dm1]
+								else:
+									tokenList1 = self.corpus.dmToMention[dm1].tokens
+									DMToTokenLists[dm1] = tokenList1
+								
+								# sets dm2's
+								tokenList2 = []
+								if dm2 in DMToTokenLists.keys():
+									tokenList2 = DMToTokenLists[dm2]
+								else:
+									tokenList2 = self.corpus.dmToMention[dm2].tokens
+									DMToTokenLists[dm2] = tokenList2
 
-							devTokenListPairs.append((tokenList1,tokenList2))
-							mentionIDPairs.append((dm1,dm2))
-							if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
-								labels.append(1)
-							else:
-								labels.append(0)
+								devTokenListPairs.append((tokenList1,tokenList2))
+								mentionIDPairs.append((dm1,dm2))
+								if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+									labels.append(1)
+								else:
+									labels.append(0)
 
-							added.add((dm1,dm2))
-							added.add((dm2,dm1))
+								added.add((dm1,dm2))
+								added.add((dm2,dm1))
+			else: # make CD pairs
+				added = set()
+				for doc_id1 in self.corpus.dirToDocs[dirNum]:
+					docDMs1 = []
+					for ref in self.corpus.docToREFs[doc_id1]:
+						for dm in self.corpus.docREFsToDMs[(doc_id1,ref)]:
+							if dm not in docDMs1:
+								docDMs1.append(dm)
+					for doc_id2 in self.corpus.dirToDocs[dirNum]:
+						if self.onlyCrossDoc and doc_id1 == doc_id2:
+							continue
+						docDMs2 = []
+						for ref in self.corpus.docToREFs[doc_id2]:
+							for dm in self.corpus.docREFsToDMs[(doc_id2,ref)]:
+								if dm not in docDMs2:
+									docDMs2.append(dm)
+
+						# iterate over all relevant dms, where they either came from same doc or not
+						for dm1 in docDMs1:
+							for dm2 in docDMs2:
+								if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+									continue
+
+								# sets dm1's
+								tokenList1 = []
+								if dm1 in DMToTokenLists.keys():
+									tokenList1 = DMToTokenLists[dm1]
+								else:
+									tokenList1 = self.corpus.dmToMention[dm1].tokens
+									DMToTokenLists[dm1] = tokenList1
+								
+								# sets dm2's
+								tokenList2 = []
+								if dm2 in DMToTokenLists.keys():
+									tokenList2 = DMToTokenLists[dm2]
+								else:
+									tokenList2 = self.corpus.dmToMention[dm2].tokens
+									DMToTokenLists[dm2] = tokenList2
+
+								devTokenListPairs.append((tokenList1,tokenList2))
+								mentionIDPairs.append((dm1,dm2))
+								if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]:
+									labels.append(1)
+								else:
+									labels.append(0)
+
+								added.add((dm1,dm2))
+								added.add((dm2,dm1))
 		return (devTokenListPairs,mentionIDPairs,labels)
 
 	# returns the Tokens (belonging to Mentions) within the hddcrp_parsed file
@@ -326,7 +376,7 @@ class ECBHelper:
 	# constructs pairs of tokens and the corresponding labels, used for testing
 	# RETURNS: (tokenListPairs, label)
 	# e.g., (([Token1,Token2],[Token61]),1)
-	def constructECBTraining(self, dirs):
+	def constructECBTraining(self, dirs, isWDModel):
 		print("* in constructECBTraining()")
 		trainingPositives = []
 		trainingNegatives = []
@@ -338,13 +388,61 @@ class ECBHelper:
 				continue
 
 			added = set() # so we don't add the same pair twice
-			for doc_id in self.corpus.dirToDocs[dirNum]:
-				numRefsForThisDoc = len(self.corpus.docToREFs[doc_id])
-				for i in range(numRefsForThisDoc):
-					ref1 = self.corpus.docToREFs[doc_id][i]
-					for dm1 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
-						for dm2 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+
+			if isWDModel:
+				for doc_id in self.corpus.dirToDocs[dirNum]:
+					numRefsForThisDoc = len(self.corpus.docToREFs[doc_id])
+					for i in range(numRefsForThisDoc):
+						ref1 = self.corpus.docToREFs[doc_id][i]
+						for dm1 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+							for dm2 in self.corpus.docREFsToDMs[(doc_id,ref1)]:
+								if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
+
+									# adds a positive example
+									trainingPositives.append((dm1,dm2))
+									added.add((dm1,dm2))
+									added.add((dm2,dm1))
+									numNegsAdded = 0
+									j = i + 1
+									while numNegsAdded < self.args.numNegPerPos:
+
+										# pick the next REF
+										ref2 = self.corpus.docToREFs[doc_id][j%numRefsForThisDoc]
+										if numRefsForThisDoc == 1:
+											doc_id2 = doc_id
+											while doc_id2 == doc_id:
+												numDocsInDir = len(self.corpus.dirToDocs[dirNum])
+												doc_id2 = self.corpus.dirToDocs[dirNum][randint(0,numDocsInDir-1)]
+											numRefsForDoc2 = len(self.corpus.docToREFs[doc_id2])
+											ref2 = self.corpus.docToREFs[doc_id2][j%numRefsForDoc2]
+
+											numDMs = len(self.corpus.docREFsToDMs[(doc_id2,ref2)])
+
+											# pick a random negative from a different REF and different DOC
+											dm3 = self.corpus.docREFsToDMs[(doc_id2,ref2)][randint(0, numDMs-1)]
+											trainingNegatives.append((dm1,dm3))
+											numNegsAdded += 1
+
+										elif ref2 != ref1:
+											numDMs = len(self.corpus.docREFsToDMs[(doc_id,ref2)])
+
+											# pick a random negative from the different REF
+											dm3 = self.corpus.docREFsToDMs[(doc_id,ref2)][randint(0, numDMs-1)]
+											trainingNegatives.append((dm1,dm3))
+											numNegsAdded += 1
+										j += 1
+			else: # generate CD pairs
+				numRefsForThisDir = len(self.corpus.dirToREFs[dirNum])
+				for i in range(numRefsForThisDir):
+					ref1 = self.corpus.dirToREFs[dirNum][i]
+					for dm1 in self.corpus.refToDMs[ref1]:
+						(doc_id1,m1) = dm1
+						for dm2 in self.corpus.refToDMs[ref1]:
 							if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
+								(doc_id2,m2) = dm2
+
+								if self.onlyCrossDoc and doc_id1 == doc_id2:
+									continue
 
 								# adds a positive example
 								trainingPositives.append((dm1,dm2))
@@ -353,32 +451,17 @@ class ECBHelper:
 								numNegsAdded = 0
 								j = i + 1
 								while numNegsAdded < self.args.numNegPerPos:
-
 									# pick the next REF
-									ref2 = self.corpus.docToREFs[doc_id][j%numRefsForThisDoc]
-									if numRefsForThisDoc == 1:
-										doc_id2 = doc_id
-										while doc_id2 == doc_id:
-											numDocsInDir = len(self.corpus.dirToDocs[dirNum])
-											doc_id2 = self.corpus.dirToDocs[dirNum][randint(0,numDocsInDir-1)]
-										numRefsForDoc2 = len(self.corpus.docToREFs[doc_id2])
-										ref2 = self.corpus.docToREFs[doc_id2][j%numRefsForDoc2]
-
-										numDMs = len(self.corpus.docREFsToDMs[(doc_id2,ref2)])
-
-										# pick a random negative from a different REF and different DOC
-										dm3 = self.corpus.docREFsToDMs[(doc_id2,ref2)][randint(0, numDMs-1)]
-										trainingNegatives.append((dm1,dm3))
-										numNegsAdded += 1
-
-									elif ref2 != ref1:
-										numDMs = len(self.corpus.docREFsToDMs[(doc_id,ref2)])
+									ref2 = self.corpus.dirToREFs[dirNum][j%numRefsForThisDir]
+									if ref2 != ref1:
 
 										# pick a random negative from the different REF
-										dm3 = self.corpus.docREFsToDMs[(doc_id,ref2)][randint(0, numDMs-1)]
+										numDMsForOtherRef = len(self.corpus.refToDMs[ref2])
+										dm3 = self.corpus.refToDMs[ref2][randint(0,numDMsForOtherRef-1)]
 										trainingNegatives.append((dm1,dm3))
 										numNegsAdded += 1
 									j += 1
+
 		# shuffle training
 		if self.args.shuffleTraining:
 			numPositives = len(trainingPositives)
@@ -401,7 +484,11 @@ class ECBHelper:
 
 		print("#pos:",str(len(trainingPositives)))
 		print("#neg:",str(len(trainingNegatives)))
-
+		'''
+		for p in trainingPositives:
+			(dm1,dm2) = p
+			print(self.corpus.dmToMention[dm1]," and ",self.corpus.dmToMention[dm2])
+		'''
 		trainingTokenListPairs = []
 		mentionIDPairs = []
 		trainingLabels = []
@@ -461,62 +548,104 @@ class ECBHelper:
 	
 
 	# creates all HM (DM equivalent) for test set (could be gold hmentions or predicted hmentions)
-	def constructHDDCRPTest(self, hddcrp_parsed):
+	def constructHDDCRPTest(self, hddcrp_parsed, isWDModel):
 		hTokenListPairs = []
 		mentionIDPairs = []
 		labels = []
 		numSingletons = 0
-		for doc_id in hddcrp_parsed.docToHMentions.keys():
-			HM_IDToTokenLists = {} # saves time
-			added = set()
 
-			if len(hddcrp_parsed.docToHMentions[doc_id]) == 1:
-				print("*** :",str(doc_id),"has exactly 1 hmention")
-				numSingletons += 1
-				hm1 = hddcrp_parsed.docToHMentions[doc_id][0]
-				tokenList = []
-				for t in hm1.tokens:
-					token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
-					tokenList.append(token)
-				hTokenListPairs.append((tokenList,tokenList))
-				mentionIDPairs.append((hm1.hm_id,hm1.hm_id))
-				labels.append(1)
-			else:
-				for hm1 in hddcrp_parsed.docToHMentions[doc_id]:
-					hm1_id = hm1.hm_id
-					
-					tokenList1 = []
-					if hm1_id in HM_IDToTokenLists.keys():
-						tokenList1 = HM_IDToTokenLists[hm1_id]
-					else:
-						for t in hm1.tokens:
-							token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
-							tokenList1.append(token)
-						HM_IDToTokenLists[hm1_id] = tokenList1
+		if isWDModel:
+			for doc_id in hddcrp_parsed.docToHMentions.keys():
+				HM_IDToTokenLists = {} # saves time
+				added = set()
 
-					for hm2 in hddcrp_parsed.docToHMentions[doc_id]:
-						hm2_id = hm2.hm_id
+				if len(hddcrp_parsed.docToHMentions[doc_id]) == 1:
+					print("*** :",str(doc_id),"has exactly 1 hmention")
+					numSingletons += 1
+					hm1 = hddcrp_parsed.docToHMentions[doc_id][0]
+					tokenList = []
+					for t in hm1.tokens:
+						token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+						tokenList.append(token)
+					hTokenListPairs.append((tokenList,tokenList))
+					mentionIDPairs.append((hm1.hm_id,hm1.hm_id))
+					labels.append(1)
+				else:
+					for hm1 in hddcrp_parsed.docToHMentions[doc_id]:
+						hm1_id = hm1.hm_id
 						
-						tokenList2 = []
-						if hm2_id in HM_IDToTokenLists.keys():
-							tokenList2 = HM_IDToTokenLists[hm2_id]
+						tokenList1 = []
+						if hm1_id in HM_IDToTokenLists.keys():
+							tokenList1 = HM_IDToTokenLists[hm1_id]
 						else:
-							for t in hm2.tokens:
+							for t in hm1.tokens:
 								token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
-								tokenList2.append(token)
-							HM_IDToTokenLists[hm2_id] = tokenList2
+								tokenList1.append(token)
+							HM_IDToTokenLists[hm1_id] = tokenList1
 
-						if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
+						for hm2 in hddcrp_parsed.docToHMentions[doc_id]:
+							hm2_id = hm2.hm_id
+							
+							tokenList2 = []
+							if hm2_id in HM_IDToTokenLists.keys():
+								tokenList2 = HM_IDToTokenLists[hm2_id]
+							else:
+								for t in hm2.tokens:
+									token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+									tokenList2.append(token)
+								HM_IDToTokenLists[hm2_id] = tokenList2
+
+							if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
+								continue
+
+							hTokenListPairs.append((tokenList1,tokenList2))
+							mentionIDPairs.append((hm1_id,hm2_id))
+							if hm1.ref_id == hm2.ref_id:
+								labels.append(1)
+							else:
+								labels.append(0)
+							added.add((hm1_id,hm2_id))
+							added.add((hm2_id,hm1_id))
+		else: # generate CD pairs
+			for dir_num in hddcrp_parsed.dirToDocs:
+				HM_IDToTokenLists = {} # saves time
+				added = set()
+				for doc_id1 in hddcrp_parsed.dirToDocs[dir_num]:
+					for doc_id2 in hddcrp_parsed.dirToDocs[dir_num]:
+						if self.onlyCrossDoc and doc_id1 == doc_id2:
 							continue
+						for hm1 in hddcrp_parsed.docToHMentions[doc_id1]:
+							hm1_id = hm1.hm_id
+							tokenList1 = []
+							if hm1_id in HM_IDToTokenLists.keys():
+								tokenList1 = HM_IDToTokenLists[hm1_id]
+							else:
+								for t in hm1.tokens:
+									token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+									tokenList1.append(token)
+								HM_IDToTokenLists[hm1_id] = tokenList1
+							for hm2 in hddcrp_parsed.docToHMentions[doc_id2]:
+								hm2_id = hm2.hm_id
+								
+								tokenList2 = []
+								if hm2_id in HM_IDToTokenLists.keys():
+									tokenList2 = HM_IDToTokenLists[hm2_id]
+								else:
+									for t in hm2.tokens:
+										token = self.corpus.UIDToToken[t.UID] # does the linking b/w HDDCRP's parse and regular corpus
+										tokenList2.append(token)
+									HM_IDToTokenLists[hm2_id] = tokenList2
+								if hm1_id == hm2_id or (hm1_id,hm2_id) in added or (hm2_id,hm1_id) in added:
+									continue
 
-						hTokenListPairs.append((tokenList1,tokenList2))
-						mentionIDPairs.append((hm1_id,hm2_id))
-						if hm1.ref_id == hm2.ref_id:
-							labels.append(1)
-						else:
-							labels.append(0)
-						added.add((hm1_id,hm2_id))
-						added.add((hm2_id,hm1_id))
+								hTokenListPairs.append((tokenList1,tokenList2))
+								mentionIDPairs.append((hm1_id,hm2_id))
+								if hm1.ref_id == hm2.ref_id:
+									labels.append(1)
+								else:
+									labels.append(0)
+								added.add((hm1_id,hm2_id))
+								added.add((hm2_id,hm1_id))
 		return (hTokenListPairs,mentionIDPairs,labels)
 
 	# creates all HM (DM equivalent) for test set

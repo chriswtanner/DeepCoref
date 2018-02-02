@@ -178,7 +178,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --FFNNOpt=${FFNNOpt}
 
 if [ "$useECBTest" = false ] ; then
-	echo "in here"
+
 	cd ${refDir}
 	goldFile=${baseDir}"data/gold.WD.semeval.txt" # data/gold.NS.WD.semeval.txt"
 	shopt -s nullglob
