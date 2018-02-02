@@ -563,6 +563,8 @@ class ECBHelper:
 
 	# creates all HM (DM equivalent) for test set (could be gold hmentions or predicted hmentions)
 	def constructHDDCRPTest(self, hddcrp_parsed, isWDModel):
+		print("* in constructHDDCRPTest()")
+
 		hTokenListPairs = []
 		mentionIDPairs = []
 		labels = []
@@ -1079,7 +1081,7 @@ class ECBHelper:
 	# creates clusters for our hddcrp predictions
 	def clusterHPredictions(self, pairs, predictions, stoppingPoint):
 		clusters = {}
-		print("in clusterPredictions()")
+		print("in clusterHPredictions()")
 		
 		# stores predictions
 		docToHMPredictions = defaultdict(lambda : defaultdict(float))

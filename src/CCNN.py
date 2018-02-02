@@ -1083,7 +1083,8 @@ class CCNN:
     def compute_optimal_f1(self, label, startingProb, predictions, golds):
         #print("* in compute_optimal_f1!!!()")
         sys.stdout.flush()
-        #print("# preds:",str(len(predictions)))
+        print("# preds:",str(len(predictions)))
+        print("# golds:",str(len(golds)))
         # sorts the predictions from smallest to largest
         # (where smallest means most likely a pair)
         preds = set()
@@ -1093,10 +1094,12 @@ class CCNN:
         #print("# unique preds:",str(len(preds)),flush=True)
         sys.stdout.flush()
 
-        print("< ",str(0.5)," = coref yields:",str(self.compute_f1(0.5, predictions, golds)))
 
-        given = self.compute_f1(startingProb, predictions, golds)
-        print("< ",str(startingProb)," = coref yields:",str(given))
+        (recall_, prec_, given) = self.compute_f1(0.5, predictions, golds)
+        print("< ",str(0.5),"=coref yields:",str(given))
+
+        (recall_, prec_, given) = self.compute_f1(startingProb, predictions, golds)
+        print("< ",str(startingProb),"=coref yields:",str(given))
         bestProb = startingProb
         bestF1 = given
         
@@ -1106,13 +1109,13 @@ class CCNN:
         #for p in sorted(preds):
         p = lowestProb
         while p < highestProb:
-            f1 = self.compute_f1(p, predictions, golds)
+            (recall, prec, f1) = self.compute_f1(p, predictions, golds)
             if f1 > bestF1:
                 bestF1 = f1
                 bestProb = p
             numTried += 1
             p += 0.025
-        print(str(label)," BEST F1: ",str(bestProb)," = ", str(bestF1))
+        print(str(label),"BEST F1:",str(bestProb),"=", str(bestF1))
         return bestProb
 
     def compute_f1(self, prob, predictions, golds):
@@ -1155,7 +1158,7 @@ class CCNN:
         #print("------")
         #print("num_golds_true: " + str(num_golds_true) + "; num_predicted_false: " + str(num_predicted_false) + "; num_predicted_true: " + str(num_predicted_true) + " (of these, " + str(num_tp) + " actually were)")
         #print("recall: " + str(recall) + "; prec: " + str(prec) + "; f1: " + str(f1) + "; accuracy: " + str(accuracy))
-        return f1
+        return (recall, prec, f1)
 
     def acc(self, y_true, y_pred):
         ones = K.ones_like(y_pred)
