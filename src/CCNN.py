@@ -54,262 +54,349 @@ class CCNN:
 
     # creates clusters for our predictions
     def clusterPredictions(self, pairs, predictions, stoppingPoint):
-        clusters = {}
-        print("in clusterPredictions()")
-        # stores predictions
-        docToDMPredictions = defaultdict(lambda : defaultdict(float))
-        docToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
-        for i in range(len(pairs)):
-            (dm1,dm2) = pairs[i]
-            prediction = predictions[i][0]
 
-            doc_id = dm1[0]
+        if isWDModel:
+            clusters = {}
+            print("in clusterPredictions() -- WD Model")
+            # stores predictions
+            docToDMPredictions = defaultdict(lambda : defaultdict(float))
+            docToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
+            for i in range(len(pairs)):
+                (dm1,dm2) = pairs[i]
+                prediction = predictions[i][0]
 
-            if dm1 not in docToDMs[doc_id]:
-                docToDMs[doc_id].append(dm1)
-            if dm2 not in docToDMs[doc_id]:
-                docToDMs[doc_id].append(dm2)
-            docToDMPredictions[doc_id][(dm1,dm2)] = prediction
+                doc_id = dm1[0]
 
-        ourClusterID = 0
-        ourClusterSuperSet = {}
+                if dm1 not in docToDMs[doc_id]:
+                    docToDMs[doc_id].append(dm1)
+                if dm2 not in docToDMs[doc_id]:
+                    docToDMs[doc_id].append(dm2)
+                docToDMPredictions[doc_id][(dm1,dm2)] = prediction
 
-        goldenClusterID = 0
-        goldenSuperSet = {}
-        
-        stoppingPoints = []
+            ourClusterID = 0
+            ourClusterSuperSet = {}
 
-        for doc_id in docToDMPredictions.keys():
-            #print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
+            goldenClusterID = 0
+            goldenSuperSet = {}
             
-            # ensures we have all DMs
-            if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
-                print("mismatch in DMs!!")
-                exit(1)
+            stoppingPoints = []
 
-            # construct the golden truth for the current doc
-            goldenTruthDirClusters = {}
-            for i in range(len(self.corpus.docToREFs[doc_id])):
-                tmp = set()
-                curREF = self.corpus.docToREFs[doc_id][i]
-                for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
-                    # TMP:
+            for doc_id in docToDMPredictions.keys():
+                #print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
+                
+                # ensures we have all DMs
+                if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
+                    print("mismatch in DMs!!")
+                    exit(1)
+
+                # construct the golden truth for the current doc
+                goldenTruthDirClusters = {}
+                for i in range(len(self.corpus.docToREFs[doc_id])):
+                    tmp = set()
+                    curREF = self.corpus.docToREFs[doc_id][i]
+                    for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
+                        # TMP:
+                        if False: #self.args.runOnValid:
+                            if dm not in self.helper.validDMs:
+                                print("skipping:",str(dm))
+                                continue
+                        
+                        tmp.add(dm)
+                    goldenTruthDirClusters[i] = tmp
+                    goldenSuperSet[goldenClusterID] = tmp
+                    goldenClusterID += 1
+                #print("golden clusters:", str(goldenTruthDirClusters))
+                
+                goldenK = len(self.corpus.docToREFs[doc_id])
+                #print("# golden clusters: ",str(goldenK))
+                # constructs our base clusters (singletons)
+                ourDocClusters = {}
+                for i in range(len(docToDMs[doc_id])):
+                    dm = docToDMs[doc_id][i]
                     if False: #self.args.runOnValid:
                         if dm not in self.helper.validDMs:
                             print("skipping:",str(dm))
                             continue
                     
-                    tmp.add(dm)
-                goldenTruthDirClusters[i] = tmp
-                goldenSuperSet[goldenClusterID] = tmp
-                goldenClusterID += 1
-            #print("golden clusters:", str(goldenTruthDirClusters))
+                    a = set()
+                    a.add(dm)
+                    ourDocClusters[i] = a
+
+                #print("golden:",str(goldenTruthDirClusters))
+                # the following keeps merging until our shortest distance > stopping threshold,
+                # or we have 1 cluster, whichever happens first
+                if not self.calculateMax:
+                    while len(ourDocClusters.keys()) > 1:
+                        # find best merge
+                        closestDist = 999999
+                        closestClusterKeys = (-1,-1)
+
+                        closestAvgDist = 999999
+                        closestAvgClusterKeys = (-1,-1)
+
+                        closestAvgAvgDist = 999999
+                        closestAvgAvgClusterKeys = (-1,-1)
+
+                        #print("ourDocClusters:",str(ourDocClusters.keys()))
+                        # looks at all combinations of pairs
+                        i = 0
+                        for c1 in ourDocClusters.keys():
+                            
+                            #print("c1:",str(c1))
+                            j = 0
+                            for c2 in ourDocClusters.keys():
+                                if j > i:
+                                    avgavgdists = []
+                                    for dm1 in ourDocClusters[c1]:
+                                        avgdists = []
+                                        for dm2 in ourDocClusters[c2]:
+                                            dist = 99999
+                                            if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                                dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                                avgavgdists.append(dist)
+                                                avgdists.append(dist)
+                                            elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                                dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                                avgavgdists.append(dist)
+                                                avgdists.append(dist)
+                                            else:
+                                                print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                                exit(1)
+                                            if dist < closestDist:
+                                                closestDist = dist
+                                                closestClusterKeys = (c1,c2)  
+                                        avgDist = float(sum(avgdists)) / float(len(avgdists))
+                                        if avgDist < closestAvgDist:
+                                            closestAvgDist = avgDist
+                                            closestAvgClusterKeys = (c1,c2)
+                                    avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+                                    if avgavgDist < closestAvgAvgDist:
+                                        closestAvgAvgDist = avgavgDist
+                                        closestAvgAvgClusterKeys = (c1,c2)
+                                j += 1
+                            i += 1
+
+                                                #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                            #print("trying to merge:",str(closestClusterKeys))
+
+                        # only merge clusters if it's less than our threshold
+                        #if closestDist > stoppingPoint:
+                        # changed
+                        if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+                            break
+                        elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+                            break
+                        elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
+                            break
+
+                        newCluster = set()
+                        (c1,c2) = closestClusterKeys
+                        if self.args.clusterMethod == "avg":
+                            (c1,c2) = closestAvgClusterKeys
+                        elif self.args.clusterMethod == "avgavg":
+                            (c1,c2) = closestAvgAvgClusterKeys
+
+                        for _ in ourDocClusters[c1]:
+                            newCluster.add(_)
+                        for _ in ourDocClusters[c2]:
+                            newCluster.add(_)
+                        ourDocClusters.pop(c1, None)
+                        ourDocClusters.pop(c2, None)
+                        ourDocClusters[c1] = newCluster
+                    # end of current doc
+                    for i in ourDocClusters.keys():
+                        ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+                        #print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(ourDocClusters[i]))
+                        ourClusterID += 1
+
+            # end of going through every doc
+            print("# total golden clusters:",str(len(goldenSuperSet.keys())))
+            print("# total our clusters:",str(len(ourClusterSuperSet)))
+            #print("stoppingPoints: ",str(stoppingPoints))
+            #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
+
+            #self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
+            #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
+            #print("finished writing")
+            return (ourClusterSuperSet, goldenSuperSet)
+        else: # working w/ CD model
+            clusters = {}
+            print("in clusterPredictions() -- CD Model")
+            # stores predictions
+            dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
+            dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
+            for i in range(len(pairs)):
+                (dm1,dm2) = pairs[i]
+                prediction = predictions[i][0]
+
+
+                doc_id1 = dm1[0]
+                extension1 = doc_id1[doc_id1.find("ecb"):]
+                dir_num1 = int(doc_id1.split("_")[0])
+
+                doc_id2 = dm2[0]
+                extension2 = doc_id2[doc_id2.find("ecb"):]
+                dir_num2 = int(doc_id2.split("_")[0])
+
+                if extension1 != extension2 or dir_num1 != dir_num2:
+                    print("** ERROR: we are trying to cluster mentions which came from different dir-halves")
+                    exit(1)
+
+                key1 = dir_num1 + extension1
+                key2 = dir_num2 + extension2
+                print("key:",key1)
+                if dm1 not in dirHalfToDMs[doc_id]:
+                    docToDMs[doc_id].append(dm1)
+                if dm2 not in docToDMs[doc_id]:
+                    docToDMs[doc_id].append(dm2)
+                docToDMPredictions[doc_id][(dm1,dm2)] = prediction
+
+            ourClusterID = 0
+            ourClusterSuperSet = {}
+
+            goldenClusterID = 0
+            goldenSuperSet = {}
             
-            goldenK = len(self.corpus.docToREFs[doc_id])
-            #print("# golden clusters: ",str(goldenK))
-            # constructs our base clusters (singletons)
-            ourDocClusters = {}
-            for i in range(len(docToDMs[doc_id])):
-                dm = docToDMs[doc_id][i]
-                if False: #self.args.runOnValid:
-                    if dm not in self.helper.validDMs:
-                        print("skipping:",str(dm))
-                        continue
+            stoppingPoints = []
+
+            for doc_id in docToDMPredictions.keys():
+                #print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
                 
-                a = set()
-                a.add(dm)
-                ourDocClusters[i] = a
+                # ensures we have all DMs
+                if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
+                    print("mismatch in DMs!!")
+                    exit(1)
 
-            #print("golden:",str(goldenTruthDirClusters))
-            # the following keeps merging until our shortest distance > stopping threshold,
-            # or we have 1 cluster, whichever happens first
-            if not self.calculateMax:
-                while len(ourDocClusters.keys()) > 1:
-                    # find best merge
-                    closestDist = 999999
-                    closestClusterKeys = (-1,-1)
-
-                    closestAvgDist = 999999
-                    closestAvgClusterKeys = (-1,-1)
-
-                    closestAvgAvgDist = 999999
-                    closestAvgAvgClusterKeys = (-1,-1)
-
-                    #print("ourDocClusters:",str(ourDocClusters.keys()))
-                    # looks at all combinations of pairs
-                    i = 0
-                    for c1 in ourDocClusters.keys():
+                # construct the golden truth for the current doc
+                goldenTruthDirClusters = {}
+                for i in range(len(self.corpus.docToREFs[doc_id])):
+                    tmp = set()
+                    curREF = self.corpus.docToREFs[doc_id][i]
+                    for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
+                        # TMP:
+                        if False: #self.args.runOnValid:
+                            if dm not in self.helper.validDMs:
+                                print("skipping:",str(dm))
+                                continue
                         
-                        #print("c1:",str(c1))
-                        j = 0
-                        for c2 in ourDocClusters.keys():
-                            if j > i:
-                                avgavgdists = []
-                                for dm1 in ourDocClusters[c1]:
-                                    avgdists = []
-                                    for dm2 in ourDocClusters[c2]:
-                                        dist = 99999
-                                        if (dm1,dm2) in docToDMPredictions[doc_id]:
-                                            dist = docToDMPredictions[doc_id][(dm1,dm2)]
-                                            avgavgdists.append(dist)
-                                            avgdists.append(dist)
-                                        elif (dm2,dm1) in docToDMPredictions[doc_id]:
-                                            dist = docToDMPredictions[doc_id][(dm2,dm1)]
-                                            avgavgdists.append(dist)
-                                            avgdists.append(dist)
-                                        else:
-                                            print("* error, why don't we have either dm1 or dm2 in doc_id")
-                                            exit(1)
-                                        if dist < closestDist:
-                                            closestDist = dist
-                                            closestClusterKeys = (c1,c2)  
-                                    avgDist = float(sum(avgdists)) / float(len(avgdists))
-                                    if avgDist < closestAvgDist:
-                                        closestAvgDist = avgDist
-                                        closestAvgClusterKeys = (c1,c2)
-                                avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
-                                if avgavgDist < closestAvgAvgDist:
-                                    closestAvgAvgDist = avgavgDist
-                                    closestAvgAvgClusterKeys = (c1,c2)
-                            j += 1
-                        i += 1
-
-                                            #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
-                        #print("trying to merge:",str(closestClusterKeys))
-
-                    # only merge clusters if it's less than our threshold
-                    #if closestDist > stoppingPoint:
-                    # changed
-                    if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
-                        break
-                    elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
-                        break
-                    elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
-                        break
-
-                    newCluster = set()
-                    (c1,c2) = closestClusterKeys
-                    if self.args.clusterMethod == "avg":
-                        (c1,c2) = closestAvgClusterKeys
-                    elif self.args.clusterMethod == "avgavg":
-                        (c1,c2) = closestAvgAvgClusterKeys
-
-                    for _ in ourDocClusters[c1]:
-                        newCluster.add(_)
-                    for _ in ourDocClusters[c2]:
-                        newCluster.add(_)
-                    ourDocClusters.pop(c1, None)
-                    ourDocClusters.pop(c2, None)
-                    ourDocClusters[c1] = newCluster
-                # end of current doc
-                for i in ourDocClusters.keys():
-                    ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
-                    #print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(ourDocClusters[i]))
-                    ourClusterID += 1
-            else: # calculates max performance possible
-                # THE FOLLOWING ITERATIVELY MERGES, and SAVES THE BEST MERGE
-                print("* CALCULATING MAX POSSIBLE PERFORMANCE")
-                bestScore = get_conll_f1(goldenTruthDirClusters, ourDocClusters)
-                bestClustering = copy.deepcopy(ourDocClusters)
-
-                mergeDistances = []
-                f1Scores = []
-                mergeDistances.append(-1)
-                f1Scores.append(bestScore)
-
-                #print("ourclusters:",str(ourDocClusters))
-                print("# initial clusters:",str(len(ourDocClusters.keys()))," had score:",str(bestScore))
-                # performs agglomerative, checking our performance after each merge
-
-                while len(ourDocClusters.keys()) > 1:
-                    # find best merge
-                    closestDist = 999999
-                    closestClusterKeys = (-1,-1)
-
-                    closestAvgDist = 999999
-                    closestAvgClusterKeys = (-1,-1)
-
-                    # looks at all combinations of pairs
-                    i = 0
-                    for c1 in ourDocClusters.keys():
-                        #print("c1:",str(c1))
-                        j = 0
-                        for c2 in ourDocClusters.keys():
-
-                            if j > i:
-
-                                dists = []
-                                for dm1 in ourDocClusters[c1]:
-                                    for dm2 in ourDocClusters[c2]:
-                                        dist = 99999
-                                        if (dm1,dm2) in docToDMPredictions[doc_id]:
-                                            dist = docToDMPredictions[doc_id][(dm1,dm2)]
-                                            dists.append(dist)
-                                        elif (dm2,dm1) in docToDMPredictions[doc_id]:
-                                            dist = docToDMPredictions[doc_id][(dm2,dm1)]
-                                            dists.append(dist)
-                                        else:
-                                            print("* error, why don't we have either dm1 or dm2 in doc_id")
-                                        if dist < closestDist:
-                                            closestDist = dist
-                                            closestClusterKeys = (c1,c2)
-                                avgDist = float(sum(dists)) / float(len(dists))
-                                if avgDist < closestAvgDist:
-                                    closestAvgDist = avgDist
-                                    closestAvgClusterKeys = (c1,c2)
-                            j += 1
-                        i += 1
-                    
-                    newCluster = set()
-
-                    # changed
-                    #mergeDistances.append(closestDist)
-                    #(c1,c2) = closestClusterKeys
-                    mergeDistances.append(closestAvgDist)
-                    (c1,c2) = closestAvgClusterKeys
-
-                    for _ in ourDocClusters[c1]:
-                        newCluster.add(_)
-                    for _ in ourDocClusters[c2]:
-                        newCluster.add(_)
-                    ourDocClusters.pop(c1, None)
-                    ourDocClusters.pop(c2, None)
-                    ourDocClusters[c1] = newCluster
-
-                    curScore = get_conll_f1(goldenTruthDirClusters, ourDocClusters)
-                    f1Scores.append(curScore)
-
-                    if curScore > bestScore:
-                        bestScore = curScore
-                        bestClustering = copy.deepcopy(ourDocClusters)
+                        tmp.add(dm)
+                    goldenTruthDirClusters[i] = tmp
+                    goldenSuperSet[goldenClusterID] = tmp
+                    goldenClusterID += 1
+                #print("golden clusters:", str(goldenTruthDirClusters))
                 
-                # end of current doc
-                print("best clustering yielded:",str(bestScore),":",str(bestClustering))
-                print("# best clusters:",str(len(bestClustering.keys())))
-                for i in bestClustering.keys():
-                    ourClusterSuperSet[ourClusterID] = bestClustering[i]
-                    print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(bestClustering[i]))
-                    ourClusterID += 1
+                goldenK = len(self.corpus.docToREFs[doc_id])
+                #print("# golden clusters: ",str(goldenK))
+                # constructs our base clusters (singletons)
+                ourDocClusters = {}
+                for i in range(len(docToDMs[doc_id])):
+                    dm = docToDMs[doc_id][i]
+                    if False: #self.args.runOnValid:
+                        if dm not in self.helper.validDMs:
+                            print("skipping:",str(dm))
+                            continue
+                    
+                    a = set()
+                    a.add(dm)
+                    ourDocClusters[i] = a
 
-                for i in range(len(f1Scores)):
-                    if f1Scores[i] == bestScore:
-                        print("* ", str(mergeDistances[i])," -> ",str(f1Scores[i]))
-                        if i != len(f1Scores) - 1:
-                            stoppingPoints.append(mergeDistances[i+1])
-                    else:
-                        print(str(mergeDistances[i])," -> ",str(f1Scores[i]))
+                #print("golden:",str(goldenTruthDirClusters))
+                # the following keeps merging until our shortest distance > stopping threshold,
+                # or we have 1 cluster, whichever happens first
+                if not self.calculateMax:
+                    while len(ourDocClusters.keys()) > 1:
+                        # find best merge
+                        closestDist = 999999
+                        closestClusterKeys = (-1,-1)
 
-        # end of going through every doc
-        print("# total golden clusters:",str(len(goldenSuperSet.keys())))
-        print("# total our clusters:",str(len(ourClusterSuperSet)))
-        #print("stoppingPoints: ",str(stoppingPoints))
-        #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
+                        closestAvgDist = 999999
+                        closestAvgClusterKeys = (-1,-1)
 
-        #self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
-        #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
-        #print("finished writing")
-        return (ourClusterSuperSet, goldenSuperSet)
+                        closestAvgAvgDist = 999999
+                        closestAvgAvgClusterKeys = (-1,-1)
 
+                        #print("ourDocClusters:",str(ourDocClusters.keys()))
+                        # looks at all combinations of pairs
+                        i = 0
+                        for c1 in ourDocClusters.keys():
+                            
+                            #print("c1:",str(c1))
+                            j = 0
+                            for c2 in ourDocClusters.keys():
+                                if j > i:
+                                    avgavgdists = []
+                                    for dm1 in ourDocClusters[c1]:
+                                        avgdists = []
+                                        for dm2 in ourDocClusters[c2]:
+                                            dist = 99999
+                                            if (dm1,dm2) in docToDMPredictions[doc_id]:
+                                                dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                                avgavgdists.append(dist)
+                                                avgdists.append(dist)
+                                            elif (dm2,dm1) in docToDMPredictions[doc_id]:
+                                                dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                                avgavgdists.append(dist)
+                                                avgdists.append(dist)
+                                            else:
+                                                print("* error, why don't we have either dm1 or dm2 in doc_id")
+                                                exit(1)
+                                            if dist < closestDist:
+                                                closestDist = dist
+                                                closestClusterKeys = (c1,c2)  
+                                        avgDist = float(sum(avgdists)) / float(len(avgdists))
+                                        if avgDist < closestAvgDist:
+                                            closestAvgDist = avgDist
+                                            closestAvgClusterKeys = (c1,c2)
+                                    avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+                                    if avgavgDist < closestAvgAvgDist:
+                                        closestAvgAvgDist = avgavgDist
+                                        closestAvgAvgClusterKeys = (c1,c2)
+                                j += 1
+                            i += 1
+
+                                                #print("closestdist is now:",str(closestDist),"which is b/w:",str(closestClusterKeys))
+                            #print("trying to merge:",str(closestClusterKeys))
+
+                        # only merge clusters if it's less than our threshold
+                        #if closestDist > stoppingPoint:
+                        # changed
+                        if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+                            break
+                        elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+                            break
+                        elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
+                            break
+
+                        newCluster = set()
+                        (c1,c2) = closestClusterKeys
+                        if self.args.clusterMethod == "avg":
+                            (c1,c2) = closestAvgClusterKeys
+                        elif self.args.clusterMethod == "avgavg":
+                            (c1,c2) = closestAvgAvgClusterKeys
+
+                        for _ in ourDocClusters[c1]:
+                            newCluster.add(_)
+                        for _ in ourDocClusters[c2]:
+                            newCluster.add(_)
+                        ourDocClusters.pop(c1, None)
+                        ourDocClusters.pop(c2, None)
+                        ourDocClusters[c1] = newCluster
+                    # end of current doc
+                    for i in ourDocClusters.keys():
+                        ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+                        #print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(ourDocClusters[i]))
+                        ourClusterID += 1
+
+            # end of going through every doc
+            print("# total golden clusters:",str(len(goldenSuperSet.keys())))
+            print("# total our clusters:",str(len(ourClusterSuperSet)))
+            #print("stoppingPoints: ",str(stoppingPoints))
+            #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
+
+            #self.writeCoNLLPerlFile("ourKeys.response",ourClusterSuperSet)
+            #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
+            #print("finished writing")
+            return (ourClusterSuperSet, goldenSuperSet)
     def analyzeResults(self, pairs, predictions, predictedClusters):
 
         # sanity check: ensures all pairs are accounted for
@@ -1374,7 +1461,6 @@ class CCNN:
 
         if subset == "train":
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBTraining(dirs, self.isWDModel)
-
         elif subset == "dev":
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, False, self.isWDModel)
         elif subset == "test":
@@ -1383,7 +1469,6 @@ class CCNN:
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructECBDev(dirs, True, self.isWDModel)
         elif subset == "hddcrp":
             (tokenListPairs, mentionIDPairs, labels) = self.helper.constructHDDCRPTest(self.hddcrp_parsed, self.isWDModel) # could be gold test or predicted test mentions
-
         else:
             print("* ERROR: unknown passed-in 'subset' param")
             exit(1)

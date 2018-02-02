@@ -319,8 +319,12 @@ class ECBHelper:
 
 						# iterate over all relevant dms, where they either came from same doc or not
 						for dm1 in docDMs1:
+							(doc_id1,m1) = dm1
+							extension1 = doc_id1[doc_id1.find("ecb"):]
 							for dm2 in docDMs2:
-								if dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
+								(doc_id2,m2) = dm2
+								extension2 = doc_id2[doc_id2.find("ecb"):]		
+								if extension1 != extension2 or dm1 == dm2 or (dm1,dm2) in added or (dm2,dm1) in added:
 									continue
 
 								# sets dm1's
@@ -433,14 +437,19 @@ class ECBHelper:
 										j += 1
 			else: # generate CD pairs
 				numRefsForThisDir = len(self.corpus.dirToREFs[dirNum])
+				
 				for i in range(numRefsForThisDir):
 					ref1 = self.corpus.dirToREFs[dirNum][i]
+					extensions = set() # keeps track of if the docs are ecb.xml or ecbplus.xml (to ensure we have homogenous pairs)
 					for dm1 in self.corpus.refToDMs[ref1]:
 						(doc_id1,m1) = dm1
+						extension1 = doc_id1[doc_id1.find("ecb"):]
 						for dm2 in self.corpus.refToDMs[ref1]:
-							if dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
-								(doc_id2,m2) = dm2
+							(doc_id2,m2) = dm2
+							extension2 = doc_id2[doc_id2.find("ecb"):]
 
+							# adds positive examples first
+							if extension1 == extension2 and dm1 != dm2 and (dm1,dm2) not in added and (dm2,dm1) not in added:
 								if self.onlyCrossDoc and doc_id1 == doc_id2:
 									continue
 
@@ -451,17 +460,22 @@ class ECBHelper:
 								numNegsAdded = 0
 								j = i + 1
 								while numNegsAdded < self.args.numNegPerPos:
-									# pick the next REF
+									# pick the next REF (which ~50% of the time will be in
+									# the other half/extension of the dir)
 									ref2 = self.corpus.dirToREFs[dirNum][j%numRefsForThisDir]
 									if ref2 != ref1:
 
 										# pick a random negative from the different REF
 										numDMsForOtherRef = len(self.corpus.refToDMs[ref2])
 										dm3 = self.corpus.refToDMs[ref2][randint(0,numDMsForOtherRef-1)]
-										trainingNegatives.append((dm1,dm3))
-										numNegsAdded += 1
-									j += 1
 
+										# but only add the negative example if it's in the same half/extension
+										(doc_id3,m3) = dm3
+										extension3 = doc_id3[doc_id3.find("ecb"):]
+										if extension1 == extension3:
+											trainingNegatives.append((dm1,dm3))
+											numNegsAdded += 1
+									j += 1
 		# shuffle training
 		if self.args.shuffleTraining:
 			numPositives = len(trainingPositives)
@@ -610,10 +624,20 @@ class ECBHelper:
 			for dir_num in hddcrp_parsed.dirToDocs:
 				HM_IDToTokenLists = {} # saves time
 				added = set()
+
 				for doc_id1 in hddcrp_parsed.dirToDocs[dir_num]:
+					extension1 = doc_id1[doc_id1.find("ecb"):]
+
 					for doc_id2 in hddcrp_parsed.dirToDocs[dir_num]:
+						extension2 = doc_id2[doc_id2.find("ecb"):]
+						
+						# if we want to exclude WD pairs, we must be in diff docs
 						if self.onlyCrossDoc and doc_id1 == doc_id2:
 							continue
+						# docs must come from same dir half
+						if extension1 != extension2:
+							continue
+
 						for hm1 in hddcrp_parsed.docToHMentions[doc_id1]:
 							hm1_id = hm1.hm_id
 							tokenList1 = []

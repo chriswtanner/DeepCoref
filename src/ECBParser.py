@@ -68,6 +68,7 @@ class ECBParser:
 		self.dmToREF = {}
 		self.refToDMs = defaultdict(list)
 		self.dirToREFs = defaultdict(list)
+		self.refToExtensions = defaultdict(set)
 
 		self.dirToDocs = defaultdict(list)
 		self.docToGlobalSentenceNums = defaultdict(set)
@@ -380,6 +381,9 @@ class ECBParser:
 					self.refToDMs[ref_id].append((doc_id,m_id))
 					dirNum = int(doc_id[0:doc_id.find("_")])
 
+					extension = doc_id[doc_id.find("ecb"):]
+					self.refToExtensions[ref_id].add(extension)
+
 					# stores the REF for the current doc_id
 					if ref_id not in self.docToREFs[doc_id]:
 						self.docToREFs[doc_id].append(ref_id)
@@ -395,6 +399,7 @@ class ECBParser:
 
 					if (doc_id,m_id) not in self.docToDMs[doc_id]:
 						self.docToDMs[doc_id].append((doc_id,m_id))
+
 			#if globalSentenceNum > 2:
 			#	print "globalSentenceNum: " + str(globalSentenceNum)
 			#	break
@@ -402,6 +407,9 @@ class ECBParser:
 		# (2) sets the globalSentenceTokens so that we can parse the original sentences
 		# (3) sets the startIndex and endIndex based on what we'd output
 		
+		for ref in self.refToExtensions:
+			if len(self.refToExtensions[ref]) > 1:
+				print("* WARNING: REF:",str(ref),"belonged to both ECB and ECBPLUS docs")
 		for t in self.corpusTokens:
 			# (1)
 			g_id = self.getGlobalTypeID(t.text)
