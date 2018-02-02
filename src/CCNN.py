@@ -55,7 +55,7 @@ class CCNN:
     # creates clusters for our predictions
     def clusterPredictions(self, pairs, predictions, stoppingPoint):
 
-        if isWDModel:
+        if self.isWDModel:
             clusters = {}
             print("in clusterPredictions() -- WD Model")
             # stores predictions

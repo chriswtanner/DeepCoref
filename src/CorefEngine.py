@@ -66,7 +66,7 @@ class CorefEngine:
 			print("* AGGLOMERATIVE MODE")
 			# trains and tests the pairwise-predictions via Conjoined-CNN
 
-			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
+			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates CD-CCNN model
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 
 			# performs agg. clustering on our predicted, testset of HMentions
