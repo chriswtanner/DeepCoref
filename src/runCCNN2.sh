@@ -203,7 +203,8 @@ if [ "$useECBTest" = false ] ; then
 		avg=`echo "scale=2;$sum/3.0" | bc`
 		echo "CoNLLF1 (CD):" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
 
-		# rm -rf ${f}
+		rm -rf ${WD_file}
+		rm -rf ${CD_file}
 	done
 fi
 
