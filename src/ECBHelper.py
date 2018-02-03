@@ -931,7 +931,7 @@ class ECBHelper:
 	# NOTE: this should be run whenever we use a CD Model
 	# that is, we first create a WD file just to ensure we're
 	# output'ing each token in the correct format as the HDDCRP
-	def convertWDFileToCDFile(self):
+	def convertWDFileToCDFile(self, stoppingPoint):
 		# constructs output file
 		fileBase = str(self.args.resultsDir) + \
 			str(self.args.hddcrpBaseFile) + "_" + \
