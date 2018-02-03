@@ -927,6 +927,64 @@ class ECBHelper:
 				j+=1
 		return (trainingPairs,trainingLabels)
 
+	# converts the WD file (either gold or predictions) to a CD format
+	# NOTE: this should be run whenever we use a CD Model
+	# that is, we first create a WD file just to ensure we're
+	# output'ing each token in the correct format as the HDDCRP
+	def convertWDFileToCDFile(self):
+		# constructs output file
+		fileBase = str(self.args.resultsDir) + \
+			str(self.args.hddcrpBaseFile) + "_" + \
+			"nl" + str(self.args.numLayers) + "_" + \
+			"pool" + str(self.args.poolType) + "_" + \
+			"ne" + str(self.args.numEpochs) + "_" + \
+			"ws" + str(self.args.windowSize) + "_" + \
+			"neg" + str(self.args.numNegPerPos) + "_" + \
+			"bs" + str(self.args.batchSize) + "_" + \
+			"s" + str(self.args.shuffleTraining) + "_" + \
+			"e" + str(self.args.embeddingsBaseFile) + "_" + \
+			"dr" + str(self.args.dropout) + "_" + \
+			"co" + str(self.args.CCNNOpt) + "_" + \
+			"cm" + str(self.args.clusterMethod) + "_" + \
+			"nf" + str(self.args.numFilters) + "_" + \
+			"fm" + str(self.args.filterMultiplier) + "_" + \
+			"fp" + str(self.args.featurePOS) + "_" + \
+			"pt" + str(self.args.posType) + "_" + \
+			"lt" + str(self.args.lemmaType) + "_" + \
+			"dt" + str(self.args.dependencyType) + "_" + \
+			"ct" + str(self.args.charType) + "_" + \
+			"st" + str(self.args.SSType) + "_" + \
+			"ws2" + str(self.args.SSwindowSize) + "_" + \
+			"vs" + str(self.args.SSvectorSize) + "_" + \
+			"sl" + str(self.args.SSlog) + "_" + \
+			"dd" + str(self.args.devDir) + "_" + \
+			"fn" + str(self.args.FFNNnumEpochs) + "_" + \
+			"fp" + str(self.args.FFNNPosRatio) + "_" + \
+			"fo" + str(self.args.FFNNOpt) + "_" + \
+			"sp" + str(stoppingPoint)
+		wdFile = fileBase + ".WD.txt"
+		cdFile = fileBase + ".CD.txt"
+
+		fin = open(wdFile, 'r')
+		fout = open(cdFile, 'w')
+		dirHalfToLines = defaultdict(lambda : defaultdict(list))
+		for line in fin:
+			line = line.rstrip()
+			if line.startswith("#") or line == "":
+				continue
+			doc_id = line.split("\t")[0]
+			ext = doc_id[doc_id.find("ecb"):doc_id.find(".xml")]
+			dir_num = doc_id.split("_")[0]
+			key = str(dir_num) + "_" + str(ext)
+			dirHalfToLines[dir_num][ext].append(key + line[line.find("\t"):])
+		for dir_num in sorted(dirHalfToLines.keys()):
+			for ext in sorted(dirHalfToLines[dir_num]):
+				fout.write("#begin document (" + str(dir_num) + "_" + str(ext) + "); part 000\n")
+				for l in dirHalfToLines[dir_num][ext]:
+					fout.write(l + "\n")
+				fout.write("\n#end document\n")
+		fout.close()
+
 	# writes CoNLL file in the same format as args.hddcrpFile
 	def writeCoNLLFile(self, predictedClusters, stoppingPoint):
 		hm_idToClusterID = {}
@@ -973,7 +1031,7 @@ class ECBHelper:
 			"fp" + str(self.args.FFNNPosRatio) + "_" + \
 			"fo" + str(self.args.FFNNOpt) + "_" + \
 			"sp" + str(stoppingPoint) + \
-			".txt"
+			".WD.txt"
 
 		print("ECBHelper writing out:",str(fileOut))
 		fout = open(fileOut, 'w')
