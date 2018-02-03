@@ -1324,7 +1324,7 @@ class ECBHelper:
 					ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
 					ourClusterID += 1
 			# end of going through every dir-half
-			#print("# our clusters:",str(len(ourClusterSuperSet)))
+			print("# our clusters:",str(len(ourClusterSuperSet)))
 			return ourClusterSuperSet
 ##################################################
 #     CoNLL output files
