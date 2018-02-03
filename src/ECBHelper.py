@@ -1242,7 +1242,7 @@ class ECBHelper:
 			ourClusterID = 0
 			ourClusterSuperSet = {}
 			for key in dirHalfToHMPredictions.keys():
-				
+				print("key:",str(key))
 				# constructs our base clusters (singletons)
 				ourDirHalfClusters = {} 
 				for i in range(len(dirHalfToHMs[key])):
@@ -1276,6 +1276,7 @@ class ECBHelper:
 									avgdists = []
 									for dm2 in ourDirHalfClusters[c2]:
 										dist = 99999
+										print("dm1:",str(dm1),"dm2:",str(dm2))
 										if (dm1,dm2) in dirHalfToHMPredictions[key]:
 											dist = dirHalfToHMPredictions[key][(dm1,dm2)]
 										elif (dm2,dm1) in dirHalfToHMPredictions[key]:
@@ -1283,6 +1284,7 @@ class ECBHelper:
 										else:
 											print("* error, why don't we have either dm1 or dm2 in key:",str(key))
 											exit(1)
+										print("dist:",str(dist))
 										avgavgdists.append(dist)
 										avgdists.append(dist)
 										if dist < closestDist:
