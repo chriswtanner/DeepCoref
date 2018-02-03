@@ -1106,12 +1106,12 @@ class CCNN:
         print("< ",str(startingProb),"=coref yields:",str(given))
         bestProb = startingProb
         bestF1 = given
-        bestRecall = 0
-        bestPrec = 0
+        bestRecall = recall_
+        bestPrec = prec_
         lowestProb = 0.1
         highestProb = 1.1
         numTried = 0
-        #for p in sorted(preds):
+
         p = lowestProb
         while p < highestProb:
             (recall, prec, f1) = self.compute_f1(p, predictions, golds)
