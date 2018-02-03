@@ -1223,8 +1223,8 @@ class ECBHelper:
 				if dir_num1 != dir_num2:
 					print("ERROR: pairs are from diff docs")
 					exit(1)
-				key1 = dir_num1 + extension1
-				key2 = dir_num2 + extension2
+				key1 = str(dir_num1) + extension1
+				key2 = str(dir_num2) + extension2
 
 				if key1 != key2:
 					print("* ERROR, somehow, training pairs came from diff dir-halves")
