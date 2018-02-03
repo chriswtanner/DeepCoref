@@ -85,8 +85,8 @@ class CorefEngine:
 					ccnnEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
-					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
-
+					helper.convertWDFileToCDFile()
+					#print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
 			exit(1)
 			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
@@ -109,7 +109,6 @@ class CorefEngine:
 					ccnnEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
-					helper.convertWDFileToCDFile()
 					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
 
 
