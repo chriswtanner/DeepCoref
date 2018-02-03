@@ -1243,14 +1243,19 @@ class ECBHelper:
 			ourClusterSuperSet = {}
 			for key in dirHalfToHMPredictions.keys():
 				print("key:",str(key))
+				print("# dirHalfToHMs:", str(len(dirHalfToHMs[key])))
+				print("they are:",str(dirHalfToHMs[key]))
+				print("dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[key])))
+				print("and they are:",str(dirHalfToHMPredictions[key]))
 				# constructs our base clusters (singletons)
-				ourDirHalfClusters = {} 
+				ourDirHalfClusters = {}
 				for i in range(len(dirHalfToHMs[key])):
 					hm = dirHalfToHMs[key][i]
 					a = set()
 					a.add(hm)
 					ourDirHalfClusters[i] = a
 
+				print("# dirHalfClusters:",str(len(ourDirHalfClusters.keys())))
 				# the following keeps merging until our shortest distance > stopping threshold,
 				# or we have 1 cluster, whichever happens first
 				while len(ourDirHalfClusters.keys()) > 1:
@@ -1282,7 +1287,7 @@ class ECBHelper:
 										elif (dm2,dm1) in dirHalfToHMPredictions[key]:
 											dist = dirHalfToHMPredictions[key][(dm2,dm1)]
 										else:
-											print("* error, why don't we have either dm1 or dm2 in key:",str(key))
+											print("* error, why don't we have either (dm1,dm2) or (dm2,dm1) in key:",str(key))
 											exit(1)
 										print("dist:",str(dist))
 										avgavgdists.append(dist)
