@@ -397,6 +397,7 @@ class CCNN:
             #self.writeCoNLLPerlFile("ourGolden.keys",goldenSuperSet)      
             #print("finished writing")
             return (ourClusterSuperSet, goldenSuperSet)
+    
     def analyzeResults(self, pairs, predictions, predictedClusters):
 
         # sanity check: ensures all pairs are accounted for
@@ -427,6 +428,10 @@ class CCNN:
         if numMissing > 0:
             exit(1)
         # end of sanity chk
+
+        # the following code is only meant for WD-Modeling
+        if not self.isWDModel:
+            break
 
         # stores distances from every hmention
         # hm_id1 -> {hm_id2 -> score}
