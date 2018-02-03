@@ -967,6 +967,7 @@ class ECBHelper:
 
 		fin = open(wdFile, 'r')
 		fout = open(cdFile, 'w')
+		print("ECHelper writing out:",str(cdFile))
 		dirHalfToLines = defaultdict(lambda : defaultdict(list))
 		for line in fin:
 			line = line.rstrip()
@@ -977,12 +978,14 @@ class ECBHelper:
 			dir_num = doc_id.split("_")[0]
 			key = str(dir_num) + "_" + str(ext)
 			dirHalfToLines[dir_num][ext].append(key + line[line.find("\t"):])
+		print("# dirs writing out:",str(len(dirHalfToLines.keys())))
 		for dir_num in sorted(dirHalfToLines.keys()):
 			for ext in sorted(dirHalfToLines[dir_num]):
 				fout.write("#begin document (" + str(dir_num) + "_" + str(ext) + "); part 000\n")
 				for l in dirHalfToLines[dir_num][ext]:
 					fout.write(l + "\n")
 				fout.write("\n#end document\n")
+		fin.close()
 		fout.close()
 
 	# writes CoNLL file in the same format as args.hddcrpFile
