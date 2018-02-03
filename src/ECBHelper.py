@@ -15,7 +15,7 @@ class ECBHelper:
 	def __init__(self, args, corpus, hddcrp_parsed): # goldTruthFile, goldLegendFile, isVerbose):
 		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 		#self.devDirs = [23,24,25]
-		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
@@ -1242,11 +1242,11 @@ class ECBHelper:
 			ourClusterID = 0
 			ourClusterSuperSet = {}
 			for key in dirHalfToHMPredictions.keys():
-				print("key:",str(key))
-				print("# dirHalfToHMs:", str(len(dirHalfToHMs[key])))
-				print("they are:",str(dirHalfToHMs[key]))
-				print("dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[key])))
-				print("and they are:",str(dirHalfToHMPredictions[key]))
+				#print("key:",str(key))
+				#print("# dirHalfToHMs:", str(len(dirHalfToHMs[key])))
+				#print("they are:",str(dirHalfToHMs[key]))
+				#print("dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[key])))
+				#print("and they are:",str(dirHalfToHMPredictions[key]))
 				# constructs our base clusters (singletons)
 				ourDirHalfClusters = {}
 				for i in range(len(dirHalfToHMs[key])):
@@ -1255,7 +1255,7 @@ class ECBHelper:
 					a.add(hm)
 					ourDirHalfClusters[i] = a
 
-				print("# dirHalfClusters:",str(len(ourDirHalfClusters.keys())))
+				#print("# dirHalfClusters:",str(len(ourDirHalfClusters.keys())))
 				# the following keeps merging until our shortest distance > stopping threshold,
 				# or we have 1 cluster, whichever happens first
 				while len(ourDirHalfClusters.keys()) > 1:
@@ -1281,7 +1281,7 @@ class ECBHelper:
 									avgdists = []
 									for dm2 in ourDirHalfClusters[c2]:
 										dist = 99999
-										print("dm1:",str(dm1),"dm2:",str(dm2))
+										#print("dm1:",str(dm1),"dm2:",str(dm2))
 										if (dm1,dm2) in dirHalfToHMPredictions[key]:
 											dist = dirHalfToHMPredictions[key][(dm1,dm2)]
 										elif (dm2,dm1) in dirHalfToHMPredictions[key]:
@@ -1289,7 +1289,7 @@ class ECBHelper:
 										else:
 											print("* error, why don't we have either (dm1,dm2) or (dm2,dm1) in key:",str(key))
 											exit(1)
-										print("dist:",str(dist))
+										#print("dist:",str(dist))
 										avgavgdists.append(dist)
 										avgdists.append(dist)
 										if dist < closestDist:
