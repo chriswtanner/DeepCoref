@@ -1094,7 +1094,6 @@ class CCNN:
         #print("# unique preds:",str(len(preds)),flush=True)
         sys.stdout.flush()
 
-
         (recall_, prec_, given) = self.compute_f1(0.5, predictions, golds)
         print("< ",str(0.5),"=coref yields:",str(given))
 

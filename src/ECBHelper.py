@@ -15,7 +15,7 @@ class ECBHelper:
 	def __init__(self, args, corpus, hddcrp_parsed): # goldTruthFile, goldLegendFile, isVerbose):
 		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 		#self.devDirs = [23,24,25]
-		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
@@ -1080,123 +1080,252 @@ class ECBHelper:
 		fout.close()
 
 	# creates clusters for our hddcrp predictions
-	def clusterHPredictions(self, pairs, predictions, stoppingPoint):
+	def clusterHPredictions(self, pairs, predictions, stoppingPoint, isWDModel):
 		clusters = {}
-		print("in clusterHPredictions()")
-		
-		# stores predictions
-		docToHMPredictions = defaultdict(lambda : defaultdict(float))
-		docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
-		
-		uniqueHMs = set()
-		for i in range(len(pairs)):
-			(hm1,hm2) = pairs[i]
 
-			prediction = predictions[i][0]
-			doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
-			doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
-			if doc_id != doc_id2:
-				print("ERROR: pairs are from diff docs")
-				exit(1)
+		if isWDModel:
+			print("in clusterHPredictions() -- WD Model")
+			# stores predictions
+			docToHMPredictions = defaultdict(lambda : defaultdict(float))
+			docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+			
+			uniqueHMs = set()
+			for i in range(len(pairs)):
+				(hm1,hm2) = pairs[i]
 
-			if hm1 not in docToHMs[doc_id]:
-				docToHMs[doc_id].append(hm1)
-			if hm2 not in docToHMs[doc_id]:
-				docToHMs[doc_id].append(hm2)
+				prediction = predictions[i][0]
+				doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+				doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+				if doc_id != doc_id2:
+					print("ERROR: pairs are from diff docs")
+					exit(1)
 
-			docToHMPredictions[doc_id][(hm1,hm2)] = prediction
-			uniqueHMs.add(hm1)
-			uniqueHMs.add(hm2)
-		
-		ourClusterID = 0
-		ourClusterSuperSet = {}
-		for doc_id in docToHMPredictions.keys():
-			# constructs our base clusters (singletons)
-			ourDocClusters = {} 
-			for i in range(len(docToHMs[doc_id])):
-				hm = docToHMs[doc_id][i]
-				a = set()
-				a.add(hm)
-				ourDocClusters[i] = a
+				if hm1 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(hm1)
+				if hm2 not in docToHMs[doc_id]:
+					docToHMs[doc_id].append(hm2)
 
-			# the following keeps merging until our shortest distance > stopping threshold,
-			# or we have 1 cluster, whichever happens first
-			while len(ourDocClusters.keys()) > 1:
-				# find best merge
-				closestDist = 999999
-				closestClusterKeys = (-1,-1)
+				docToHMPredictions[doc_id][(hm1,hm2)] = prediction
+				uniqueHMs.add(hm1)
+				uniqueHMs.add(hm2)
+			
+			ourClusterID = 0
+			ourClusterSuperSet = {}
+			for doc_id in docToHMPredictions.keys():
+				# constructs our base clusters (singletons)
+				ourDocClusters = {} 
+				for i in range(len(docToHMs[doc_id])):
+					hm = docToHMs[doc_id][i]
+					a = set()
+					a.add(hm)
+					ourDocClusters[i] = a
 
-				closestAvgDist = 999999
-				closestAvgClusterKeys = (-1,-1)
+				# the following keeps merging until our shortest distance > stopping threshold,
+				# or we have 1 cluster, whichever happens first
+				while len(ourDocClusters.keys()) > 1:
+					# find best merge
+					closestDist = 999999
+					closestClusterKeys = (-1,-1)
 
-				closestAvgAvgDist = 999999
-				closestAvgAvgClusterKeys = (-1,-1)
+					closestAvgDist = 999999
+					closestAvgClusterKeys = (-1,-1)
 
-				#print("ourDocClusters:",str(ourDocClusters.keys()))
-				# looks at all combinations of pairs
-				i = 0
-				for c1 in ourDocClusters.keys():
-					
-					#print("c1:",str(c1))
-					j = 0
-					for c2 in ourDocClusters.keys():
-						if j > i:
-							avgavgdists = []
-							for dm1 in ourDocClusters[c1]:
-								avgdists = []
-								for dm2 in ourDocClusters[c2]:
-									dist = 99999
-									if (dm1,dm2) in docToHMPredictions[doc_id]:
-										dist = docToHMPredictions[doc_id][(dm1,dm2)]
-									elif (dm2,dm1) in docToHMPredictions[doc_id]:
-										dist = docToHMPredictions[doc_id][(dm2,dm1)]
-									else:
-										print("* error, why don't we have either dm1 or dm2 in doc_id")
-										exit(1)
-									avgavgdists.append(dist)
-									avgdists.append(dist)
-									if dist < closestDist:
-										closestDist = dist
-										closestClusterKeys = (c1,c2)
-								avgDist = float(sum(avgdists)) / float(len(avgdists))
-								if avgDist < closestAvgDist:
-									closestAvgDist = avgDist
-									closestAvgClusterKeys = (c1,c2)
-							avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
-							if avgavgDist < closestAvgAvgDist:
-								closestAvgAvgDist = avgavgDist
-								closestAvgAvgClusterKeys = (c1,c2)
-						j += 1
-					i += 1
-				if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
-					break
-				elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
-					break
-				elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
-					break
+					closestAvgAvgDist = 999999
+					closestAvgAvgClusterKeys = (-1,-1)
 
-				newCluster = set()
-				(c1,c2) = closestClusterKeys
-				if self.args.clusterMethod == "avg":
-					(c1,c2) = closestAvgClusterKeys
-				elif self.args.clusterMethod == "avgavg":
-					(c1,c2) = closestAvgAvgClusterKeys
+					#print("ourDocClusters:",str(ourDocClusters.keys()))
+					# looks at all combinations of pairs
+					i = 0
+					for c1 in ourDocClusters.keys():
+						
+						#print("c1:",str(c1))
+						j = 0
+						for c2 in ourDocClusters.keys():
+							if j > i:
+								avgavgdists = []
+								for dm1 in ourDocClusters[c1]:
+									avgdists = []
+									for dm2 in ourDocClusters[c2]:
+										dist = 99999
+										if (dm1,dm2) in docToHMPredictions[doc_id]:
+											dist = docToHMPredictions[doc_id][(dm1,dm2)]
+										elif (dm2,dm1) in docToHMPredictions[doc_id]:
+											dist = docToHMPredictions[doc_id][(dm2,dm1)]
+										else:
+											print("* error, why don't we have either dm1 or dm2 in doc_id")
+											exit(1)
+										avgavgdists.append(dist)
+										avgdists.append(dist)
+										if dist < closestDist:
+											closestDist = dist
+											closestClusterKeys = (c1,c2)
+									avgDist = float(sum(avgdists)) / float(len(avgdists))
+									if avgDist < closestAvgDist:
+										closestAvgDist = avgDist
+										closestAvgClusterKeys = (c1,c2)
+								avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+								if avgavgDist < closestAvgAvgDist:
+									closestAvgAvgDist = avgavgDist
+									closestAvgAvgClusterKeys = (c1,c2)
+							j += 1
+						i += 1
+					if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+						break
+					elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+						break
+					elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
+						break
 
-				for _ in ourDocClusters[c1]:
-					newCluster.add(_)
-				for _ in ourDocClusters[c2]:
-					newCluster.add(_)
-				ourDocClusters.pop(c1, None)
-				ourDocClusters.pop(c2, None)
-				ourDocClusters[c1] = newCluster
-			# end of current doc
-			for i in ourDocClusters.keys():
-				ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
-				ourClusterID += 1
-		# end of going through every doc
-		#print("# our clusters:",str(len(ourClusterSuperSet)))
-		return ourClusterSuperSet
+					newCluster = set()
+					(c1,c2) = closestClusterKeys
+					if self.args.clusterMethod == "avg":
+						(c1,c2) = closestAvgClusterKeys
+					elif self.args.clusterMethod == "avgavg":
+						(c1,c2) = closestAvgAvgClusterKeys
 
+					for _ in ourDocClusters[c1]:
+						newCluster.add(_)
+					for _ in ourDocClusters[c2]:
+						newCluster.add(_)
+					ourDocClusters.pop(c1, None)
+					ourDocClusters.pop(c2, None)
+					ourDocClusters[c1] = newCluster
+				# end of current doc
+				for i in ourDocClusters.keys():
+					ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+					ourClusterID += 1
+			# end of going through every doc
+			#print("# our clusters:",str(len(ourClusterSuperSet)))
+			return ourClusterSuperSet
+		else: # CD model
+			print("in clusterHPredictions() -- CD Model")
+			# stores predictions
+			dirHalfToHMPredictions = defaultdict(lambda : defaultdict(float))
+			dirHalfToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+			
+			uniqueHMs = set()
+
+			# separates the predictions into dir-halves, so that we
+			# don't try to cluster mentions all in the same dir
+			for i in range(len(pairs)):
+				(hm1,hm2) = pairs[i]
+
+				prediction = predictions[i][0]
+				doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+				doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+
+				extension1 = doc_id[doc_id.find("ecb"):]
+				dir_num1 = int(doc_id.split("_")[0])
+
+				extension2 = doc_id2[doc_id2.find("ecb"):]
+				dir_num2 = int(doc_id2.split("_")[0])			
+
+				if dir_num1 != dir_num2:
+					print("ERROR: pairs are from diff docs")
+					exit(1)
+				key1 = dir_num1 + extension1
+				key2 = dir_num2 + extension2
+
+				if key1 != key2:
+					print("* ERROR, somehow, training pairs came from diff dir-halves")
+					exit(1)
+
+				if hm1 not in dirHalfToHMs[key1]:
+					dirHalfToHMs[key1].append(hm1)
+				if hm2 not in dirHalfToHMs[key2]:
+					dirHalfToHMs[key2].append(hm2)
+
+				dirHalfToHMPredictions[key1][(hm1,hm2)] = prediction
+				uniqueHMs.add(hm1)
+				uniqueHMs.add(hm2)
+			
+			ourClusterID = 0
+			ourClusterSuperSet = {}
+			for key in dirHalfToHMPredictions.keys():
+				
+				# constructs our base clusters (singletons)
+				ourDirHalfClusters = {} 
+				for i in range(len(dirHalfToHMs[key])):
+					hm = dirHalfToHMs[key][i]
+					a = set()
+					a.add(hm)
+					ourDirHalfClusters[i] = a
+
+				# the following keeps merging until our shortest distance > stopping threshold,
+				# or we have 1 cluster, whichever happens first
+				while len(ourDirHalfClusters.keys()) > 1:
+					# find best merge
+					closestDist = 999999
+					closestClusterKeys = (-1,-1)
+
+					closestAvgDist = 999999
+					closestAvgClusterKeys = (-1,-1)
+
+					closestAvgAvgDist = 999999
+					closestAvgAvgClusterKeys = (-1,-1)
+
+					# looks at all combinations of pairs
+					# starting case, each c1/key/cluster has a single HM
+					i = 0
+					for c1 in ourDirHalfClusters.keys():
+						j = 0
+						for c2 in ourDirHalfClusters.keys():
+							if j > i:
+								avgavgdists = []
+								for dm1 in ourDirHalfClusters[c1]:
+									avgdists = []
+									for dm2 in ourDirHalfClusters[c2]:
+										dist = 99999
+										if (dm1,dm2) in dirHalfToHMPredictions[key]:
+											dist = dirHalfToHMPredictions[key][(dm1,dm2)]
+										elif (dm2,dm1) in dirHalfToHMPredictions[key]:
+											dist = dirHalfToHMPredictions[key][(dm2,dm1)]
+										else:
+											print("* error, why don't we have either dm1 or dm2 in key:",str(key))
+											exit(1)
+										avgavgdists.append(dist)
+										avgdists.append(dist)
+										if dist < closestDist:
+											closestDist = dist
+											closestClusterKeys = (c1,c2)
+									avgDist = float(sum(avgdists)) / float(len(avgdists))
+									if avgDist < closestAvgDist:
+										closestAvgDist = avgDist
+										closestAvgClusterKeys = (c1,c2)
+								avgavgDist = float(sum(avgavgdists)) / float(len(avgavgdists))
+								if avgavgDist < closestAvgAvgDist:
+									closestAvgAvgDist = avgavgDist
+									closestAvgAvgClusterKeys = (c1,c2)
+							j += 1
+						i += 1
+					if self.args.clusterMethod == "min" and closestDist > stoppingPoint:
+						break
+					elif self.args.clusterMethod == "avg" and closestAvgDist > stoppingPoint:
+						break
+					elif self.args.clusterMethod == "avgavg" and closestAvgAvgDist > stoppingPoint:
+						break
+
+					newCluster = set()
+					(c1,c2) = closestClusterKeys
+					if self.args.clusterMethod == "avg":
+						(c1,c2) = closestAvgClusterKeys
+					elif self.args.clusterMethod == "avgavg":
+						(c1,c2) = closestAvgAvgClusterKeys
+
+					for _ in ourDirHalfClusters[c1]:
+						newCluster.add(_)
+					for _ in ourDirHalfClusters[c2]:
+						newCluster.add(_)
+					ourDirHalfClusters.pop(c1, None)
+					ourDirHalfClusters.pop(c2, None)
+					ourDirHalfClusters[c1] = newCluster
+				# end of clustering current dir-half
+				for i in ourDirHalfClusters.keys():
+					ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
+					ourClusterID += 1
+			# end of going through every dir-half
+			#print("# our clusters:",str(len(ourClusterSuperSet)))
+			return ourClusterSuperSet
 ##################################################
 #     CoNLL output files
 ##################################################

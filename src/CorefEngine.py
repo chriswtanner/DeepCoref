@@ -66,7 +66,7 @@ class CorefEngine:
 			print("* AGGLOMERATIVE MODE")
 			# trains and tests the pairwise-predictions via Conjoined-CNN
 
-			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates CD-CCNN model
+			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 
 			# performs agg. clustering on our predicted, testset of HMentions
@@ -81,7 +81,7 @@ class CorefEngine:
 					print("AGG TEST F1 sp:",str(sp),"=",str(conll_f1))
 					print("TEST:",str(muc_f1),str(bcub_f1),str(ceafe_f1))
 				else:
-					predictedClusters = helper.clusterHPredictions(testing_pairs, testing_preds, sp)
+					predictedClusters = helper.clusterHPredictions(testing_pairs, testing_preds, sp, ccnnEngine.isWDModel)
 					ccnnEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
