@@ -431,7 +431,7 @@ class CCNN:
 
         # the following code is only meant for WD-Modeling
         if not self.isWDModel:
-            break
+            return
 
         # stores distances from every hmention
         # hm_id1 -> {hm_id2 -> score}
