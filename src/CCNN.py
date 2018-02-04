@@ -90,7 +90,6 @@ class CCNN:
                     exit(1)
 
                 # construct the golden truth for the current doc
-                goldenTruthDirClusters = {}
                 for i in range(len(self.corpus.docToREFs[doc_id])):
                     tmp = set()
                     curREF = self.corpus.docToREFs[doc_id][i]
@@ -100,12 +99,9 @@ class CCNN:
                             if dm not in self.helper.validDMs:
                                 print("skipping:",str(dm))
                                 continue
-                        
                         tmp.add(dm)
-                    goldenTruthDirClusters[i] = tmp
                     goldenSuperSet[goldenClusterID] = tmp
                     goldenClusterID += 1
-                #print("golden clusters:", str(goldenTruthDirClusters))
                 
                 goldenK = len(self.corpus.docToREFs[doc_id])
                 #print("# golden clusters: ",str(goldenK))
@@ -122,7 +118,6 @@ class CCNN:
                     a.add(dm)
                     ourDocClusters[i] = a
 
-                #print("golden:",str(goldenTruthDirClusters))
                 # the following keeps merging until our shortest distance > stopping threshold,
                 # or we have 1 cluster, whichever happens first
                 if not self.calculateMax:
@@ -227,29 +222,34 @@ class CCNN:
             dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
             for i in range(len(pairs)):
                 (dm1,dm2) = pairs[i]
+
                 prediction = predictions[i][0]
-
-
                 doc_id1 = dm1[0]
+                doc_id2 = dm2[0]
+
                 extension1 = doc_id1[doc_id1.find("ecb"):]
                 dir_num1 = int(doc_id1.split("_")[0])
 
-                doc_id2 = dm2[0]
                 extension2 = doc_id2[doc_id2.find("ecb"):]
                 dir_num2 = int(doc_id2.split("_")[0])
 
-                if extension1 != extension2 or dir_num1 != dir_num2:
+                if dir_num1 != dir_num2:
                     print("** ERROR: we are trying to cluster mentions which came from different dir-halves")
                     exit(1)
 
-                key1 = dir_num1 + extension1
-                key2 = dir_num2 + extension2
-                print("key:",key1)
-                if dm1 not in dirHalfToDMs[doc_id]:
-                    docToDMs[doc_id].append(dm1)
-                if dm2 not in docToDMs[doc_id]:
-                    docToDMs[doc_id].append(dm2)
-                docToDMPredictions[doc_id][(dm1,dm2)] = prediction
+                key1 = str(dir_num1) + extension1
+                key2 = str(dir_num2) + extension2
+
+                if key1 != key2:
+                    print("* ERROR, somehow, training pairs came from diff dir-halves")
+                    exit(1)
+
+                if dm1 not in dirHalfToDMs[key1]:
+                    dirHalfToDMs[key1].append(dm1)
+                if dm2 not in dirHalfToDMs[key1]:
+                    dirHalfToDMs[key1].append(dm2)
+
+                dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
 
             ourClusterID = 0
             ourClusterSuperSet = {}
@@ -259,48 +259,43 @@ class CCNN:
             
             stoppingPoints = []
 
-            for doc_id in docToDMPredictions.keys():
+            for key in dirHalfToDMPredictions.keys():
                 #print("-----------\ncurrent doc:",str(doc_id),"\n-----------")
-                
-                # ensures we have all DMs
-                if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
-                    print("mismatch in DMs!!")
-                    exit(1)
+                dir_num = int(key[0:key.find("ecb")])
+                extension = key[key.find("ecb"):]
 
-                # construct the golden truth for the current doc
-                goldenTruthDirClusters = {}
-                for i in range(len(self.corpus.docToREFs[doc_id])):
-                    tmp = set()
-                    curREF = self.corpus.docToREFs[doc_id][i]
-                    for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:
-                        # TMP:
-                        if False: #self.args.runOnValid:
-                            if dm not in self.helper.validDMs:
-                                print("skipping:",str(dm))
-                                continue
-                        
-                        tmp.add(dm)
-                    goldenTruthDirClusters[i] = tmp
-                    goldenSuperSet[goldenClusterID] = tmp
+                # ensures we have all DMs
+                #if len(docToDMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
+                #    print("mismatch in DMs!!")
+                #    exit(1)
+
+                # construct the golden truth for the current dir-half
+                refToDMs = defaultdict(set)
+                curDMs = set()
+                for doc_id in self.corpus.dirToDocs[dir_num]:
+                    cur_ext = doc_id[doc_id.find("ecb"):]
+                    if cur_ext != extension:
+                        continue
+
+                    # dir is in the correct dir-half, so now
+                    # let's add all of its refs
+                    for ref in self.corpus.docToREFs[doc_id]:
+                        for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
+                            refToDMs[ref].add(dm)
+                            curDMs.add(dm)
+                for ref in refToDMs:
+                    goldenSuperSet[goldenClusterID] = refToDMs[ref]
                     goldenClusterID += 1
-                #print("golden clusters:", str(goldenTruthDirClusters))
                 
-                goldenK = len(self.corpus.docToREFs[doc_id])
-                #print("# golden clusters: ",str(goldenK))
                 # constructs our base clusters (singletons)
                 ourDocClusters = {}
-                for i in range(len(docToDMs[doc_id])):
-                    dm = docToDMs[doc_id][i]
-                    if False: #self.args.runOnValid:
-                        if dm not in self.helper.validDMs:
-                            print("skipping:",str(dm))
-                            continue
-                    
+                ij = 0
+                for dm in curDMs:
                     a = set()
                     a.add(dm)
-                    ourDocClusters[i] = a
+                    ourDocClusters[ij] = a
+                    ij += 1
 
-                #print("golden:",str(goldenTruthDirClusters))
                 # the following keeps merging until our shortest distance > stopping threshold,
                 # or we have 1 cluster, whichever happens first
                 if not self.calculateMax:
@@ -329,12 +324,12 @@ class CCNN:
                                         avgdists = []
                                         for dm2 in ourDocClusters[c2]:
                                             dist = 99999
-                                            if (dm1,dm2) in docToDMPredictions[doc_id]:
-                                                dist = docToDMPredictions[doc_id][(dm1,dm2)]
+                                            if (dm1,dm2) in dirHalfToDMPredictions[key]:
+                                                dist = dirHalfToDMPredictions[key][(dm1,dm2)]
                                                 avgavgdists.append(dist)
                                                 avgdists.append(dist)
-                                            elif (dm2,dm1) in docToDMPredictions[doc_id]:
-                                                dist = docToDMPredictions[doc_id][(dm2,dm1)]
+                                            elif (dm2,dm1) in dirHalfToDMPredictions[key]:
+                                                dist = dirHalfToDMPredictions[key][(dm2,dm1)]
                                                 avgavgdists.append(dist)
                                                 avgdists.append(dist)
                                             else:
@@ -384,12 +379,11 @@ class CCNN:
                     # end of current doc
                     for i in ourDocClusters.keys():
                         ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
-                        #print("setting ourClusterSuperSet[",str(ourClusterID),"] to:",str(ourDocClusters[i]))
                         ourClusterID += 1
 
             # end of going through every doc
             print("# total golden clusters:",str(len(goldenSuperSet.keys())))
-            print("# total our clusters:",str(len(ourClusterSuperSet)))
+            print("# total our clusters:",str(len(ourClusterSuperSet.keys())))
             #print("stoppingPoints: ",str(stoppingPoints))
             #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
 
