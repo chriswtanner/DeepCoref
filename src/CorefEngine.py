@@ -15,7 +15,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False
-		stoppingPoints = [0.15,0.18] # ,0.201,0.23,0.25,0.301,0.35,0.401,0.45,0.501,0.55,0.601]
+		stoppingPoints = [0.25] #[0.15,0.201,0.25,0.301,0.35,0.401,0.45,0.501,0.55,0.601]
 		
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -86,7 +86,7 @@ class CorefEngine:
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
 					helper.convertWDFileToCDFile(sp)
-					#print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
+					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
 			exit(1)
 			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
@@ -109,6 +109,7 @@ class CorefEngine:
 					ccnnEngine.analyzeResults(testing_pairs, testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
+					helper.convertWDFileToCDFile()
 					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
 
 

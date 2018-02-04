@@ -181,7 +181,7 @@ if [ "$useECBTest" = false ] ; then
 
 	cd ${refDir}
 	goldWDFile=${baseDir}"data/gold.WD.semeval.txt" # data/gold.NS.WD.semeval.txt"
-	goldCDFile=${baseDir}"data/gold.CD2.semeval.txt" # CD2 contains the formatting that we adhere to
+	goldCDFile=${baseDir}"data/gold.NS.CD2.semeval.txt" # CD2 contains the formatting that we adhere to
 	shopt -s nullglob
 
 	for sp in "${stoppingPoints[@]}"
