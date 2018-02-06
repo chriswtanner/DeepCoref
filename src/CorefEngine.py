@@ -15,7 +15,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.25] #[0.15,0.201,0.25,0.301,0.35,0.401,0.45,0.501,0.55]
+		stoppingPoints = [0.201,0.25,0.301] #[0.15,0.201,0.25,0.301,0.35,0.401,0.45,0.501,0.55]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -68,6 +68,7 @@ class CorefEngine:
 				bestDevF1 = -1
 				bestTestSP = -1
 				bestTestF1 = -1
+				testSPToF1 = {}
 				for sp in stoppingPoints:
 					
 					# DEV
@@ -81,15 +82,14 @@ class CorefEngine:
 					# TEST
 					(predictedClusters, goldenClusters) = ccnnEngine.clusterPredictions(testing_pairs, testing_preds, sp)
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
+					testSPToF1[sp] = conll_f1
 					if conll_f1 > bestTestF1:
 						bestTestF1 = conll_f1
 						bestTestSP = sp
 					print("AGG TEST F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
 
-				(predictedClusters, goldenClusters) = ccnnEngine.clusterPredictions(testing_pairs, testing_preds, bestDevSP)
-				(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
 				print("[FINAL RESULTS]: BEST DEV SP:",str(bestDevSP),"yielded F1:",str(bestDevF1))
-				print("[FINAL RESULTS]: ON TEST, this yielded:",str(conll_f1))
+				print("[FINAL RESULTS]: ON TEST, this yielded:",str(testSPToF1[bestDevSP]))
 				print("[FINAL RESULTS]: MAX TEST SP:",str(bestTestSP),"yielded F1:",str(bestTestF1))
 			else: # test on HDDCRP's predicted mention boundaries
 				for sp in stoppingPoints:
