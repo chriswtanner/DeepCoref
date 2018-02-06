@@ -15,7 +15,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.201,0.25,0.301] #[0.15,0.201,0.25,0.301,0.35,0.401,0.45,0.501,0.55]
+		stoppingPoints = [0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.45,0.501]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
