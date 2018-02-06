@@ -12,9 +12,9 @@ from random import randint
 class ECBHelper:
 ##pos: 2263
 #neg: 4526
-	def __init__(self, args, corpus, hddcrp_parsed): # goldTruthFile, goldLegendFile, isVerbose):
-		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
-		#self.devDirs = [23,24,25]
+	def __init__(self, args, corpus, hddcrp_parsed, runFFNN):
+
+		self.useDoubleDevDirs = False
 		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
@@ -30,14 +30,18 @@ class ECBHelper:
 			self.devDirs = self.nonTestingDirs
 			self.trainingDirs = []
 
-		
-		#self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20]
-		#self.devDirs = [21,22,23,24,25]
-		#self.testingDirs = [23,24,25]
-		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+		if self.useDoubleDevDirs and runFFNN: # if true, we will use some of the Training dirs as a separate, smaller Dev A set (20-22)
+			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19]
+			self.devDirs = [20,21,22] # will serve as Training for FFNN
+			self.testingDirs = [23,24,25]
+		else:
+			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+			self.devDirs = [23,24,25] # will serve as Training for FFNN
+			self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 		print("trainingDirs:",str(self.trainingDirs))
 		print("devDirs:",str(self.devDirs))
 		print("testingDirs:",str(self.testingDirs))
+
 		# sets passed-in params
 		self.corpus = corpus
 		self.isVerbose = args.verbose
@@ -46,7 +50,6 @@ class ECBHelper:
 
 		# filled in by loadEmbeddings(), if called, and if embeddingsType='type'
 		self.wordTypeToEmbedding = {}
-		#self.embeddingLength = 0 # filled in by loadEmbeddings()
 
 		# filled in by addStanfordAnnotations(), if called
 		self.posToIndex = {} # maps each of the 45 POS' to a unique index (alphabetical ordering), used for creating a feature
@@ -72,6 +75,9 @@ class ECBHelper:
 		# stop words from the CCNN class, so i want to auto-load the stopwords, which i'm now doing
 		self.stopWordsFile = self.args.stoplistFile
 		self.stopwords = self.loadStopWords(self.stopWordsFile)
+
+		if self.args.SSType != "none":
+			self.createSemanticSpaceSimVectors() # just uses args and corpus
 
 	def setValidDMs(self, DMs):
 		self.validDMs = DMs

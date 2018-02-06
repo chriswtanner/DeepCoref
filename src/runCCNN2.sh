@@ -8,11 +8,8 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-#stoppingPoints=(0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601)
-stoppingPoints=(0.15 0.201 0.25 0.301 0.35 0.401 0.45 0.501 0.55) # 0.201 0.23 0.25 0.301 0.35 0.401 0.45 0.501 0.55 0.601)
-#stoppingPoints=(0.701 0.72 0.74 0.76 0.78 0.801 0.81 0.83 0.85 0.87 0.88 0.89 0.901 0.91)
-#stoppingPoints=(0.24 0.27 0.301 0.33 0.36 0.39 0.401 0.41 0.42 0.43 0.44 0.45 0.46 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601 0.62 0.66 0.701 0.72 0.74 0.76 0.78 0.801 0.81)
-#stoppingPoints=(0.12 0.15 0.18 0.21 0.24 0.27 0.301 0.33 0.36 0.39 0.42 0.45 0.47 0.48 0.49 0.501 0.51 0.52 0.53 0.55 0.57 0.601 0.62 0.66 0.701 0.72 0.74 0.76 0.78 0.801 0.81)
+stoppingPoints=(0.25) # (0.15 0.201 0.25 0.301 0.35 0.401 0.45 0.501 0.55)
+
 if [ ${me} = "ctanner" ]
 then
 	echo "[ ON BROWN NETWORK ]"
@@ -181,7 +178,7 @@ if [ "$useECBTest" = false ] ; then
 
 	cd ${refDir}
 	goldWDFile=${baseDir}"data/gold.WD.semeval.txt" # data/gold.NS.WD.semeval.txt"
-	goldCDFile=${baseDir}"data/gold.NS.CD2.semeval.txt" # CD2 contains the formatting that we adhere to
+	goldCDFile=${baseDir}"data/gold.CD2.semeval.txt" # CD2 contains the formatting that we adhere to; NS.CD2 is for Choubey comparison
 	shopt -s nullglob
 
 	for sp in "${stoppingPoints[@]}"

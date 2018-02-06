@@ -10,7 +10,7 @@ class HDDCRPParser:
 		print("\t* parsed",str(len(self.hmentions)), "mentions")
 		print("\t* created", str(len(self.hm_idToHMention.keys())), " hm_ids!")
 
-		self.loadGold("gold.NS.WD.semeval.txt") # was NS.
+		self.loadGold("gold.WD.semeval.txt") # was NS.WD for Choubey comparison
 		#self.makeNewGoldHDDCRP(inputFile, "gold.NS.WD.semeval.txt")
 		sys.stdout.flush()
 
