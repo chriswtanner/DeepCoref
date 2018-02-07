@@ -14,11 +14,10 @@ import sys
 import functools
 import math
 from itertools import product
-class FFNN:
+class FFNNCD:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.sameLemmaBaseline = False # if True, perform SameLemma
 
 		# print stuff
 		print("args:", str(args))
@@ -139,9 +138,8 @@ class FFNN:
 		return K.mean(cost * self.pos_ratio, axis=-1)
 
 	def createTraining(self, dev_pairs, dev_preds):
-		print("* in createTraining")
+		print("in FFNNCD's CreateTraining()")
 
-		# sanity check part 1: ensure all dev DMs are accounted for (that we have prediction values for all)
 		parsedDevDMs = set()
 		for d in self.helper.devDirs:
 			for doc in self.corpus.dirToDocs[d]:
@@ -150,10 +148,15 @@ class FFNN:
 
 		# loads dev predictions via CCNN's pairwise predictions, or a saved file
 		devPredictions = {}
-		docDMPredictions = defaultdict(lambda : defaultdict(float))
-		predDevDMs = set()
+		dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
+		dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
+		predDevDMs = set() # only used for sanity check
 		if dev_pairs == None and dev_preds == None: # read the file
-			f = open(self.args.dataDir + "dev_" + str(self.args.devDir) + ".txt")
+			fn = self.args.dataDir + "dev_" + str(self.args.devDir) + ".txt"
+			print("** READING THE FILE:",str(fn))
+			print("** ERROR: I believe I got rid of this codeflow.  Maybe it's used for HDDCRP comparison?  Exiting")
+			exit(1)
+			f = open(fn)
 			for line in f:
 				d1,m1,d2,m2,pred = line.rstrip().split(",")
 				m1 = int(m1)
@@ -167,45 +170,52 @@ class FFNN:
 				predDevDMs.add(dm2)
 			f.close()		
 		else: # read the CCNN predictions
-			for _ in range(len(dev_pairs)):
-				(dm1,dm2) = dev_pairs[_]
+			print("** LOOKING AT CCNN's PREDICTIONS")
+			for i in range(len(dev_pairs)):
+				(dm1,dm2) = dev_pairs[i]
+				
+				pred = dev_preds[i][0]
+				doc_id1 = dm1[0]
+				doc_id2 = dm2[0]
+				
+				extension1 = doc_id1[doc_id1.find("ecb"):]
+				dir_num1 = int(doc_id1.split("_")[0])
+				
+				extension2 = doc_id2[doc_id2.find("ecb"):]
+				dir_num2 = int(doc_id2.split("_")[0])
+				
+				key1 = str(dir_num1) + extension1
+				key2 = str(dir_num2) + extension2
+				
+				if key1 != key2:
+					print("* ERROR, somehow, training pairs came from diff dir-halves")
+					exit(1)
+
+				if dm1 not in dirHalfToDMs[key1]:
+					dirHalfToDMs[key1].append(dm1)
+				if dm2 not in dirHalfToDMs[key1]:
+					dirHalfToDMs[key1].append(dm2)
+
+				dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
-				pred = dev_preds[_][0]
-				devPredictions[dev_pairs[_]] = pred
-				doc_id = ""
-				#if self.args.useECBTest:
-				doc_id = dm1[0]
-				#else:
-				#	doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
-				docDMPredictions[doc_id][(dm1,dm2)] = pred
 
-		# sanity check part 2: ensure all dev DMs are accounted for (that we have prediction values for all)
-		# AND it maps DMs to a per-doc access
+		# sanity check part 1: ensures we have parsed all of our predicted DMs
 		docToPredDevDMs = defaultdict(set)
 		for dm in predDevDMs:
 			if dm not in parsedDevDMs:
-				print("we dont have",str(dm),"in parsed")
-			else: # we have the DM parsed, so we can look up its doc
-				(doc_id,m_id) = dm
-				docToPredDevDMs[doc_id].add(dm)
-
+				print("* ERROR: we dont have",str(dm),"in parsed")
+				exit(1)
+		# sanity check part 2: ensures we have predictions for all of our parsed DMs
 		for dm in parsedDevDMs:
 			if dm not in predDevDMs:
 				ref = self.corpus.dmToREF[dm]
 				(d1,m1) = dm
-				print("missing",str(dm),"and the doc has # mentions:",str(len(self.corpus.docToDMs[d1])))
+				print("* ERROR: missing",str(dm),"and the doc has # mentions:",str(len(self.corpus.docToDMs[d1])))
+				exit(1)
 		print("# parsed:",str(len(parsedDevDMs)))
 		print("# pred:",str(len(predDevDMs)))
-
-		# the following is for the static-clustering; that is, we make predictions before
-		# any clustering is done.  we don't make FFNN clustering decisions.
-		# instead, we just make weights which will use agglomerative to decide
-		#_, self.trainX, self.trainY = self.loadStaticData(docToPredDevDMs, devPredictions, False)
-		#self.testingPairs, self.testX, self.testY = self.loadStaticData(docToPredTestDMs, testPredictions, True)
-
 		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions, docDMPredictions)
-		#self.loadDynamicData(docToPredTestDMs, testPredictions, True)
 
 	def cluster(self, stoppingPoint):
 		# loads test predictions
@@ -220,7 +230,7 @@ class FFNN:
 		if self.testingPairs == None and self.testingPreds == None: # read the file
 			# sanity check:
 			if self.args.useECBTest:
-				print("* ERROR: we want to use ECBTest data, but we aren't passing it to FFNN")
+				print("* ERROR: we want to use ECBTest data, but we aren't passing it to FFNNWD")
 				exit(1)
 
 			# we know we are reading from HDDCRP predicted test mentions
@@ -320,35 +330,18 @@ class FFNN:
 			# constructs our base clusters (singletons)
 			ourDocClusters = {} 
 
-			# perform SameLemma baseline
-			if self.sameLemmaBaseline:
-				lemmaToSetOfHMs = defaultdict(set)
 
-				for i in range(len(docToHMs[doc_id])):
-					hm = docToHMs[doc_id][i]
-					men = self.corpus.dmToMention[hm]
-					lemmaString = ""
-					for t in men.tokens:
-						lemma = self.helper.getBestStanToken(t.stanTokens).lemma
-						lemmaString += lemma
-					lemmaToSetOfHMs[lemmaString].add(hm)
-				i = 0
-				print("lemmaToSetOfHMs:",str(lemmaToSetOfHMs))
-				for lemma in lemmaToSetOfHMs:
-					ourDocClusters[i] = lemmaToSetOfHMs[lemma]
-					i += 1
-			else:
-				for i in range(len(docToHMs[doc_id])):
-					hm = docToHMs[doc_id][i]
-					a = set()
-					a.add(hm)
-					ourDocClusters[i] = a
+			for i in range(len(docToHMs[doc_id])):
+				hm = docToHMs[doc_id][i]
+				a = set()
+				a.add(hm)
+				ourDocClusters[i] = a
 			#if len(docToHMs[doc_id]) == 1:
 			#	print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
 
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
-			while len(ourDocClusters.keys()) > 1 and not self.sameLemmaBaseline:
+			while len(ourDocClusters.keys()) > 1:
 				# find best merge
 				closestDist = 999999
 				closestClusterKeys = (-1,-1)
@@ -556,106 +549,3 @@ class FFNN:
 		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
 		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg]
 		return featureVec
-
-	def loadStaticData(self, docToPredDMs, predictions, isHDDCRP):
-		addedPairs = set()
-		pairs = []
-		X = []
-		Y = []
-		numP = 0
-		numN = 0
-
-		# pre-processes; constructs the distribution of all links from a given m
-		dmToLinkDistribution = defaultdict(lambda: [0] * 10)
-		docToListDistribution = defaultdict(lambda: [0] * 10)
-		for p in predictions:
-			(dm1,dm2) = p
-			pred = predictions[p]
-			binNum = math.floor(min(0.9999,pred)*10)
-
-			if isHDDCRP: # meaning testset
-				doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
-			else:
-				(doc_id,m_id) = dm1
-
-			dmToLinkDistribution[dm1][binNum] += 1
-			dmToLinkDistribution[dm2][binNum] += 1
-			docToListDistribution[doc_id][binNum] += 1
-
-		# normalizes mention weights into a distribution
-		for m in dmToLinkDistribution:
-			mSum = sum(dmToLinkDistribution[m])
-			li = []
-			for _ in dmToLinkDistribution[m]:
-				li.append(float(_/mSum))
-			dmToLinkDistribution[m] = li
-
-		# normalizes doc weights into a distribution
-		for doc_id in docToListDistribution:
-			docSum = sum(docToListDistribution[doc_id])
-			li = []
-			for _ in docToListDistribution[doc_id]:
-				li.append(float(_/docSum))
-			docToListDistribution[doc_id] = li
-
-		for doc in docToPredDMs:
-			for dm1 in docToPredDMs[doc]:
-				positivePairs = set()
-				negativePairs = set()
-				for dm2 in docToPredDMs[doc]:
-
-					# if we have a singleton, let's use it
-					if len(docToPredDMs[doc]) > 1 and dm1 == dm2:
-						continue
-					# we haven't yet added it to then positive or negative examples
-					# (don't want duplicate training pairs)
-					if (dm1,dm2) not in addedPairs and (dm2,dm1) not in addedPairs:				
-						curX = []
-						addExample = True # will only become False if the # of neg devs is greater than our param
-						if (dm1,dm2) in predictions:
-							curX.append(predictions[(dm1,dm2)])
-						elif (dm2,dm1) in predictions:
-							curX.append(predictions[(dm2,dm1)])
-						else:
-							print("* ERROR: dm1,dm2 or reverse aren't in predictions")
-							exit(1)
-
-						curX += docToListDistribution[doc]
-						curX += dmToLinkDistribution[dm1]
-
-						curY = []
-						if isHDDCRP:
-							ref1 = self.hddcrp_parsed.hm_idToHMention[dm1].ref_id
-							ref2 = self.hddcrp_parsed.hm_idToHMention[dm2].ref_id
-							if ref1 == ref2:
-								curY = [0,1]
-								numP += 1
-							else:
-								curY = [1,0]
-								numN += 1
-
-						else: # ECB Corpus Mentions
-							# positive
-							if self.corpus.dmToREF[dm1] == self.corpus.dmToREF[dm2]: 
-								curY = [0,1]
-								numP += 1
-							else:
-								if numN >= self.args.numNegPerPos * numP:
-									addExample = False
-								else:
-									curY = [1,0]
-									numN += 1
-
-						if addExample:
-							# adds training
-							X.append(curX)
-							Y.append(curY)
-
-							# just ensures we don't add the same training (pos or neg) twice
-							addedPairs.add((dm1,dm2))
-							addedPairs.add((dm2,dm1))
-
-							pairs.append((dm1,dm2))
-		print("numP:",str(numP))
-		print("numN:",str(numN))
-		return (pairs, X, Y)

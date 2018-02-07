@@ -6,14 +6,15 @@ from ECBHelper import *
 from HDDCRPParser import *
 from StanParser import *
 from CCNN import *
-from FFNN import *
+from FFNNWD import *
+from FFNNCD import *
 from get_coref_metrics import *
 from collections import defaultdict
 
 # Coreference Resolution System for Events (uses ECB+ corpus)
 class CorefEngine:
 	if __name__ == "__main__":
-
+		isWDModel = False
 		runFFNN = True # if False, we will use Agglomerative Cluster
 		stoppingPoints = [0.501] #[0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.45,0.501,0.55,0.601]
 		# handles passed-in args
@@ -36,13 +37,14 @@ class CorefEngine:
 
 			# runs CCNN -> FFNN
 			if args.useECBTest: # ECB+ test set
-				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
+				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel) # True creates a WD-CCNN model
 				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
-				ffnnEngine = FFNN(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds)
+				ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds)
+				exit(1)
 			else: # HDDCRP test set
-				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
+				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel) # True creates a WD-CCNN model
 				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
-				ffnnEngine = FFNN(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds) # reads in a saved prediction file instead
+				ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds) # reads in a saved prediction file instead
 			
 			ffnnEngine.train()
 
@@ -60,7 +62,7 @@ class CorefEngine:
 			print("* AGGLOMERATIVE CLUSTERING MODE")
 			# trains and tests the pairwise-predictions via Conjoined-CNN
 
-			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
+			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel) # creates CD-CCNN model
 			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 
 			if args.useECBTest: # use corpus' gold test set
