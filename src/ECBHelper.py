@@ -14,7 +14,7 @@ class ECBHelper:
 #neg: 4526
 	def __init__(self, args, corpus, hddcrp_parsed, runFFNN):
 
-		self.useDoubleDevDirs = False
+		self.useDoubleDevDirs = True # should only be True when using ECBTest w/ FFNN
 		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
