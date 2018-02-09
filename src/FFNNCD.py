@@ -147,7 +147,6 @@ class FFNNCD:
 					parsedDevDMs.add(dm)
 
 		# loads dev predictions via CCNN's pairwise predictions, or a saved file
-		devPredictions = {}
 		dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
 		dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
 		predDevDMs = set() # only used for sanity check
@@ -164,8 +163,6 @@ class FFNNCD:
 				dm1 = (d1,m1)
 				dm2 = (d2,m2)
 				pred = float(pred)
-				devPredictions[(dm1,dm2)] = pred
-				docDMPredictions[d1][(dm1,dm2)] = pred
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
 			f.close()		
@@ -184,19 +181,19 @@ class FFNNCD:
 				extension2 = doc_id2[doc_id2.find("ecb"):]
 				dir_num2 = int(doc_id2.split("_")[0])
 				
-				key1 = str(dir_num1) + extension1
-				key2 = str(dir_num2) + extension2
+				dirHalf1 = str(dir_num1) + extension1
+				dirHalf2 = str(dir_num2) + extension2
 				
-				if key1 != key2:
+				if dirHalf1 != dirHalf2:
 					print("* ERROR, somehow, training pairs came from diff dir-halves")
 					exit(1)
 
-				if dm1 not in dirHalfToDMs[key1]:
-					dirHalfToDMs[key1].append(dm1)
-				if dm2 not in dirHalfToDMs[key1]:
-					dirHalfToDMs[key1].append(dm2)
+				if dm1 not in dirHalfToDMs[dirHalf1]:
+					dirHalfToDMs[dirHalf1].append(dm1)
+				if dm2 not in dirHalfToDMs[dirHalf2]:
+					dirHalfToDMs[dirHalf2].append(dm2)
 
-				dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
+				dirHalfToDMPredictions[dirHalf1][(dm1,dm2)] = pred
 				predDevDMs.add(dm1)
 				predDevDMs.add(dm2)
 
@@ -215,7 +212,7 @@ class FFNNCD:
 				exit(1)
 		print("# parsed:",str(len(parsedDevDMs)))
 		print("# pred:",str(len(predDevDMs)))
-		self.trainX, self.trainY = self.loadDynamicData(docToPredDevDMs, devPredictions, docDMPredictions)
+		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
 	def cluster(self, stoppingPoint):
 		# loads test predictions
@@ -352,7 +349,8 @@ class FFNNCD:
 						for c2 in ourDocClusters.keys():
 							if j > i:
 								X = []
-								featureVec = self.getClusterFeatures(dm1, ourDocClusters[c2], sorted_preds, docToHMPredictions[doc_id], docToHMs[doc_id])
+								#getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, allDMsInDoc):
+								featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], sorted_preds, docToHMPredictions[doc_id], docToHMs[doc_id])
 								X.append(np.asarray(featureVec))
 								X = np.asarray(X)
 								# the first [0] is required to get into the surrounding array
@@ -411,53 +409,44 @@ class FFNNCD:
 	def init_weights(self, shape):
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
-	def loadDynamicData(self, docToPredDMs, allPredictions, docDMPredictions):
-		# constructs a mapping of DOC -> {REF -> DM}
-		docToREFDMs = defaultdict(lambda : defaultdict(set))
-		docToDMs = defaultdict(set)
-		for doc_id in docToPredDMs:
-			for dm in docToPredDMs[doc_id]:
+	def loadDynamicData(self, dirHalfToDMs, dirHalfToDMPredictions):
+		
+		# constructs a mapping of DIRHALF -> {REF -> DM}
+		dirHalfREFToDMs = defaultdict(lambda : defaultdict(set))
+		for dirHalf in dirHalfToDMs:
+			for dm in dirHalfToDMs[dirHalf]:
 				ref_id = self.corpus.dmToREF[dm]
-				docToREFDMs[doc_id][ref_id].add(dm)
-				docToDMs[doc_id].add(dm)
+				dirHalfREFToDMs[dirHalf][ref_id].add(dm)
 
 		positiveData = []
 		negativeData = []
 		X = []
 		Y = []
-		for doc_id in docToREFDMs:
-			if len(docToDMs[doc_id]) == 1:
-				print("* DOC:",str(doc_id),"HAS SINGLETON:",str(docToDMs[doc_id]))
+
+		# iterates through all dirHalves
+		for dirHalf in dirHalfToDMs:
+
+			numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
+			if numDMsInDirHalf == 1:
+				print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
 				continue
 
-
-			# pre-processes: makes a sorted list of all predictions (non-dupes) in the doc
-			allDocPreds = []
-			added = set()
-			for dm1 in docToPredDMs[doc_id]:
-				for dm2 in docToPredDMs[doc_id]:
+			# sanity check: ensures we have all predictions for the current dirHalf
+			for dm1 in dirHalfToDMs[dirHalf]:
+				for dm2 in dirHalfToDMs[dirHalf]:
 					if dm1 == dm2:
 						continue
-					pair = None
-					if (dm1,dm2) in allPredictions:
-						pair = (dm1,dm2)
-					elif (dm2,dm1) in allPredictions:
-						pair = (dm2,dm1)
-					else:
-						print(len(added))
+
+					if (dm1,dm2) not in dirHalfToDMPredictions[dirHalf] and (dm2,dm1) not in dirHalfToDMPredictions[dirHalf]:
 						print("* ERROR: we dont have dm1-dm2")
 						exit(1)
-					if pair not in added:
-						allDocPreds.append(allPredictions[pair])
-						added.add(pair)
-			sorted_preds = sorted(allDocPreds)
 			
 			# pick a DM
-			for dm1 in docToDMs[doc_id]:
+			for dm1 in dirHalfToDMs[dirHalf]:
 				gold_ref_id = self.corpus.dmToREF[dm1]
 				# we can only pick a positive if there are other items in the cluster
-				if len(docToREFDMs[doc_id][gold_ref_id]) > 1:
-					featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][gold_ref_id], sorted_preds, docDMPredictions[doc_id], docToDMs[doc_id])
+				if len(dirHalfREFToDMs[dirHalf][gold_ref_id]) > 1:
+					featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][gold_ref_id], dirHalfToDMPredictions[dirHalf], numDMsInDirHalf)
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
@@ -466,86 +455,38 @@ class FFNNCD:
 					if other_ref_id == gold_ref_id:
 						continue
 					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-						featureVec = self.getClusterFeatures(dm1, docToREFDMs[doc_id][other_ref_id], sorted_preds, docDMPredictions[doc_id], docToDMs[doc_id])
+						featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], numDMsInDirHalf)
 						negativeData.append(featureVec)
 						X.append(featureVec)
 						Y.append([1,0])
 		return (X,Y)
-	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, dm1, allDMsInCluster, sorted_preds, predictions, allDMsInDoc):
 
-		dmToLinkDistribution = [0] * 5
+	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
+	def getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, numDMsInDirHalf):
 
 		predsIn = []
-		predsOut = []
-		maxPred = 0
-		for k in predictions:
-			if predictions[k] > maxPred:
-				maxPred = predictions[k]
 
-		minPredIn = maxPred
-		minPredOut = maxPred
+		minPredIn = 9999
 		maxPredIn = -1
-		maxPredOut = -1
-		for dm2 in allDMsInDoc:
+		for dm2 in allDMsInCandidateCluster:
 			if dm1 == dm2:
 				continue
-			if (dm1,dm2) in predictions:
+			if (dm1,dm2) in dirHalfToPredictions:
 				pred = predictions[(dm1,dm2)]
-			elif (dm2,dm1) in predictions:
+			elif (dm2,dm1) in dirHalfToPredictions:
 				pred = predictions[(dm2,dm1)]
 			else:
 				print("* ERROR: prediction doesn't exist")
 				exit(1)
 
-			binNum = math.floor(min(1.49,pred)*10/3.0)
-			dmToLinkDistribution[binNum] += 1
-
-			if dm2 in allDMsInCluster:
+				predsIn.append(pred)
 				if pred < minPredIn:
 					minPredIn = pred
 				if pred > maxPredIn:
 					maxPredIn = pred
 				predsIn.append(pred)
-			else: # pred is outside of candidate cluster
-				if pred < minPredOut:
-					minPredOut = pred
-				if pred > maxPredOut:
-					maxPredOut = pred
-				predsOut.append(pred)
 		
-		# normalizes mention weights into a distribution
-		sumCounts = sum(dmToLinkDistribution)
-		li = []
-		for _ in range(len(dmToLinkDistribution)):
-			li.append(float(dmToLinkDistribution[_]/sumCounts))
-		dmToLinkDistribution = li
-
+		clusterSizePercentage = float(allDMsInCandidateCluster) / float(numDMsInDirHalf)
 		avgPredIn = sum(predsIn) / len(predsIn)
-		avgPredOut = maxPred
-
-		if len(predsOut) > 0:
-			avgPredOut = sum(predsOut) / len(predsOut)
-
-		numItems = len(predsIn)
-		clusterSizePercentage = float(numItems) / float(len(allDMsInDoc))
-		indexAboveMin = 0
-		indexAboveAvg = 0
-		for _ in range(len(sorted_preds)):
-			if sorted_preds[_] < minPredIn:
-				indexAboveMin += 1
-			if sorted_preds[_] < avgPredIn:
-				indexAboveAvg += 1
-		percentageBelowMin = float(indexAboveMin) / len(sorted_preds)
-		percentageBelowAvg = float(indexAboveAvg) / len(sorted_preds)
-		minDiff = float(minPredOut - minPredIn)
-		avgDiff = float(avgPredOut - avgPredIn)
-		maxDiff = float(maxPredOut - maxPredIn)
 		featureVec = [minPredIn, avgPredIn, maxPredIn, clusterSizePercentage] # A
-		featureVec += dmToLinkDistribution
-		#featureVec = [minPredIn, avgPredIn, clusterSizePercentage, minDiff, avgDiff] # B clusterSizePercentage
-		#featureVec = [percentageBelowMin, percentageBelowAvg] # C
-		#featureVec = [percentageBelowMin, percentageBelowAvg, numItems] # D
-		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg] # E (or include numItems if it ever helps)
-		#featureVec = [minPredIn, avgPredIn, percentageBelowMin, percentageBelowAvg]
 		return featureVec
