@@ -357,7 +357,7 @@ class FFNNCD:
 
 				print("# clusters:",str(len(ourDirHalfClusters.keys())))
 				# find best merge
-				closestDist = 999999
+				closestDist = 99999
 				closestClusterKeys = (-1,-1)
 				i = 0
 				for c1 in ourDirHalfClusters.keys():
@@ -373,17 +373,17 @@ class FFNNCD:
 								# the first [0] is required to get into the surrounding array
 								# the second [0] is to access the probability of not-match
 								# so the lower it is means the higher the prob. of 'is-match' [1]
-								dist = self.model.predict(X)[0][0]
+								dist = float(self.model.predict(X)[0][0])
 								print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
 								if dist < closestDist:
 									closestDist = dist
 									closestClusterKeys = (c1,c2)
+									print("setting closestDist:",closestDist,"and closestClusterKeys:",str(closestClusterKeys))
 							j += 1
 					i += 1
 				if closestDist > stoppingPoint:
 					break
 				newCluster = set()
-				print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
 				(c1,c2) = closestClusterKeys
 				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
@@ -392,12 +392,12 @@ class FFNNCD:
 				ourDirHalfClusters.pop(c1, None)
 				ourDirHalfClusters.pop(c2, None)
 				ourDirHalfClusters[c1] = newCluster
-
+				print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
 				sys.stdout.flush()
 			# end of current dirHalf
 			
 			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
-			exit(1)
+
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
 
