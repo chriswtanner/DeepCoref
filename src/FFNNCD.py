@@ -256,7 +256,7 @@ class FFNNCD:
 			for _ in range(len(self.testingPairs)):
 				(dm1,dm2) = self.testingPairs[_]
 				pred = self.testingPreds[_][0]
-				print("testingPair:",str(dm1),"and",str(dm2))
+				#print("testingPair:",str(dm1),"and",str(dm2))
 				if self.args.useECBTest:
 					doc_id1 = dm1[0]
 					doc_id2 = dm2[0]
