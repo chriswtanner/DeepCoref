@@ -333,7 +333,7 @@ class FFNNCD:
 					goldenSuperSet[goldenClusterID] = tmp
 					goldenClusterID += 1
 		print("goldenSuperSet:",str(goldenSuperSet))
-		for p in goldenSuperSet.keys():
+		for g in goldenSuperSet.keys():
 			print("g:",str(g))
 			for i in goldenSuperSet[g]:
 				print("i:",i)
