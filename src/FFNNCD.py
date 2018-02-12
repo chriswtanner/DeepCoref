@@ -77,8 +77,6 @@ class FFNNCD:
 		self.model.compile(loss=self.weighted_binary_crossentropy,optimizer=opt,metrics=['accuracy'])
 		self.model.summary()
 		self.model.fit(self.trainX, self.trainY, epochs=self.num_epochs, batch_size=self.batch_size, verbose=1)
-		#evaluation = self.model.evaluate(self.testX, self.testY, verbose=1)
-		#return (self.testingPairs, preds, self.testY)
 
 	def calculateF12(self, preds):
 		num_correct = 0
@@ -215,16 +213,20 @@ class FFNNCD:
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
 	def cluster(self, stoppingPoint):
+
+		print("* in Cluster()")
 		# loads test predictions
 		predTestDMs = set()
 
 		# stores predictions
 		# NOTE: although i'm using the variable 'HM', this is robust; it can handle ECB data too,
 		#       not just HDDCRP data (i had to name the variable something and couldn't name it DM and HM)
-		docToHMPredictions = defaultdict(lambda : defaultdict(float))
-		docToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+		dirHalfToHMPredictions = defaultdict(lambda : defaultdict(float))
+		dirHalfToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
 
 		if self.testingPairs == None and self.testingPreds == None: # read the file
+			print("* why are we in here?")
+			exit(1)
 			# sanity check:
 			if self.args.useECBTest:
 				print("* ERROR: we want to use ECBTest data, but we aren't passing it to FFNNWD")
@@ -253,41 +255,59 @@ class FFNNCD:
 		else: # use the passed-in Mentions (which could be ECB or HDDCRP format)
 			for _ in range(len(self.testingPairs)):
 				(dm1,dm2) = self.testingPairs[_]
-				predTestDMs.add(dm1)
-				predTestDMs.add(dm2)
 				pred = self.testingPreds[_][0]
-				doc_id = 0
-				doc_id2 = 0
+
 				if self.args.useECBTest:
-					doc_id = dm1[0]
+					doc_id1 = dm1[0]
 					doc_id2 = dm2[0]
 				else:
-					doc_id = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+					doc_id1 = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
 					doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
-				if doc_id != doc_id2:
-					print("ERROR: pairs are from diff docs")
+
+				extension1 = doc_id1[doc_id1.find("ecb"):]
+				extension2 = doc_id2[doc_id2.find("ecb"):]
+				dir_num1 = int(doc_id1.split("_")[0])
+				dir_num2 = int(doc_id2.split("_")[0])				
+				dirHalf1 = str(dir_num1) + extension1
+				dirHalf2 = str(dir_num2) + extension2
+
+				if dirHalf1 != dirHalf2:
+					print("* ERROR, somehow, training pairs came from diff dir-halves")
 					exit(1)
 
-				if dm1 not in docToHMs[doc_id]:
-					docToHMs[doc_id].append(dm1)
-				if dm2 not in docToHMs[doc_id]:
-					docToHMs[doc_id].append(dm2)
-				docToHMPredictions[doc_id][(dm1,dm2)] = pred
+				if dm1 not in dirHalfToHMs[dirHalf1]:
+					dirHalfToHMs[dirHalf1].append(dm1)
+				if dm2 not in dirHalfToHMs[dirHalf1]: # not an error; dirHalf1 == dirHalf2
+					dirHalfToHMs[dirHalf1].append(dm2)
+				dirHalfToHMPredictions[dirHalf1][(dm1,dm2)] = pred
 				predTestDMs.add(dm1)
-				predTestDMs.add(dm2) 
+				predTestDMs.add(dm2)
 
 		# sanity check: ensures we are working w/ all of the DMs
+		parsedDMs = set()
 		if self.args.useECBTest:
 			for d in self.helper.testingDirs:
 				for doc in self.corpus.dirToDocs[d]:
 					for dm in self.corpus.docToDMs[doc]:
+						parsedDMs.add(dm)
 						if dm not in predTestDMs:
 							print("* ERROR: did not have the dm:",str(dm),"which was in our parsed ECB Test")
 							exit(1)
+
+			print("# predTestDMs:",str(len(predTestDMs)))
+			print("# parsedDMs:",str(len(parsedDMs)))
+
+			# sanity check part 2: ensures we have predictions for all of our parsed DMs
+			for dm in parsedDMs:
+				if dm not in predTestDMs:
+					print("* ERROR: missing",str(dm),"from the predicted test set of DMs")
+					exit(1)
+
 		else: # hddcrp
 			for hm in self.hddcrp_parsed.hm_idToHMention:
 				if hm not in predTestDMs:
-					print("* ERROR: hddcrp is missing some hms")
+					print("* ERROR: predTestDMs is missing",str(hm))
+
 					exit(1)
 		print("# dms in test:",str(len(predTestDMs)))
 
@@ -298,59 +318,52 @@ class FFNNCD:
 		goldenClusterID = 0
 		goldenSuperSet = {}
 		if self.args.useECBTest: # construct golden clusters
-			for doc_id in docToHMPredictions.keys():
+			for dirHalf in dirHalfToHMPredictions.keys():
 				
 				# ensures we have all DMs
-				if len(docToHMs[doc_id]) != len(self.corpus.docToDMs[doc_id]):
-					print("mismatch in DMs!!")
+				if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
+					print("mismatch in DMs!! local dirHalfToHMs:",str(len(dirHalfToHMs[dirHalf])),"parsedCorpus:",str(len(self.corpus.dirHalfToHMs[dirHalf])))
 					exit(1)
 
-				# construct the golden truth for the current doc
-				goldenTruthDirClusters = {}
-				for i in range(len(self.corpus.docToREFs[doc_id])):
+				# construct the golden truth for the current dirHalf
+				for curREF in self.corpus.dirHalfREFToDMs[dirHalf]:
 					tmp = set()
-					curREF = self.corpus.docToREFs[doc_id][i]
-					for dm in self.corpus.docREFsToDMs[(doc_id,curREF)]:						
+					for dm in self.corpus.dirHalfREFToDMs[(dirHalf,curREF)]:						
 						tmp.add(dm)
-					goldenTruthDirClusters[i] = tmp
 					goldenSuperSet[goldenClusterID] = tmp
 					goldenClusterID += 1
 
+		for dirHalf in dirHalfToHMPredictions.keys():
+			print("dirHalf:",str(dirHalf))
+			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
 
-		for doc_id in docToHMPredictions.keys():			
-			# sorts all preds for the current doc
-			docPreds = []
-			for pair in docToHMPredictions[doc_id]:
-				docPreds.append(docToHMPredictions[doc_id][pair])
-			sorted_preds = sorted(docPreds)
+			# stores all preds for the current dirHalf
+			dirHalfPreds = []
+			for pair in dirHalfToHMPredictions[dirHalf]:
+				dirHalfPreds.append(dirHalfToHMPredictions[dirHalf][pair])
 
 			# constructs our base clusters (singletons)
-			ourDocClusters = {} 
-
-
-			for i in range(len(docToHMs[doc_id])):
-				hm = docToHMs[doc_id][i]
+			ourDirHalfClusters = {} 
+			for i in range(len(dirHalfToHMs[dirHalf])):
+				hm = dirHalfToHMs[dirHalf][i]
 				a = set()
 				a.add(hm)
-				ourDocClusters[i] = a
-			#if len(docToHMs[doc_id]) == 1:
-			#	print("DOC:",str(doc_id),"is a singleton, and sorted_preds:",str(sorted_preds))
+				ourDirHalfClusters[i] = a
 
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
-			while len(ourDocClusters.keys()) > 1:
+			while len(ourDirHalfClusters.keys()) > 1:
 				# find best merge
 				closestDist = 999999
 				closestClusterKeys = (-1,-1)
 				i = 0
-				for c1 in ourDocClusters.keys():
-					for dm1 in ourDocClusters[c1]:
+				for c1 in ourDirHalfClusters.keys():
+					for dm1 in ourDirHalfClusters[c1]:
 						j = 0
-						for c2 in ourDocClusters.keys():
+						for c2 in ourDirHalfClusters.keys():
 							if j > i:
 								X = []
-								#getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, allDMsInDoc):
-								featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], sorted_preds, docToHMPredictions[doc_id], docToHMs[doc_id])
+								featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
 								X.append(np.asarray(featureVec))
 								X = np.asarray(X)
 								# the first [0] is required to get into the surrounding array
@@ -367,22 +380,22 @@ class FFNNCD:
 				newCluster = set()
 				#print("* merging:",ourDocClusters[c1],"and",ourDocClusters[c2],"dist:",closestDist)
 				(c1,c2) = closestClusterKeys
-				for _ in ourDocClusters[c1]:
+				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
-				for _ in ourDocClusters[c2]:
+				for _ in ourDirHalfClusters[c2]:
 					newCluster.add(_)
-				ourDocClusters.pop(c1, None)
-				ourDocClusters.pop(c2, None)
-				ourDocClusters[c1] = newCluster
-			# end of current doc
+				ourDirHalfClusters.pop(c1, None)
+				ourDirHalfClusters.pop(c2, None)
+				ourDirHalfClusters[c1] = newCluster
+			# end of current dirHalf
 			
-			# goes through each cluster for the current doc
-			for i in ourDocClusters.keys():
+			# goes through each cluster for the current dirHalf
+			for i in ourDirHalfClusters.keys():
 
 				# if True, remove REFs which aren't in the gold set, then remove singletons
 				if self.ChoubeyFilter and not self.args.useECBTest:
 					newCluster = set()
-					for dm in ourDocClusters[i]:
+					for dm in ourDirHalfClusters[i]:
 						muid = self.hddcrp_parsed.hm_idToHMention[dm].UID
 						if muid in self.hddcrp_parsed.gold_MUIDToHMentions:
 							newCluster.add(dm)
@@ -390,9 +403,9 @@ class FFNNCD:
 						ourClusterSuperSet[ourClusterID] = newCluster
 						ourClusterID += 1
 				else:
-					ourClusterSuperSet[ourClusterID] = ourDocClusters[i]
+					ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
 					ourClusterID += 1
-		# end of going through every doc
+		# end of going through every dirHalf
 		#print("# our clusters:",str(len(ourClusterSuperSet)))
 		return (ourClusterSuperSet, goldenSuperSet)
 
@@ -451,7 +464,7 @@ class FFNNCD:
 					X.append(featureVec)
 					Y.append([0,1])
 				# looks for other clusters to compare DM1 to
-				for other_ref_id in docToREFDMs[doc_id].keys():
+				for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
 					if other_ref_id == gold_ref_id:
 						continue
 					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
@@ -465,28 +478,27 @@ class FFNNCD:
 	def getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, numDMsInDirHalf):
 
 		predsIn = []
-
 		minPredIn = 9999
 		maxPredIn = -1
 		for dm2 in allDMsInCandidateCluster:
+
 			if dm1 == dm2:
 				continue
 			if (dm1,dm2) in dirHalfToPredictions:
-				pred = predictions[(dm1,dm2)]
+				pred = dirHalfToPredictions[(dm1,dm2)]
 			elif (dm2,dm1) in dirHalfToPredictions:
-				pred = predictions[(dm2,dm1)]
+				pred = dirHalfToPredictions[(dm2,dm1)]
 			else:
 				print("* ERROR: prediction doesn't exist")
 				exit(1)
 
-				predsIn.append(pred)
-				if pred < minPredIn:
-					minPredIn = pred
-				if pred > maxPredIn:
-					maxPredIn = pred
-				predsIn.append(pred)
-		
-		clusterSizePercentage = float(allDMsInCandidateCluster) / float(numDMsInDirHalf)
+			if pred < minPredIn:
+				minPredIn = pred
+			if pred > maxPredIn:
+				maxPredIn = pred
+			predsIn.append(pred)
+
+		clusterSizePercentage = float(len(allDMsInCandidateCluster)) / float(numDMsInDirHalf)
 		avgPredIn = sum(predsIn) / len(predsIn)
 		featureVec = [minPredIn, avgPredIn, maxPredIn, clusterSizePercentage] # A
 		return featureVec

@@ -74,6 +74,11 @@ class ECBParser:
 		self.docToGlobalSentenceNums = defaultdict(set)
 		self.docToTokens = defaultdict(list) # currently ignores the <start> <end> tokens
 		self.docToREFs = defaultdict(list)
+
+		# dirHalf's (for cross-doc work)
+		self.dirHalfREFToDMs = defaultdict(lambda : defaultdict(set))
+		self.dirHalfToHMs = defaultdict(list)
+
 		self.docREFsToDMs = defaultdict(list) # key: (doc_id,ref_id) -> [(doc_id1,m_id1), ... (doc_id3,m_id3)]
 		self.docToDMs = defaultdict(list)
 		self.docToUIDs = defaultdict(list)
@@ -374,15 +379,25 @@ class ECBParser:
 				# only keep track of REFs for which we have found Mentions
 				for match2 in it2:
 					m_id = int(match2.group(1))
-					if (doc_id,m_id) not in self.dmToMention.keys():
+					dm = (doc_id,m_id)
+					if dm not in self.dmToMention.keys():
 						#print("*** MISSING MENTION!")
 						continue
-					self.dmToREF[(doc_id,m_id)] = ref_id
-					self.refToDMs[ref_id].append((doc_id,m_id))
+					self.dmToREF[dm] = ref_id
+					self.refToDMs[ref_id].append(dm)
 					dirNum = int(doc_id[0:doc_id.find("_")])
 
 					extension = doc_id[doc_id.find("ecb"):]
 					self.refToExtensions[ref_id].add(extension)
+
+					dirHalf = str(dir_num) + extension
+
+					# stores the REF for the current dirHalf
+					if dm not in self.dirHalfREFToDMs[dirHalf][ref_id]:
+						self.dirHalfREFToDMs[dirHalf][ref_id].add(dm)
+
+					if (doc_id,m_id) not in self.dirHalfToHMs[dirHalf]:
+						self.dirHalfToHMs[dirHalf].append((doc_id,m_id))
 
 					# stores the REF for the current doc_id
 					if ref_id not in self.docToREFs[doc_id]:

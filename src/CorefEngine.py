@@ -40,7 +40,6 @@ class CorefEngine:
 				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel) # True creates a WD-CCNN model
 				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
 				ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds)
-				exit(1)
 			else: # HDDCRP test set
 				ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel) # True creates a WD-CCNN model
 				(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
