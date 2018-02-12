@@ -256,7 +256,7 @@ class FFNNCD:
 			for _ in range(len(self.testingPairs)):
 				(dm1,dm2) = self.testingPairs[_]
 				pred = self.testingPreds[_][0]
-
+				print("testingPair:",str(dm1),"and",str(dm2))
 				if self.args.useECBTest:
 					doc_id1 = dm1[0]
 					doc_id2 = dm2[0]
@@ -319,7 +319,7 @@ class FFNNCD:
 		goldenSuperSet = {}
 		if self.args.useECBTest: # construct golden clusters
 			for dirHalf in dirHalfToHMPredictions.keys():
-				
+				print("dirHalf:",dirHalf,"has",str(len(dirHalfToHMs[dirHalf])),"DMs")
 				# ensures we have all DMs
 				if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
 					print("mismatch in DMs!! local dirHalfToHMs:",str(len(dirHalfToHMs[dirHalf])),"parsedCorpus:",str(len(self.corpus.dirHalfToHMs[dirHalf])))
@@ -337,6 +337,7 @@ class FFNNCD:
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
 			print("numDMsInDirHalf:",numDMsInDirHalf)
+			print("# pairs in dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[dirHalf])))
 			# stores all preds for the current dirHalf
 			dirHalfPreds = []
 			for pair in dirHalfToHMPredictions[dirHalf]:
@@ -349,7 +350,7 @@ class FFNNCD:
 				a = set()
 				a.add(hm)
 				ourDirHalfClusters[i] = a
-
+				print("setting ourDirHalfClusters[",i,"] = ",str(a))
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
 			while len(ourDirHalfClusters.keys()) > 1:

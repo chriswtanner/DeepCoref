@@ -1,4 +1,5 @@
 #!/bin/bash
+prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
 numLayers=(1) # 3) # 1 3
 numEpochs=(2) # 20)
@@ -112,7 +113,7 @@ do
 																										for fo in "${FFNNOpt[@]}"
 																										do
 																											# qsub -pe smp 8 -l vlong -o
-																											fout=gpu${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_co${co}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}_dd${dd}_fn${fn}_fp${fp}_fo${fo}.out
+																											fout=gpu_${prefix}_${hdd}_nl${nl}_pool${pool}_ne${ne}_ws${ws}_neg${neg}_bs${bs}_s${s}_e${emb}_dr${dr}_co${co}_cm${cm}_nf${nf}_fm${fm}_fp${fpos}_pt${pt}_lt${lt}_dt${dt}_ct${ct}_st${st}_ws2${ws2}_vs${vs}_sl${sl}_dd${dd}_fn${fn}_fp${fp}_fo${fo}.out
 																											echo ${fout}
 																											if [ ${hn} = "titanx" ] || [ ${hn} = "Christophers-MacBook-Pro-2" ]
 																											then
