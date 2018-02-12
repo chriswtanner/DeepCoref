@@ -353,6 +353,10 @@ class FFNNCD:
 				print("setting ourDirHalfClusters[",i,"] = ",str(a))
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
+
+			# stores the cluster distances so that we don't have to do the expensive
+			# computation every time
+			clusterDistances = defaultdict(lambda : defaultdict(float))
 			while len(ourDirHalfClusters.keys()) > 1:
 
 				print("# clusters:",str(len(ourDirHalfClusters.keys())))
@@ -365,15 +369,29 @@ class FFNNCD:
 						j = 0
 						for c2 in ourDirHalfClusters.keys():
 							if j > i:
-								X = []
-								print("comparing dm1:",str(dm1),"to",str(ourDirHalfClusters[c2]))
-								featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
-								X.append(np.asarray(featureVec))
-								X = np.asarray(X)
-								# the first [0] is required to get into the surrounding array
-								# the second [0] is to access the probability of not-match
-								# so the lower it is means the higher the prob. of 'is-match' [1]
-								dist = float(self.model.predict(X)[0][0])
+								
+								dist = -1
+
+								# if we don't have it stored, it means it concerns the last merged/formed cluster
+								# so let's compute it now and save it
+								if clusterDistances[c1][c2] == None:
+									if clusterDistances[c2][c1] != None: # ensure we didn't accidentally leave this one
+										print("ERROR: missing clusterDistances")
+										exit(1)
+									X = []
+									print("comparing dm1:",str(dm1),"to",str(ourDirHalfClusters[c2]))
+									featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
+									X.append(np.asarray(featureVec))
+									X = np.asarray(X)
+									# the first [0] is required to get into the surrounding array
+									# the second [0] is to access the probability of not-match
+									# so the lower it is means the higher the prob. of 'is-match' [1]
+									dist = float(self.model.predict(X)[0][0])
+									clusterDistances[c1][c2] = dist
+									clusterDistances[c2][c1] = dist
+								else: # we already have the distance, so let's just use it
+									dist = clusterDistances[c1][c2]
+
 								print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
 								if dist < closestDist:
 									closestDist = dist
@@ -394,6 +412,13 @@ class FFNNCD:
 				ourDirHalfClusters.pop(c2, None)
 				ourDirHalfClusters[c1] = newCluster
 				
+				# removes c1 and c2 from clusterDistances
+				# so, on the next round, we only need to compute these new ones
+				for i in range(len(ourDirHalfClusters.keys())):
+					for j in range(len(ourDirHalfClusters.keys())):
+						if j > i:
+							clusterDistances[i][j] = None
+							clusterDistances[j][i] = None
 				sys.stdout.flush()
 			# end of current dirHalf
 			
