@@ -74,6 +74,14 @@ class CorefEngine:
 					
 					# DEV
 					(predictedClusters, goldenClusters) = ccnnEngine.clusterPredictions(dev_pairs, dev_preds, sp)
+					for p in predictedClusters:
+						print("p:",str(p))
+						for i in predictedClusters[i]:
+							print("i:",i)
+					for p in goldenClusters:
+						print("g:",str(p))
+						for i in goldenClusters[i]:
+							print("i:",i)
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
 					print("AGG DEV F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
 					if conll_f1 > bestDevF1:
