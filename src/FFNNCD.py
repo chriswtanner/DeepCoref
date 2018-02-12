@@ -366,6 +366,7 @@ class FFNNCD:
 						for c2 in ourDirHalfClusters.keys():
 							if j > i:
 								X = []
+								print("comparing dm1:",str(dm1),"to",str(ourDirHalfClusters[c2]))
 								featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
 								X.append(np.asarray(featureVec))
 								X = np.asarray(X)
@@ -373,6 +374,7 @@ class FFNNCD:
 								# the second [0] is to access the probability of not-match
 								# so the lower it is means the higher the prob. of 'is-match' [1]
 								dist = self.model.predict(X)[0][0]
+								print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
 								if dist < closestDist:
 									closestDist = dist
 									closestClusterKeys = (c1,c2)
@@ -395,7 +397,7 @@ class FFNNCD:
 			# end of current dirHalf
 			
 			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
-
+			exit(1)
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
 
