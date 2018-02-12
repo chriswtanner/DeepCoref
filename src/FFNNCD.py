@@ -336,7 +336,7 @@ class FFNNCD:
 		for dirHalf in dirHalfToHMPredictions.keys():
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
-
+			print("numDMsInDirHalf:",numDMsInDirHalf)
 			# stores all preds for the current dirHalf
 			dirHalfPreds = []
 			for pair in dirHalfToHMPredictions[dirHalf]:
@@ -353,6 +353,8 @@ class FFNNCD:
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
 			while len(ourDirHalfClusters.keys()) > 1:
+
+				print("# clusters:",str(len(ourDirHalfClusters.keys())))
 				# find best merge
 				closestDist = 999999
 				closestClusterKeys = (-1,-1)
@@ -378,7 +380,7 @@ class FFNNCD:
 				if closestDist > stoppingPoint:
 					break
 				newCluster = set()
-				#print("* merging:",ourDocClusters[c1],"and",ourDocClusters[c2],"dist:",closestDist)
+				print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
 				(c1,c2) = closestClusterKeys
 				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
@@ -387,8 +389,12 @@ class FFNNCD:
 				ourDirHalfClusters.pop(c1, None)
 				ourDirHalfClusters.pop(c2, None)
 				ourDirHalfClusters[c1] = newCluster
+
+				sys.stdout.flush()
 			# end of current dirHalf
 			
+			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
+
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
 
