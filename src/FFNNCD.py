@@ -385,6 +385,7 @@ class FFNNCD:
 					break
 				newCluster = set()
 				(c1,c2) = closestClusterKeys
+				print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
 				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
 				for _ in ourDirHalfClusters[c2]:
@@ -392,7 +393,7 @@ class FFNNCD:
 				ourDirHalfClusters.pop(c1, None)
 				ourDirHalfClusters.pop(c2, None)
 				ourDirHalfClusters[c1] = newCluster
-				print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
+				
 				sys.stdout.flush()
 			# end of current dirHalf
 			
