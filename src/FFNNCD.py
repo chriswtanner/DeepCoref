@@ -319,7 +319,7 @@ class FFNNCD:
 		goldenSuperSet = {}
 		if self.args.useECBTest: # construct golden clusters
 			for dirHalf in dirHalfToHMPredictions.keys():
-				print("dirHalf:",dirHalf,"has",str(len(dirHalfToHMs[dirHalf])),"DMs")
+
 				# ensures we have all DMs
 				if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
 					print("mismatch in DMs!! local dirHalfToHMs:",str(len(dirHalfToHMs[dirHalf])),"parsedCorpus:",str(len(self.corpus.dirHalfToHMs[dirHalf])))
@@ -332,11 +332,7 @@ class FFNNCD:
 						tmp.add(dm)
 					goldenSuperSet[goldenClusterID] = tmp
 					goldenClusterID += 1
-		print("goldenSuperSet:",str(goldenSuperSet))
-		for g in goldenSuperSet.keys():
-			print("g:",str(g))
-			for i in goldenSuperSet[g]:
-				print("i:",i)
+
 		for dirHalf in dirHalfToHMPredictions.keys():
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
@@ -354,7 +350,6 @@ class FFNNCD:
 				a = set()
 				a.add(hm)
 				ourDirHalfClusters[i] = a
-				print("setting ourDirHalfClusters[",i,"] = ",str(a))
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
 
@@ -362,8 +357,6 @@ class FFNNCD:
 			# computation every time
 			clusterDistances = defaultdict(lambda : defaultdict(float))
 			while len(ourDirHalfClusters.keys()) > 1:
-
-				print("# clusters:",str(len(ourDirHalfClusters.keys())))
 				# find best merge
 				closestDist = 99999
 				closestClusterKeys = (-1,-1)
@@ -373,9 +366,7 @@ class FFNNCD:
 						j = 0
 						for c2 in ourDirHalfClusters.keys():
 							if j > i:
-								
 								dist = -1
-
 								# if we don't have it stored, it means it concerns the last merged/formed cluster
 								# so let's compute it now and save it
 								if clusterDistances[c1][c2] == None:
@@ -383,7 +374,6 @@ class FFNNCD:
 										print("ERROR: missing clusterDistances")
 										exit(1)
 									X = []
-									print("comparing dm1:",str(dm1),"to",str(ourDirHalfClusters[c2]))
 									featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
 									X.append(np.asarray(featureVec))
 									X = np.asarray(X)

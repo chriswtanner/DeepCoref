@@ -50,14 +50,6 @@ class CorefEngine:
 				(predictedClusters, goldenClusters) = ffnnEngine.cluster(sp)
 				print("# goldencluster:",str(len(goldenClusters)))
 				print("# predicted:",str(len(predictedClusters)))
-				for p in predictedClusters.keys():
-					print("p:",str(p))
-					for i in predictedClusters[p]:
-						print("i:",i,str(corpus.dmToMention[i]))
-				for p in goldenClusters.keys():
-					print("g:",str(p))
-					for i in goldenClusters[p]:
-						print("i:",i,str(corpus.dmToMention[i]))
 
 				if args.useECBTest: # use corpus' gold test set
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)

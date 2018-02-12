@@ -33,7 +33,7 @@ class ECBHelper:
 		if self.useDoubleDevDirs and runFFNN: # if true, we will use some of the Training dirs as a separate, smaller Dev A set (20-22)
 			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19]
 			self.devDirs = [20,21] # will serve as Training for FFNN
-			self.testingDirs = [23] #,24,25]
+			self.testingDirs = [23,24] #,24,25]
 		else:
 			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 			self.devDirs = [23,24,25] # will serve as Training for FFNN
