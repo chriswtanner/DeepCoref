@@ -16,7 +16,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 		isWDModel = False
 		runFFNN = True # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.501] #[0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.45,0.501,0.55,0.601]
+		stoppingPoints = [0.15,0.25,0.301,0.35,0.401,0.45,0.501,0.55,0.65,0.701] #[0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.45,0.501,0.55,0.601]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -46,6 +46,8 @@ class CorefEngine:
 				ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds) # reads in a saved prediction file instead
 			
 			ffnnEngine.train()
+			bestCoNLL = 0
+			bestSP = 0
 			for sp in stoppingPoints:
 				(predictedClusters, goldenClusters) = ffnnEngine.cluster(sp)
 				print("# goldencluster:",str(len(goldenClusters)))
@@ -54,9 +56,14 @@ class CorefEngine:
 				if args.useECBTest: # use corpus' gold test set
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(goldenClusters, predictedClusters)
 					print("FFNN F1 sp:",str(sp),"=",str(conll_f1),"OTHERS:",str(muc_f1),str(bcub_f1),str(ceafe_f1))
+					if conll_f1 > bestCoNLL:
+						bestCoNLL = conll_f1
+						bestSP = sp
 				else:
 					print("FFNN on HDDCRP")
 					helper.writeCoNLLFile(predictedClusters, sp)
+			if args.useECBTest:
+				print("[FINAL RESULTS]: MAX DEV SP:",str(bestSP),"YIELDED F1:",str(bestCoNLL)) 
 		else: # AGGLOMERATIVE CLUSTERING
 			print("* AGGLOMERATIVE CLUSTERING MODE")
 			# trains and tests the pairwise-predictions via Conjoined-CNN

@@ -386,11 +386,11 @@ class FFNNCD:
 								else: # we already have the distance, so let's just use it
 									dist = clusterDistances[c1][c2]
 
-								print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
+								#print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
 								if dist < closestDist:
 									closestDist = dist
 									closestClusterKeys = (c1,c2)
-									print("setting closestDist:",closestDist,"and closestClusterKeys:",str(closestClusterKeys))
+									#print("setting closestDist:",closestDist,"and closestClusterKeys:",str(closestClusterKeys))
 							j += 1
 					i += 1
 				if closestDist > stoppingPoint:
@@ -416,7 +416,7 @@ class FFNNCD:
 				sys.stdout.flush()
 			# end of current dirHalf
 			
-			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
+			#print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
 
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
