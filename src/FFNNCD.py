@@ -326,13 +326,17 @@ class FFNNCD:
 					exit(1)
 
 				# construct the golden truth for the current dirHalf
-				for curREF in self.corpus.dirHalfREFToDMs[dirHalf]:
+				for curREF in self.corpus.dirHalfREFToDMs[dirHalf].keys():
 					tmp = set()
-					for dm in self.corpus.dirHalfREFToDMs[(dirHalf,curREF)]:						
+					for dm in self.corpus.dirHalfREFToDMs[dirHalf][curREF]:
 						tmp.add(dm)
 					goldenSuperSet[goldenClusterID] = tmp
 					goldenClusterID += 1
-
+		print("goldenSuperSet:",str(goldenSuperSet))
+		for p in goldenSuperSet.keys():
+			print("g:",str(g))
+			for i in goldenSuperSet[g]:
+				print("i:",i)
 		for dirHalf in dirHalfToHMPredictions.keys():
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
