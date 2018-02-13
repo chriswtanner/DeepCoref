@@ -10,6 +10,7 @@ from FFNNWD import *
 from FFNNCD import *
 from get_coref_metrics import *
 from collections import defaultdict
+from sortedcontainers import SortedDict
 
 # Coreference Resolution System for Events (uses ECB+ corpus)
 class CorefEngine:
@@ -19,6 +20,74 @@ class CorefEngine:
 		stoppingPoints = [0.501]
 		# [0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.575,0.601,0.65,0.701]
 
+		'''
+		clusterDistances = SortedDict()
+		bad = set()
+		clusterDistances[0.3] = [(3,4),(3,5)]
+		clusterDistances[0.2] = [(2,3),(2,4),(2,5)]
+		clusterDistances[0.1] = [(1,2),(1,3),(1,4),(1,5)]
+		print(clusterDistances)
+
+		clusterNum = 6
+		clusters = {}
+		for i in range(5):
+			a = set()
+			a.add(i+1)
+			clusters[i+1] = a
+		print(clusters)
+		while len(clusters) > 1:
+			print("# clusters:",str(len(clusters)))
+			goodPair = None
+			searchForShortest = True
+			while searchForShortest:
+				(k,values) = clusterDistances.peekitem(0)
+				print("bestPeak:",k,values)
+				newList = []
+				for (i,j) in values:
+					if i not in bad and j not in bad:
+						newList.append((i,j))
+				if len(newList) > 0: # not empty, yay, we don't have to keep searching
+					searchForShortest = False
+					goodPair = newList.pop(0) # we may be making the list have 0 items now
+				if len(newList) > 0: # let's update the shortest distance's pairs
+					clusterDistances[k] = newList
+					# compute new values between this and all other clusters
+				else: # no good items, let's remove it from the dict
+					del clusterDistances[k]
+			print("best pair:",goodPair)
+			(i,j) = goodPair
+			print("clusterDistances after removed:",clusterDistances)
+			bad.add(i)
+			bad.add(j)
+
+			# remove the clusters
+			newCluster = set()
+			for _ in clusters[i]:
+				newCluster.add(_)
+			for _ in clusters[j]:
+				newCluster.add(_)
+			clusters.pop(i,None)
+			clusters.pop(j,None)
+
+			print("new cluster:",clusterNum,"=",str(newCluster))
+
+			# adds new cluster
+			clusters[clusterNum] = newCluster
+			print("current clusters:",clusters)
+			# adds distances to new cluster
+			for c1 in clusters:
+				if c1 != clusterNum:
+					dist = float(clusterNum + 1/clusterNum)
+					if dist in clusterDistances:
+						clusterDistances[dist].append((c1,clusterNum))
+					else:
+						clusterDistances[dist] = [(c1,clusterNum)]
+			clusterNum += 1
+			print("clusterDistances after adding:",clusterDistances)
+		print("clusterS:",str(clusters))
+		print("clusterDistances:",str(clusterDistances))
+		exit(1)
+		'''
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -66,7 +135,7 @@ class CorefEngine:
 					helper.writeCoNLLFile(predictedClusters, sp)
 					helper.convertWDFileToCDFile(sp)
 					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
-					
+
 			if args.useECBTest:
 				print("[FINAL RESULTS]: MAX DEV SP:",str(bestSP),"YIELDED F1:",str(bestCoNLL)) 
 		else: # AGGLOMERATIVE CLUSTERING

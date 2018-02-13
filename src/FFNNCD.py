@@ -15,6 +15,7 @@ import functools
 import math
 import time
 from itertools import product
+from sortedcontainers import SortedDict
 class FFNNCD:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
@@ -336,6 +337,7 @@ class FFNNCD:
 					goldenClusterID += 1
 
 		for dirHalf in dirHalfToHMPredictions.keys():
+
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
 			print("numDMsInDirHalf:",numDMsInDirHalf)
@@ -347,78 +349,109 @@ class FFNNCD:
 
 			# constructs our base clusters (singletons)
 			ourDirHalfClusters = {} 
+			clusterNum = 0
 			for i in range(len(dirHalfToHMs[dirHalf])):
 				hm = dirHalfToHMs[dirHalf][i]
 				a = set()
 				a.add(hm)
-				ourDirHalfClusters[i] = a
+				ourDirHalfClusters[clusterNum] = a
+				clusterNum += 1
 			# the following keeps merging until our shortest distance > stopping threshold,
 			# or we have 1 cluster, whichever happens first
 
 			# stores the cluster distances so that we don't have to do the expensive
 			# computation every time
-			clusterDistances = defaultdict(lambda : defaultdict(float))
-			while len(ourDirHalfClusters.keys()) > 1:
-				# find best merge
-				closestDist = 99999
-				closestClusterKeys = (-1,-1)
-				i = 0
-				for c1 in ourDirHalfClusters.keys():
-					for dm1 in ourDirHalfClusters[c1]:
-						j = 0
-						for c2 in ourDirHalfClusters.keys():
-							if j > i:
-								dist = -1
-								# if we don't have it stored, it means it concerns the last merged/formed cluster
-								# so let's compute it now and save it
-								if clusterDistances[c1][c2] == None:
-									if clusterDistances[c2][c1] != None: # ensure we didn't accidentally leave this one
-										print("ERROR: missing clusterDistances")
-										exit(1)
-									X = []
-									featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], numDMsInDirHalf)
-									X.append(np.asarray(featureVec))
-									X = np.asarray(X)
-									# the first [0] is required to get into the surrounding array
-									# the second [0] is to access the probability of not-match
-									# so the lower it is means the higher the prob. of 'is-match' [1]
-									dist = float(self.model.predict(X)[0][0])
-									clusterDistances[c1][c2] = dist
-									clusterDistances[c2][c1] = dist
-								else: # we already have the distance, so let's just use it
-									dist = clusterDistances[c1][c2]
+			# seed the distances
+			clusterDistances = SortedDict()
+			numDistances = 0
+			for c1 in ourDirHalfClusters.keys():
+				for dm1 in ourDirHalfClusters[c1]:
+					j = 0
+					for c2 in ourDirHalfClusters.keys():
+						if j > i:
+							X = []
+							featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], float(2.0/numDMsInDirHalf))
+							X = np.asarray(np.asarray(featureVec))
+							dist = float(self.model.predict(X)[0][0])
+							if dist in clusterDistances:
+								clusterDistances[dist].append((c1,c2))
+							else:
+								clusterDistances[dist] = [(c1,c2)]
+							numDistances += 1
+			print("# clusterDistances:",str(numDistances))
+			print("clusterDistances:",clusterDistances)
 
-								#print(str(ourDirHalfClusters[c1]),str(ourDirHalfClusters[c2]),"dist:",str(dist))
-								if dist < closestDist:
-									closestDist = dist
-									closestClusterKeys = (c1,c2)
-									#print("setting closestDist:",closestDist,"and closestClusterKeys:",str(closestClusterKeys))
-							j += 1
-					i += 1
-				if closestDist > stoppingPoint:
+			cluster_start_time = time.time()
+			while len(ourDirHalfClusters.keys()) > 1:
+				print("# ourDirHalfClusters:",str(len(ourDirHalfClusters)))
+				goodPair = None
+				searchForShortest = True
+				shortestDist = None
+				while searchForShortest:
+					(k,values) = clusterDistances.peekitem(0)
+					newList = []
+					for (c1,c2) in values:
+						if c1 not in bad and c2 not in bad:
+							newList.append((c1,c2))
+					if len(newList) > 0: # not empty, yay, we don't have to keep searching
+						searchForShortest = False
+						goodPair = newList.pop(0) # we may be making the list have 0 items now
+						shortestDist = k
+					if len(newList) > 0: # let's update the shortest distance's pairs
+						clusterDistances[k] = newList
+					else: # no good items, let's remove it from the dict
+						del clusterDistances[k]
+
+				if shortestDist > sp:
 					break
+				# compute new values between this and all other clusters
+				(c1,c2) = goodPair
+				bad.add(c1)
+				bad.add(c2)
+
+				# remove the clusters
 				newCluster = set()
-				(c1,c2) = closestClusterKeys
-				#print("* merging:",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2],"dist:",closestDist)
 				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
 				for _ in ourDirHalfClusters[c2]:
 					newCluster.add(_)
-				ourDirHalfClusters.pop(c1, None)
-				ourDirHalfClusters.pop(c2, None)
-				ourDirHalfClusters[c1] = newCluster
-				
-				# removes c1 and c2 from clusterDistances
-				# so, on the next round, we only need to compute these new ones
-				for i in range(len(ourDirHalfClusters.keys())):
-					for j in range(len(ourDirHalfClusters.keys())):
-						if j > i:
-							clusterDistances[i][j] = None
-							clusterDistances[j][i] = None
+				ourDirHalfClusters.pop(c1,None)
+				ourDirHalfClusters.pop(c2,None)
+
+				#print("new cluster:",clusterNum,"=",str(newCluster))
+
+				# adds new cluster
+				ourDirHalfClusters[clusterNum] = newCluster
+				# adds distances to new cluster
+				for c1 in ourDirHalfClusters:
+					if c1 != clusterNum:
+
+						shorterCluster = ourDirHalfClusters[c1]
+						longerCluster = ourDirHalfClusters[newCluster]
+
+						len1 = len(ourDirHalfClusters[c1])
+						len2 = len(ourDirHalfClusters[newCluster])
+
+						# checks if we should swap these
+						if len1 > len2:
+							shorterCluster = ourDirHalfClusters[newCluster]
+							longerCluster = ourDirHalfClusters[c1]
+
+						for dm1 in shorterCluster:
+							X = []
+							featureVec = self.getClusterFeatures(dm1, longerCluster, dirHalfToHMPredictions[dirHalf], float((len1+len2)/numDMsInDirHalf))
+							X.append(np.asarray(featureVec))
+							X = np.asarray(X)
+							dist = float(self.model.predict(X)[0][0])
+							if dist in clusterDistances:
+								clusterDistances[dist].append((c1,clusterNum))
+							else:
+								clusterDistances[dist] = [(c1,clusterNum)]
+				clusterNum += 1
 				sys.stdout.flush()
 			# end of current dirHalf
 			
-			#print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
+			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
 
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
@@ -436,6 +469,7 @@ class FFNNCD:
 				else:
 					ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
 					ourClusterID += 1
+			print("cur dirhalf took:",str((time.time() - cluster_start_time)),"seconds")
 		# end of going through every dirHalf
 		#print("# our clusters:",str(len(ourClusterSuperSet)))
 		print("*** CLUSTERING TOOK",str((time.time() - start_time)),"SECONDS")
@@ -490,8 +524,9 @@ class FFNNCD:
 			for dm1 in dirHalfToDMs[dirHalf]:
 				gold_ref_id = self.corpus.dmToREF[dm1]
 				# we can only pick a positive if there are other items in the cluster
-				if len(dirHalfREFToDMs[dirHalf][gold_ref_id]) > 1:
-					featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][gold_ref_id], dirHalfToDMPredictions[dirHalf], numDMsInDirHalf)
+				clusterSize = len(dirHalfREFToDMs[dirHalf][gold_ref_id])
+				if clusterSize > 1:
+					featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][gold_ref_id], dirHalfToDMPredictions[dirHalf], float(clusterSize/numDMsInDirHalf))
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
@@ -499,15 +534,16 @@ class FFNNCD:
 				for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
 					if other_ref_id == gold_ref_id:
 						continue
+					otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
 					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-						featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], numDMsInDirHalf)
+						featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
 						negativeData.append(featureVec)
 						X.append(featureVec)
 						Y.append([1,0])
 		return (X,Y)
 
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, numDMsInDirHalf):
+	def getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, clusterSizePercentage):
 
 		predsIn = []
 		minPredIn = 9999
@@ -530,7 +566,6 @@ class FFNNCD:
 				maxPredIn = pred
 			predsIn.append(pred)
 
-		clusterSizePercentage = float(len(allDMsInCandidateCluster)) / float(numDMsInDirHalf)
 		avgPredIn = sum(predsIn) / len(predsIn)
 		featureVec = [minPredIn, avgPredIn, maxPredIn, clusterSizePercentage] # A
 		return featureVec
