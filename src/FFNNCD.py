@@ -364,6 +364,7 @@ class FFNNCD:
 			# seed the distances
 			clusterDistances = SortedDict()
 			numDistances = 0
+			i = 0
 			for c1 in ourDirHalfClusters.keys():
 				for dm1 in ourDirHalfClusters[c1]:
 					j = 0
@@ -371,19 +372,20 @@ class FFNNCD:
 						if j > i:
 							X = []
 							featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], float(2.0/numDMsInDirHalf))
-							X = np.asarray(np.asarray(featureVec))
+							X.append(np.asarray(featureVec))
+							X = np.asarray(X)
 							dist = float(self.model.predict(X)[0][0])
 							if dist in clusterDistances:
 								clusterDistances[dist].append((c1,c2))
 							else:
 								clusterDistances[dist] = [(c1,c2)]
 							numDistances += 1
-			print("# clusterDistances:",str(numDistances))
-			print("clusterDistances:",clusterDistances)
+						j += 1
+				i += 1
 
+			bad = set()
 			cluster_start_time = time.time()
 			while len(ourDirHalfClusters.keys()) > 1:
-				print("# ourDirHalfClusters:",str(len(ourDirHalfClusters)))
 				goodPair = None
 				searchForShortest = True
 				shortestDist = None
@@ -402,7 +404,7 @@ class FFNNCD:
 					else: # no good items, let's remove it from the dict
 						del clusterDistances[k]
 
-				if shortestDist > sp:
+				if shortestDist > stoppingPoint:
 					break
 				# compute new values between this and all other clusters
 				(c1,c2) = goodPair
@@ -427,14 +429,14 @@ class FFNNCD:
 					if c1 != clusterNum:
 
 						shorterCluster = ourDirHalfClusters[c1]
-						longerCluster = ourDirHalfClusters[newCluster]
+						longerCluster = ourDirHalfClusters[clusterNum]
 
 						len1 = len(ourDirHalfClusters[c1])
-						len2 = len(ourDirHalfClusters[newCluster])
+						len2 = len(ourDirHalfClusters[clusterNum])
 
 						# checks if we should swap these
 						if len1 > len2:
-							shorterCluster = ourDirHalfClusters[newCluster]
+							shorterCluster = ourDirHalfClusters[clusterNum]
 							longerCluster = ourDirHalfClusters[c1]
 
 						for dm1 in shorterCluster:
