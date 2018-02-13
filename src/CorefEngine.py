@@ -64,6 +64,9 @@ class CorefEngine:
 				else:
 					print("FFNN on HDDCRP")
 					helper.writeCoNLLFile(predictedClusters, sp)
+					helper.convertWDFileToCDFile(sp)
+					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
+					
 			if args.useECBTest:
 				print("[FINAL RESULTS]: MAX DEV SP:",str(bestSP),"YIELDED F1:",str(bestCoNLL)) 
 		else: # AGGLOMERATIVE CLUSTERING

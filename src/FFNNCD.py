@@ -13,6 +13,7 @@ import os
 import sys
 import functools
 import math
+import time
 from itertools import product
 class FFNNCD:
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
@@ -215,6 +216,7 @@ class FFNNCD:
 	def cluster(self, stoppingPoint):
 
 		print("* in Cluster()")
+		start_time = time.time()
 		# loads test predictions
 		predTestDMs = set()
 
@@ -436,6 +438,7 @@ class FFNNCD:
 					ourClusterID += 1
 		# end of going through every dirHalf
 		#print("# our clusters:",str(len(ourClusterSuperSet)))
+		print("*** CLUSTERING TOOK",str((time.time() - start_time)),"SECONDS")
 		return (ourClusterSuperSet, goldenSuperSet)
 
 	def getAccuracy(self, preds, golds):
