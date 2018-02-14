@@ -19,8 +19,8 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.45,0.501,0.55] #,0.55]
-		stoppingPoints2 = [0.001, 0.01,0.05,0.1,0.15,0.2,0.3]
+		stoppingPoints = [0.45] #,0.501,0.55] #,0.55]
+		stoppingPoints2 = [0.001, 0.01,0.05,0.1,0.2,0.3]
 		# [0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.575,0.601,0.65,0.701]
 
 		# handles passed-in args
@@ -76,8 +76,8 @@ class CorefEngine:
 			print("* AGGLOMERATIVE CLUSTERING MODE")
 
 			# trains and tests the pairwise-predictions via Conjoined-CNN
-			wd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
-			(wd_dev_pairs, wd_dev_preds, wd_testing_pairs, wd_testing_preds) = wd_ccnnEngine.trainAndTest()
+			#wd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
+			#(wd_dev_pairs, wd_dev_preds, wd_testing_pairs, wd_testing_preds) = wd_ccnnEngine.trainAndTest()
 
 			cd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
 			(cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds) = cd_ccnnEngine.trainAndTest()
@@ -90,8 +90,8 @@ class CorefEngine:
 					# performs WD-AGG-Clustering (Test Set)
 					(wd_predictedClusters, wd_goldenClusters) = cd_ccnnEngine.aggClusterPredictions(cd_testing_pairs, cd_testing_preds, sp)
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(wd_goldenClusters, wd_predictedClusters)
-					print("AGG CD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
-					exit(1)
+					print("AGG WD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
+
 					for sp2 in stoppingPoints2:
 
 						# performs CD-AGG-Clustering on the WD clusters (Test Set)

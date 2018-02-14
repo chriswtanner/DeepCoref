@@ -56,16 +56,16 @@ class CCNN:
             clusters = {}
             print("in aggClusterWDClusters() -- CD Model")
 
-            # maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
-            dirHalfToWDClusterNums = defaultdict(set)
-            dmToPredictions = {}
-            
 
+            
+            dmToPredictions = {}
             for i in range(len(cd_pairs)):
                 (dm1,dm2) = cd_pairs[i]
                 prediction = cd_predictions[i][0]
                 dmToPredictions[(dm1,dm2)] = prediction
 
+            # maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
+            dirHalfToWDClusterNums = defaultdict(set)
             for clusterNum in wdClusters.keys():
                 cluster = wdClusters[clusterNum]
                 keys = set()
@@ -577,14 +577,13 @@ class CCNN:
                 #    print("mismatch in DMs!!")
                 #    exit(1)
 
-                # construct the golden truth for the current dir-half
-                for dirHalf in self.corpus.dirHalfREFToDMs.keys():
-                    for ref in self.corpus.dirHalfREFToDMs[dirHalf]:
-                        a = set()
-                        for dm in self.corpus.dirHalfREFToDMs[dirHalf][ref]:
-                            a.add(dm)
-                        goldenSuperSet2[goldenClusterID2] = a
-                        goldenClusterID2 += 1
+                # construct the golden truth for the current dirHalf (key)
+                for ref in self.corpus.dirHalfREFToDMs[key]:
+                    a = set()
+                    for dm in self.corpus.dirHalfREFToDMs[key][ref]:
+                        a.add(dm)
+                    goldenSuperSet2[goldenClusterID2] = a
+                    goldenClusterID2 += 1
 
                 refToDMs = defaultdict(set) 
                 curDMs = set()
