@@ -138,7 +138,7 @@ class CCNN:
             goldenClusterID = 0
             goldenSuperSet = {}
 
-            for dirHalf in dirHalfToDMs.keys():
+            for dirHalf in dirHalfToWDClusterNums.keys():
 
                 # construct the golden truth for the current dir-half
                 dir_num = int(key[0:key.find("ecb")])
@@ -154,8 +154,8 @@ class CCNN:
                     for ref in self.corpus.docToREFs[doc_id]:
                         for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
                             refToDMs[ref].add(dm)
+                
                 for ref in refToDMs:
-
                     # sanity check:
                     if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
                         print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
