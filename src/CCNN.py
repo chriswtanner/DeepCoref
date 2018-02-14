@@ -86,9 +86,12 @@ class CCNN:
                     print("* ERROR: cluster had # keys:",str(len(keys)))
                 dirHalfToWDClusterNums[oneKey].add(clusterNum)
 
+            print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
+            print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
+
             # stores predictions
             dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
-            dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
+            dirHalfToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
             for i in range(len(cd_pairs)):
                 (dm1,dm2) = cd_pairs[i]
 
@@ -117,12 +120,19 @@ class CCNN:
                     print("* ERROR, we have WD predicted values, even though we should have only generated CD ones")
                     exit(1)
 
-                if dm1 not in dirHalfToDMs[key1]:
-                    dirHalfToDMs[key1].append(dm1)
-                if dm2 not in dirHalfToDMs[key1]:
-                    dirHalfToDMs[key1].append(dm2)
+                dirHalfToDMs[key1].add(dm1)
+                dirHalfToDMs[key1].add(dm2)
 
                 dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
+
+            print("per CCNN, #dirHalfToDMs:",str(len(dirHalfToDMs.keys())))
+            print("per corpus, #dirHalfToDMs:",str(len(self.corpus.dirHalfToDMs.keys())))
+
+            # sanity check: ensures we have all of the DMs
+            for dirHalf in dirHalfToDMs:
+                if len(dirHalfToDMs[dirHalf]) != len(self.corpus.dirHalfToDMs[dirHalf]):
+                    print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
+                    exit(1)
 
             ourClusterID = 0
             ourClusterSuperSet = {}

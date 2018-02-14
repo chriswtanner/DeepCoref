@@ -76,8 +76,8 @@ class CorefEngine:
 			print("* AGGLOMERATIVE CLUSTERING MODE")
 
 			# trains and tests the pairwise-predictions via Conjoined-CNN
-			#wd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
-			#(wd_dev_pairs, wd_dev_preds, wd_testing_pairs, wd_testing_preds) = wd_ccnnEngine.trainAndTest()
+			wd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
+			(wd_dev_pairs, wd_dev_preds, wd_testing_pairs, wd_testing_preds) = wd_ccnnEngine.trainAndTest()
 
 			cd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
 			(cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds) = cd_ccnnEngine.trainAndTest()
@@ -88,7 +88,7 @@ class CorefEngine:
 				for sp in stoppingPoints:
 					
 					# performs WD-AGG-Clustering (Test Set)
-					(wd_predictedClusters, wd_goldenClusters) = cd_ccnnEngine.aggClusterPredictions(cd_testing_pairs, cd_testing_preds, sp)
+					(wd_predictedClusters, wd_goldenClusters) = wd_ccnnEngine.aggClusterPredictions(wd_testing_pairs, wd_testing_preds, sp)
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(wd_goldenClusters, wd_predictedClusters)
 					print("AGG WD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
 
