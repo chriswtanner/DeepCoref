@@ -2,10 +2,10 @@
 prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
 numLayers=(1) # 3) # 1 3
-numEpochs=(2) # 20)
+numEpochs=(20) # 20)
 windowSize=(0)
-numNeg=(2)
-batchSize=(256) # 128) # 64 128
+numNeg=(5)
+batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
 embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")

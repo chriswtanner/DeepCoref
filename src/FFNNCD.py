@@ -363,7 +363,6 @@ class FFNNCD:
 			# computation every time
 			# seed the distances
 			clusterDistances = SortedDict()
-			numDistances = 0
 			i = 0
 			for c1 in ourDirHalfClusters.keys():
 				for dm1 in ourDirHalfClusters[c1]:
@@ -379,7 +378,6 @@ class FFNNCD:
 								clusterDistances[dist].append((c1,c2))
 							else:
 								clusterDistances[dist] = [(c1,c2)]
-							numDistances += 1
 						j += 1
 				i += 1
 
