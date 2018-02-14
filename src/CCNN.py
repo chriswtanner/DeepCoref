@@ -124,7 +124,7 @@ class CCNN:
                 dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
 
             print("per CCNN, #dirHalfToDMs:",str(len(dirHalfToDMs.keys())))
-            print("per corpus, #dirHalfToDMs:",str(len(self.corpus.dirHalfToDMs.keys())))
+            print("per corpus, #dirHalfToDMs:",str(len(self.corpus.dirHalfToHMs.keys())))
 
             # sanity check: ensures we have all of the DMs
             for dirHalf in dirHalfToDMs:
