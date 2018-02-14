@@ -239,11 +239,11 @@ class CCNN:
                             added.add((c2,c1))
 
                     # min pair (could also be avg or avgavg)
-                    dist = closestDist
-                    (c1,c2) = closestClusterKeys
+                    #dist = closestDist
+                    #(c1,c2) = closestClusterKeys
 
-                    #dist = closestAvgDist
-                    #(c1,c2) = closestAvgClusterKeys
+                    dist = closestAvgDist
+                    (c1,c2) = closestAvgClusterKeys
 
                     #dist = closestAvgAvgDist
                     #(c1,c2) = closestAvgAvgClusterKeys
@@ -354,6 +354,7 @@ class CCNN:
                     if shortestDist > stoppingPoint:
                         break
                 '''
+            print("# ourclusters:",str(len(ourClusterSuperSet)),";# golden:",str(len(goldenSuperSet)))
             return (ourClusterSuperSet, goldenSuperSet)
 
     # creates clusters for our predictions
