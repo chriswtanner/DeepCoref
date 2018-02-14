@@ -56,8 +56,6 @@ class CCNN:
             clusters = {}
             print("in aggClusterWDClusters() -- CD Model")
 
-
-            
             dmToPredictions = {}
             for i in range(len(cd_pairs)):
                 (dm1,dm2) = cd_pairs[i]
@@ -130,7 +128,7 @@ class CCNN:
 
             # sanity check: ensures we have all of the DMs
             for dirHalf in dirHalfToDMs:
-                if len(dirHalfToDMs[dirHalf]) != len(self.corpus.dirHalfToDMs[dirHalf]):
+                if len(dirHalfToDMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
                     print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
                     exit(1)
 
@@ -157,6 +155,10 @@ class CCNN:
                         for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
                             refToDMs[ref].add(dm)
                 for ref in refToDMs:
+
+                    # sanity check:
+                    if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
+                        print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
                     goldenSuperSet[goldenClusterID] = refToDMs[ref]
                     goldenClusterID += 1
 

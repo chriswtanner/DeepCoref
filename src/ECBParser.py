@@ -436,6 +436,9 @@ class ECBParser:
 		for m in self.mentions:
 			self.UIDToMentions[m.UID] = m
 
+		print("# parsed corpus dirHalfs:",str(len(dirHalfREFToDMs)))
+		for dirHalf in self.dirHalfREFToDMs.keys():
+			print("dirHalf:",str(dirHalf))
 		print("done")
 		# ensures we have found all of the valid mentions in our corpus
 		'''
