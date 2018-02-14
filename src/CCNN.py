@@ -153,7 +153,7 @@ class CCNN:
 
                 ourDirHalfClusters = {}
                 clusterNumToDocs = defaultdict(set)
-                print("dirHalf:",str(dirHalf))
+                #print("dirHalf:",str(dirHalf))
 
                 highestClusterNum = 0
                 # sets base clusters to be the WD clusters
