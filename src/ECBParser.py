@@ -439,8 +439,8 @@ class ECBParser:
 		print("# parsed corpus dirHalfs:",str(len(self.dirHalfREFToDMs)))
 		for dirHalf in sorted(self.dirHalfREFToDMs.keys()):
 			print("dirHalf:",str(dirHalf))
-		print("# dirToDocs:",str(len(dirToDocs.keys())))
-		for d in sorted(dirToDocs.keys()):
+		print("# dirToDocs:",str(len(self.dirToDocs.keys())))
+		for d in sorted(self.dirToDocs.keys()):
 			print("dir:",str(d))
 		print("done")
 		# ensures we have found all of the valid mentions in our corpus
