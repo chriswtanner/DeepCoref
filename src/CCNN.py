@@ -562,6 +562,9 @@ class CCNN:
             goldenClusterID = 0
             goldenSuperSet = {}
             
+            goldenClusterID2 = 0
+            goldenSuperSet2 = {}
+
             stoppingPoints = []
             print("#dirHalfs:",str(len(dirHalfToDMPredictions.keys())))
             for key in dirHalfToDMPredictions.keys():
@@ -575,7 +578,15 @@ class CCNN:
                 #    exit(1)
 
                 # construct the golden truth for the current dir-half
-                refToDMs = defaultdict(set)
+                for dirHalf in self.corpus.dirHalfREFToDMs.keys():
+                    for ref in self.corpus.dirHalfREFToDMs[dirHalf]:
+                        a = set()
+                        for dm in self.corpus.dirHalfREFToDMs[dirHalf][ref]:
+                            a.add(dm)
+                        goldenSuperSet2[goldenClusterID2] = a
+                        goldenClusterID2 += 1
+
+                refToDMs = defaultdict(set) 
                 curDMs = set()
                 for doc_id in self.corpus.dirToDocs[dir_num]:
                     cur_ext = doc_id[doc_id.find("ecb"):]
@@ -688,6 +699,7 @@ class CCNN:
 
             # end of going through every doc
             print("# total golden clusters:",str(len(goldenSuperSet.keys())))
+            print("# total golden clusters2:",str(len(goldenSuperSet2.keys())))
             print("# total our clusters:",str(len(ourClusterSuperSet.keys())))
             #print("stoppingPoints: ",str(stoppingPoints))
             #print("avg stopping point: ",str(float(sum(stoppingPoints))/float(len(stoppingPoints))))
