@@ -926,7 +926,7 @@ class ECBHelper:
 		f.close()
 		fout.close()
 
-	def clusterWDHPredictions(self, wdClusters, cp_pairs, cd_predictions, stoppingPoint2):
+	def clusterWDHPredictions(self, wdClusters, cd_pairs, cd_predictions, stoppingPoint2):
 		clusters = {}
 		print("in clusterWDHPredictions() -- CD Model which uses WD predictions")
 
