@@ -157,7 +157,7 @@ class CCNN:
                             refToDMs[ref].add(dm)
                 
                 print("# refs:",str(len(refToDMs)))
-                print("local:",str(refToDMs)
+                print("local:",str(refToDMs))
                 print("corpus:",str(self.corpus.dirHalfREFToDMs[dirHalf]))
                 for ref in refToDMs:
                     # sanity check:
