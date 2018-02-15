@@ -244,7 +244,7 @@ class CCNN:
                                         closestDist = dist
                                         closestClusterKeys = (c1,c2)
                             for dm in dmToDists:
-                                avg = float(sum(dmToDists[dm])/len(dmToDists[dm]))
+                                avg = float(sum(dmToDists[dm])/float(len(dmToDists[dm])))
                                 if avg < closestAvgDist:
                                     closestAvgDist = avg
                                     closestAvgClusterKeys = (c1,c2)

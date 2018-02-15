@@ -17,6 +17,7 @@ class ECBHelper:
 		self.useDoubleDevDirs = False # should only be True when using ECBTest Dev w/ FFNN
 
 		# NOTE!: if the below is False, then "* ERROR, we have WD predicted " in CCNN.py should be commented out
+		#    if it's True, then "* ERROR, we have WD predicted " in CCNN.py's should be visible, for error checking
 		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
@@ -716,7 +717,7 @@ class ECBHelper:
 	# NOTE: this should be run whenever we use a CD Model
 	# that is, we first create a WD file just to ensure we're
 	# output'ing each token in the correct format as the HDDCRP
-	def convertWDFileToCDFile(self, stoppingPoint):
+	def convertWDFileToCDFile(self, stoppingPoint, stoppingPoint2=""):
 		# constructs output file
 		fileBase = str(self.args.resultsDir) + \
 			str(self.args.hddcrpBaseFile) + "_" + \
@@ -747,8 +748,8 @@ class ECBHelper:
 			"fp" + str(self.args.FFNNPosRatio) + "_" + \
 			"fo" + str(self.args.FFNNOpt) + "_" + \
 			"sp" + str(stoppingPoint)
-		wdFile = fileBase + ".WD.txt"
-		cdFile = fileBase + ".CD.txt"
+		wdFile = fileBase + str(stoppingPoint2) + ".WD.txt"
+		cdFile = fileBase + str(stoppingPoint2) + ".CD.txt"
 
 		fin = open(wdFile, 'r')
 		fout = open(cdFile, 'w')
@@ -774,7 +775,7 @@ class ECBHelper:
 		fout.close()
 
 	# writes CoNLL file in the same format as args.hddcrpFile
-	def writeCoNLLFile(self, predictedClusters, stoppingPoint):
+	def writeCoNLLFile(self, predictedClusters, stoppingPoint, stoppingPoint2=""):
 		hm_idToClusterID = {}
 		for c_id in predictedClusters.keys():
 			for hm_id in predictedClusters[c_id]:
@@ -818,7 +819,7 @@ class ECBHelper:
 			"fn" + str(self.args.FFNNnumEpochs) + "_" + \
 			"fp" + str(self.args.FFNNPosRatio) + "_" + \
 			"fo" + str(self.args.FFNNOpt) + "_" + \
-			"sp" + str(stoppingPoint) + \
+			"sp" + str(stoppingPoint) + str(stoppingPoint2) + \
 			".WD.txt"
 
 		print("ECBHelper writing out:",str(fileOut))
@@ -924,6 +925,211 @@ class ECBHelper:
 
 		f.close()
 		fout.close()
+
+	def clusterWDHPredictions(self, wdClusters, cp_pairs, cd_predictions, stoppingPoint2):
+		clusters = {}
+		print("in clusterWDHPredictions() -- CD Model which uses WD predictions")
+
+		# maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
+		dirHalfToWDClusterNums = defaultdict(set)
+		for clusterNum in wdClusters.keys():
+			cluster = wdClusters[clusterNum]
+			keys = set()
+			oneKey = None
+			oneDoc = None
+			for hm in cluster:
+				doc_id = self.hddcrp_parsed.hm_idToHMention[hm].doc_id
+				if doc_id != oneDoc and oneDoc != None:
+					print("* ERROR: differing docs within the wd base cluster")
+					exit(1)
+				oneDoc = doc_id
+				extension = doc_id[doc_id.find("ecb"):]
+				dir_num = int(doc_id.split("_")[0])
+				key = str(dir_num) + extension
+				keys.add(key)
+				oneKey = key
+			if len(keys) != 1:
+				print("* ERROR: cluster had # keys:",str(len(keys)))
+			dirHalfToWDClusterNums[oneKey].add(clusterNum)
+
+		print("in WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
+		print("in the entire parsed corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
+
+		# stores predictions
+		dirHalfToHMPredictions = defaultdict(lambda : defaultdict(float))
+		dirHalfToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
+		
+		uniqueHMs = set()
+
+		# separates the predictions into dir-halves, so that we
+		# don't try to cluster mentions all in the same dir
+		for i in range(len(cd_pairs)):
+			(hm1,hm2) = pairs[i]
+			prediction = predictions[i][0]
+			doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
+			doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
+
+			extension1 = doc_id[doc_id.find("ecb"):]
+			dir_num1 = int(doc_id.split("_")[0])
+
+			extension2 = doc_id2[doc_id2.find("ecb"):]
+			dir_num2 = int(doc_id2.split("_")[0])			
+
+			if dir_num1 != dir_num2:
+				print("ERROR: pairs are from diff dirs")
+				exit(1)
+			key1 = str(dir_num1) + extension1
+			key2 = str(dir_num2) + extension2
+
+			if key1 != key2:
+				print("* ERROR, somehow, training pairs came from diff dir-halves")
+				exit(1)
+
+			if hm1 not in dirHalfToHMs[key1]:
+				dirHalfToHMs[key1].append(hm1)
+			if hm2 not in dirHalfToHMs[key2]:
+				dirHalfToHMs[key2].append(hm2)
+
+			dirHalfToHMPredictions[key1][(hm1,hm2)] = prediction
+			uniqueHMs.add(hm1)
+			uniqueHMs.add(hm2)
+		
+		print("per CCNN, #dirHalfToHMs:",str(len(dirHalfToHMs.keys())))
+		print("per corpus, #dirHalfToHMs:",str(len(self.corpus.dirHalfToHMs.keys())))
+
+		# sanity check: ensures we have all of the HMs
+		for dirHalf in dirHalfToHMs:
+			if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
+				print("* ERROR: differing # of HMs b/w CCNN and the Corpus")
+				exit(1)
+
+		ourClusterID = 0
+		ourClusterSuperSet = {}
+		for dirHalf in dirHalfToWDClusterNums.keys():
+			print("dirHalf:",str(dirHalf))
+			ourDirHalfClusters = {}
+			clusterNumToDocs = defaultdict(set)
+			highestClusterNum = 0
+			# sets base clusters to be the WD clusters
+			for wdClusterNum in dirHalfToWDClusterNums[dirHalf]:
+				a = set()
+				for hm in wdClusters[wdClusterNum]:
+					a.add(hm)
+					doc_id = self.hddcrp_parsed.hm_idToHMention[hm].doc_id
+					clusterNumToDocs[highestClusterNum].add(doc_id)
+				ourDirHalfClusters[highestClusterNum] = a
+				highestClusterNum += 1
+			print("# dirHalfClusters:",str(len(ourDirHalfClusters)))
+
+
+			# the following keeps merging until our shortest distance > stopping threshold,
+			# or we have 1 cluster, whichever happens first
+			while len(ourDirHalfClusters.keys()) > 1:
+
+				# find best merge
+				closestDist = 999999
+				closestClusterKeys = (-1,-1)
+
+				closestAvgDist = 999999
+				closestAvgClusterKeys = (-1,-1)
+
+				closestAvgAvgDist = 999999
+				closestAvgAvgClusterKeys = (-1,-1)
+
+				# looks at all combinations of pairs
+				# starting case, each c1/key/cluster has a single HM
+
+				added = set()
+
+				for c1 in ourDirHalfClusters.keys():
+					docsInC1 = clusterNumToDocs[c1]
+					for c2 in ourDirHalfClusters.keys():
+						if (c2,c1) in added or (c1,c2) in added or c1 == c2:
+							continue
+						docsInC2 = clusterNumToDocs[c2]
+
+						# only consider merging clusters that are disjoint in their docs
+						containsOverlap = False
+						for d1 in docsInC1:
+							if d1 in docsInC2:
+								containsOverlap = True
+								break
+						#if containsOverlap:
+						#    continue
+
+						avgavgdists = []
+						hmToDists = defaultdict(list)
+						for hm1 in ourDirHalfClusters[c1]:
+							for hm2 in ourDirHalfClusters[c2]:
+								if hm1 == hm2:
+									print("* ERROR: somehow hm1 == hm2")
+									exit(1)
+
+								dist = 9999
+								if (hm1,hm2) in dirHalfToHMPredictions[dirHalf]:
+									dist = dirHalfToHMPredictions[dirHalf][(hm1,hm2)]
+								elif (hm2,hm1) in dirHalfToHMPredictions[dirHalf]:
+									dist = dirHalfToHMPredictions[dirHalf][(hm2,hm1)]
+								else:
+									print("* error, why don't we have either (hm1,hm2) or (hm2,hm1) in key:",str(dirHalf))
+									print("hms:",str(hm1),str(hm2))
+									exit(1)
+
+								avgavgdists.append(dist)
+								hmToDists[hm1].append(dist)
+								hmToDists[hm2].append(dist)
+								if dist < closestDist:
+									closestDist = dist
+									closestClusterKeys = (c1,c2)
+						for hm in hmToDists:
+							avg = float(sum(hmToDists[hm])/len(hmToDists[hm]))
+							if avg < closestAvgDist:
+								closestAvgDist = avg
+								closestAvgClusterKeys = (c1,c2)
+						avgavg = float(sum(avgavgdists)) / float(len(avgavgdists))
+						if avgavg < closestAvgAvgDist:
+							closestAvgAvgDist = avgavg
+							closestAvgAvgClusterKeys = (c1,c2)
+						added.add((c1,c2))
+						added.add((c2,c1))
+
+				# min pair (could also be avg or avgavg)
+				#dist = closestDist
+				#(c1,c2) = closestClusterKeys
+
+				dist = closestAvgDist
+				(c1,c2) = closestAvgClusterKeys
+
+				#dist = closestAvgAvgDist
+				#(c1,c2) = closestAvgAvgClusterKeys
+
+				if dist > stoppingPoint2:
+					break
+
+				newCluster = set()
+				for _ in ourDirHalfClusters[c1]:
+					newCluster.add(_)
+				for _ in ourDirHalfClusters[c2]:
+					newCluster.add(_)
+				ourDirHalfClusters.pop(c1, None)
+				ourDirHalfClusters.pop(c2, None)
+				ourDirHalfClusters[highestClusterNum] = newCluster
+				newDocSet = set()
+				for _ in clusterNumToDocs[c1]:
+					newDocSet.add(_)
+				for _ in clusterNumToDocs[c2]:
+					newDocSet.add(_)
+				clusterNumToDocs.pop(c1, None)
+				clusterNumToDocs.pop(c2, None)
+				clusterNumToDocs[highestClusterNum] = newDocSet
+				highestClusterNum += 1
+			# end of clustering current dir-half
+			for i in ourDirHalfClusters.keys():
+				ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
+				ourClusterID += 1
+		# end of going through every dir-half
+		print("# our clusters:",str(len(ourClusterSuperSet)))
+		return ourClusterSuperSet
 
 	# creates clusters for our hddcrp predictions
 	def clusterHPredictions(self, pairs, predictions, stoppingPoint, isWDModel):

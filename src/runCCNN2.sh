@@ -187,7 +187,7 @@ if [ "$useECBTest" = false ] ; then
 	do
 		f=${baseDir}"results/"${hddcrpBaseFile}"_nl"${numLayers}"_pool"${poolType}"_ne"${numEpochs}"_ws"${windowSize}"_neg"${numNegPerPos}"_bs"${batchSize}"_sFalse_e"${embeddingsBaseFile}"_dr"${dropout}"_co"${CCNNOpt}"_cm"${clusterMethod}"_nf"${numFilters}"_fm"${filterMultiplier}"_fp"${featurePOS}"_pt"${posType}"_lt"${lemmaType}"_dt"${dependencyType}"_ct"${charType}"_st"${SSType}"_ws2"${SSwindowSize}"_vs"${SSvectorSize}"_sl"${SSlog}"_dd"${devDir}"_fn"${FFNNnumEpochs}"_fp"${FFNNPosRatio}"_fo"${FFNNOpt}"_sp"${sp}
 		WD_file=${f}".WD.txt"
-		CD_file=${f}".CD.txt"
+		
 		muc=`./scorer.pl muc ${goldWDFile} ${WD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 		bcub=`./scorer.pl bcub ${goldWDFile} ${WD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 		ceafe=`./scorer.pl ceafe ${goldWDFile} ${WD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
@@ -195,15 +195,19 @@ if [ "$useECBTest" = false ] ; then
 		avg=`echo "scale=2;$sum/3.0" | bc`
 		echo "CoNLLF1 (WD):" ${WD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
 
-		muc=`./scorer.pl muc ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-		bcub=`./scorer.pl bcub ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-		ceafe=`./scorer.pl ceafe ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
-		sum=`echo ${muc}+${bcub}+${ceafe} | bc`
-		avg=`echo "scale=2;$sum/3.0" | bc`
-		echo "CoNLLF1 (CD):" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
-
-		rm -rf ${WD_file}
-		rm -rf ${CD_file}
+		for sp2 in "${stoppingPoints2[@]}"
+		do
+			CD_file=${f}${sp2}".CD.txt"
+			muc=`./scorer.pl muc ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+			bcub=`./scorer.pl bcub ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+			ceafe=`./scorer.pl ceafe ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
+			sum=`echo ${muc}+${bcub}+${ceafe} | bc`
+			avg=`echo "scale=2;$sum/3.0" | bc`
+			echo "CoNLLF1 (CD):" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
+			#rm -rf ${CD_file}
+		done
+		#rm -rf ${WD_file}
+		
 	done
 fi
 

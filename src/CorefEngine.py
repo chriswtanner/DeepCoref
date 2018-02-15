@@ -106,9 +106,14 @@ class CorefEngine:
 			else: # test on HDDCRP's predicted mention boundaries
 
 				for sp in stoppingPoints:
-					predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)
-					wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, predictedClusters)
-					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
-					helper.writeCoNLLFile(predictedClusters, sp)
-					helper.convertWDFileToCDFile(sp)
-					print("* done writing all CoNLL file(s); now run ./scorer.pl to evaluate our predictions")
+					wd_predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)
+					wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
+					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(wd_predictedClusters.keys())))
+					helper.writeCoNLLFile(wd_predictedClusters, sp)
+					#helper.convertWDFileToCDFile(sp)
+					print("* done writing all CoNLL WD file(s); now run ./scorer.pl to evaluate our predictions")
+
+					for sp2 in stoppingPoints2:
+						cd_predictedClusters = helper.clusterWDHPredictions(wd_predictedClusters, cd_testing_pairs, cd_testing_preds, sp2)
+						helper.writeCoNLLFile(cd_predictedClusters, sp, sp2) # 2 is so that it doesn't override the actual WD
+						helper.convertWDFileToCDFile(sp, sp2)
