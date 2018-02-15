@@ -1,8 +1,8 @@
 #!/bin/bash
 prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
-numLayers=(1) # 3) # 1 3
-numEpochs=(20) # 20)
+numLayers=(2) # 3) # 1 3
+numEpochs=(3 20) # 20)
 windowSize=(0)
 numNeg=(5)
 batchSize=(128) # 128) # 64 128
