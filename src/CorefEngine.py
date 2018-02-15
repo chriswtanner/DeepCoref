@@ -107,7 +107,7 @@ class CorefEngine:
 
 				for sp in stoppingPoints:
 					predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)
-					wd_ccnnEngine.analyzeResults(cd_testing_pairs, cd_testing_preds, predictedClusters)
+					wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
 					helper.convertWDFileToCDFile(sp)
