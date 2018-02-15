@@ -17,7 +17,7 @@ class ECBHelper:
 		self.useDoubleDevDirs = False # should only be True when using ECBTest Dev w/ FFNN
 
 		# NOTE!: if the below is False, then "* ERROR, we have WD predicted " in CCNN.py should be commented out
-		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []

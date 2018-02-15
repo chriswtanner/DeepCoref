@@ -1,10 +1,10 @@
 #!/bin/bash
-prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
+prefix="hddcrp" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
-numLayers=(2) # 3) # 1 3
-numEpochs=(3 20) # 20)
+numLayers=(1) # 3) # 1 3
+numEpochs=(10) # 20)
 windowSize=(0)
-numNeg=(5)
+numNeg=(2)
 batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
@@ -12,7 +12,7 @@ embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(4)
+numFilters=(16)
 filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove

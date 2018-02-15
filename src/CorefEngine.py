@@ -19,7 +19,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.301,0.35,0.401,0.45,0.475,0.501,0.525,0.55] #,0.501,0.55] #,0.55]
+		stoppingPoints = [0.501] #[0.301,0.35,0.401,0.45,0.475,0.501,0.525,0.55] #,0.501,0.55] #,0.55]
 		stoppingPoints2 = [0.601,0.701,0.75,0.801,0.825,0.85,0.875,0.901]
 		# [0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.575,0.601,0.65,0.701]
 
@@ -104,8 +104,9 @@ class CorefEngine:
 							bestTestSP = sp2
 				print("[FINAL RESULTS]: MAX TEST SP:",str(bestTestSP),"yielded F1:",str(bestTestF1))
 			else: # test on HDDCRP's predicted mention boundaries
+
 				for sp in stoppingPoints:
-					predictedClusters = helper.clusterHPredictions(cd_testing_pairs, cd_testing_preds, sp, ccnnEngine.isWDModel)
+					predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)
 					ccnnEngine.analyzeResults(cd_testing_pairs, cd_testing_preds, predictedClusters)
 					print("* using a agg. threshold cutoff of",str(sp),",we returned # clusters:",str(len(predictedClusters.keys())))
 					helper.writeCoNLLFile(predictedClusters, sp)
