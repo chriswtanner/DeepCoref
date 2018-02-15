@@ -116,7 +116,7 @@ class CCNN:
 
                 if doc_id1 == doc_id2:
                     print("* ERROR, we have WD predicted values, even though we should have only generated CD ones")
-                    exit(1)
+                    #exit(1)
 
                 dirHalfToDMs[key1].add(dm1)
                 dirHalfToDMs[key1].add(dm2)
