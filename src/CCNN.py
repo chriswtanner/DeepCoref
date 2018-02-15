@@ -233,6 +233,7 @@ class CCNN:
                                         dist = dirHalfToDMPredictions[dirHalf][(dm2,dm1)]
                                     else:
                                         print("* ERROR: missing dist for dm1,dm2")
+                                        print("dms:",str(dm1),str(dm2))
                                         exit(1)
 
 
