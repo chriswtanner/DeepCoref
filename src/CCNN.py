@@ -139,7 +139,6 @@ class CCNN:
             goldenSuperSet = {}
 
             for dirHalf in dirHalfToWDClusterNums.keys():
-
                 # construct the golden truth for the current dir-half
                 dir_num = int(dirHalf[0:dirHalf.find("ecb")])
                 extension = dirHalf[dirHalf.find("ecb"):]
@@ -181,8 +180,8 @@ class CCNN:
                     ourDirHalfClusters[highestClusterNum] = a
                     #print("cluster:",str(highestClusterNum),":",str(ourDirHalfClusters[highestClusterNum]),"; DOCS:",str(clusterNumToDocs[highestClusterNum]))
                     highestClusterNum += 1
-                print("#golden clusters:",str(len(refToDMs)),str(refToDMs))
-                print("# WD base clusters:",str(len(ourDirHalfClusters)),str(ourDirHalfClusters))
+                print("#golden clusters:",str(len(refToDMs))) #,str(refToDMs))
+                print("# WD base clusters:",str(len(ourDirHalfClusters))) #,str(ourDirHalfClusters))
 
                 # stores the cluster distances so that we don't have to do the expensive
                 # computation every time
