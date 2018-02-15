@@ -142,8 +142,8 @@ class CCNN:
 
                 print("dirHalf:",str(dirHalf))
                 # construct the golden truth for the current dir-half
-                dir_num = int(key[0:key.find("ecb")])
-                extension = key[key.find("ecb"):]
+                dir_num = int(dirHalf[0:dirHalf.find("ecb")])
+                extension = dirHalf[dirHalf.find("ecb"):]
                 refToDMs = defaultdict(set)
                 for doc_id in self.corpus.dirToDocs[dir_num]:
                     cur_ext = doc_id[doc_id.find("ecb"):]
