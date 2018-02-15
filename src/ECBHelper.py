@@ -999,9 +999,7 @@ class ECBHelper:
 
 		# sanity check: ensures we have all of the HMs
 		for dirHalf in dirHalfToHMs:
-			if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
-				print("* ERROR: differing # of HMs b/w CCNN and the Corpus")
-				exit(1)
+			print("HDDCRP has:",str(len(dirHalfToHMs[dirHalf])),"corpus has:",str(len(self.corpus.dirHalfToHMs[dirHalf])))
 
 		ourClusterID = 0
 		ourClusterSuperSet = {}
