@@ -140,7 +140,6 @@ class CCNN:
 
             for dirHalf in dirHalfToWDClusterNums.keys():
 
-                print("dirHalf:",str(dirHalf))
                 # construct the golden truth for the current dir-half
                 dir_num = int(dirHalf[0:dirHalf.find("ecb")])
                 extension = dirHalf[dirHalf.find("ecb"):]
@@ -156,21 +155,16 @@ class CCNN:
                         for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
                             refToDMs[ref].add(dm)
                 
-                print("# refs:",str(len(refToDMs)))
-                print("local:",str(refToDMs))
-                print("corpus:",str(self.corpus.dirHalfREFToDMs[dirHalf]))
                 for ref in refToDMs:
                     # sanity check:
-                    print("ref:",str(ref))
-                    print("refToDMs[ref]:",str(len(refToDMs[ref])))
-                    print("len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):",str(len(self.corpus.dirHalfREFToDMs[dirHalf][ref])))
-
                     if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
                         print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
+                        exit(1)
                     goldenSuperSet[goldenClusterID] = refToDMs[ref]
                     goldenClusterID += 1
-                print("#goldenSuperSet:",str(len(goldenSuperSet.keys())))
-                exit(1)
+                
+
+
 
                 ourDirHalfClusters = {}
                 clusterNumToDocs = defaultdict(set)
@@ -187,6 +181,8 @@ class CCNN:
                     ourDirHalfClusters[highestClusterNum] = a
                     #print("cluster:",str(highestClusterNum),":",str(ourDirHalfClusters[highestClusterNum]),"; DOCS:",str(clusterNumToDocs[highestClusterNum]))
                     highestClusterNum += 1
+                print("#golden clusters:",str(len(refToDMs)),str(refToDMs))
+                print("# WD base clusters:",str(len(ourDirHalfClusters)),str(ourDirHalfClusters))
 
                 # stores the cluster distances so that we don't have to do the expensive
                 # computation every time
