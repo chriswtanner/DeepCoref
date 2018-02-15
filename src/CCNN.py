@@ -157,11 +157,14 @@ class CCNN:
                             refToDMs[ref].add(dm)
                 
                 print("# refs:",str(len(refToDMs)))
+                print("local:",str(refToDMs)
+                print("corpus:",str(self.corpus.dirHalfREFToDMs[dirHalf]))
                 for ref in refToDMs:
                     # sanity check:
                     print("ref:",str(ref))
                     print("refToDMs[ref]:",str(len(refToDMs[ref])))
                     print("len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):",str(len(self.corpus.dirHalfREFToDMs[dirHalf][ref])))
+
                     if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
                         print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
                     goldenSuperSet[goldenClusterID] = refToDMs[ref]

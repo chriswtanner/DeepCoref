@@ -393,8 +393,7 @@ class ECBParser:
 					dirHalf = str(dir_num) + extension
 
 					# stores the REF for the current dirHalf
-					if dm not in self.dirHalfREFToDMs[dirHalf][ref_id]:
-						self.dirHalfREFToDMs[dirHalf][ref_id].add(dm)
+					self.dirHalfREFToDMs[dirHalf][ref_id].add(dm)
 
 					if (doc_id,m_id) not in self.dirHalfToHMs[dirHalf]:
 						self.dirHalfToHMs[dirHalf].append((doc_id,m_id))
