@@ -965,7 +965,7 @@ class ECBHelper:
 		# don't try to cluster mentions all in the same dir
 		for i in range(len(cd_pairs)):
 			(hm1,hm2) = cd_pairs[i]
-			prediction = predictions[i][0]
+			prediction = cd_predictions[i][0]
 			doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
 			doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
 
