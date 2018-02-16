@@ -21,7 +21,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
 		self.numCorpusSamples = 4
-		
+
 		# print stuff
 		print("args:", str(args))
 		print("tf version:",str(tf.__version__))
@@ -153,7 +153,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		predDevDMs = set() # only used for sanity check
 	
 		print("** LOOKING AT CCNN's PREDICTIONS")
-		for i in range(len(dev_pairs)):
+		for i in range(dev_pairs):
 			(dm1,dm2) = dev_pairs[i]
 			
 			pred = dev_preds[i][0]
