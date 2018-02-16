@@ -511,6 +511,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					docsInPseudoGoldCluster = set() 
 					while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
 						randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)
+						print("dirHalfREFToDocs[dirHalf][ref_id]",str(dirHalfREFToDocs[dirHalf][ref_id]))
+						print("randDoc:",str(randDoc))
 						if randDoc != doc_id:
 							docsInPseudoGoldCluster.add(randDoc)
 					print("pseudo gold:",docsInPseudoGoldCluster)
