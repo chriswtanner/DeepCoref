@@ -8,7 +8,7 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.501) #,0.55)                                                                                                                                             
+stoppingPoints=(0.501)
 stoppingPoints2=(0.525) # (0.45 0.47 0.501 0.525 0.55 0.575 0.601 0.625 0.65 0.675 0.701)
 
 # (0.301,0.401,0.501,0.601)

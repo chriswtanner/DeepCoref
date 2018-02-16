@@ -989,52 +989,6 @@ class CCNN:
         '''
         #
 
-    def writePredictionsToFile(self, dev_pairs, dev_preds, testing_pairs, testing_preds):
-        baseOut = str(self.args.resultsDir) + \
-            str(self.args.hddcrpBaseFile) + "_" + \
-            "nl" + str(self.args.numLayers) + "_" + \
-            "pool" + str(self.args.poolType) + "_" + \
-            "ne" + str(self.args.numEpochs) + "_" + \
-            "ws" + str(self.args.windowSize) + "_" + \
-            "neg" + str(self.args.numNegPerPos) + "_" + \
-            "bs" + str(self.args.batchSize) + "_" + \
-            "s" + str(self.args.shuffleTraining) + "_" + \
-            "e" + str(self.args.embeddingsBaseFile) + "_" + \
-            "dr" + str(self.args.dropout) + "_" + \
-            "cm" + str(self.args.clusterMethod) + "_" + \
-            "nf" + str(self.args.numFilters) + "_" + \
-            "fm" + str(self.args.filterMultiplier) + "_" + \
-            "fp" + str(self.args.featurePOS) + "_" + \
-            "pt" + str(self.args.posType) + "_" + \
-            "lt" + str(self.args.lemmaType) + "_" + \
-            "dt" + str(self.args.dependencyType) + "_" + \
-            "ct" + str(self.args.charType) + "_" + \
-            "st" + str(self.args.SSType) + "_" + \
-            "ws2" + str(self.args.SSwindowSize) + "_" + \
-            "vs" + str(self.args.SSvectorSize) + "_" + \
-            "sl" + str(self.args.SSlog) + "_" + \
-            "dev" + str(self.args.devDir)
-        foutdev = open(str(baseOut) + "_dev.txt", "w")
-        fouttest = open(str(baseOut) + "_test.txt", "w")
-        #foutdev = open("dev.txt", "w")
-        #fouttest = open("test.txt", "w")
-        # sanity check
-        if len(dev_pairs) != len(dev_preds) or len(testing_pairs) != len(testing_preds):
-            print("* ERROR: inconsistent sizes")
-            exit(1)
-        # end of sanity check
-
-        for _ in range(len(dev_pairs)):
-            ((d1,m1),(d2,m2)) = dev_pairs[_]
-            foutdev.write(str(d1) + "," + str(m1) + "," + str(d2) + "," + str(m2) + "," + str(dev_preds[_][0]) + "\n")
-        foutdev.close()
-        foutdev.close()
-
-        for _ in range(len(testing_pairs)):
-            (hm1,hm2) = testing_pairs[_]
-            fouttest.write(str(hm1) + "," + str(hm2) + "," + str(testing_preds[_][0]) + "\n")
-        fouttest.close()
-
     def writeCoNLLPerlFile(self, fileOut, clusters):
         # writes WD file
         f = open(fileOut, 'w')
@@ -1187,12 +1141,6 @@ class CCNN:
             #bestProb_test = self.compute_optimal_f1("testing", bestProb_dev, testing_preds, testing_labels)
             #print("test acc:", str(self.compute_accuracy(bestProb_test, testing_preds, testing_labels)))
             print("testing size:", str(len(testing_data)))
-
-        #if not self.args.useECBTest:
-        #    self.printSubstringTable(testing_pairs, testing_preds, bestProb_test)
-
-        # TMP: remove this after i have tested if K-fold helps and is needed
-        #self.writePredictionsToFile(dev_pairs, dev_preds, testing_pairs, testing_preds)
 
         return (dev_pairs, dev_preds, testing_pairs, testing_preds)
         

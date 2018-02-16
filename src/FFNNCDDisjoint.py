@@ -16,11 +16,10 @@ import math
 import time
 from itertools import product
 from sortedcontainers import SortedDict
-class FFNNCD:
+class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing is done on a Cluster basis, disjoint only
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.onlyDisjointClusters = False
 
 		# print stuff
 		print("args:", str(args))
@@ -139,7 +138,7 @@ class FFNNCD:
 		return K.mean(cost * self.pos_ratio, axis=-1)
 
 	def createTraining(self, dev_pairs, dev_preds):
-		print("in FFNNCD's CreateTraining()")
+		print("in FFNNCDDisjoint's createTraining()")
 
 		parsedDevDMs = set()
 		for d in self.helper.devDirs:
@@ -149,7 +148,7 @@ class FFNNCD:
 
 		# loads dev predictions via CCNN's pairwise predictions, or a saved file
 		dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
-		dirHalfToDMs = defaultdict(list) # used for ensuring our predictions included ALL valid DMs
+		dirHalfToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
 		predDevDMs = set() # only used for sanity check
 	
 		print("** LOOKING AT CCNN's PREDICTIONS")
@@ -157,8 +156,13 @@ class FFNNCD:
 			(dm1,dm2) = dev_pairs[i]
 			
 			pred = dev_preds[i][0]
-			doc_id1 = dm1[0]
-			doc_id2 = dm2[0]
+
+			if self.args.useECBTest:
+				doc_id1 = dm1[0]
+				doc_id2 = dm2[0]
+			else:
+				doc_id1 = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+				doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
 			
 			extension1 = doc_id1[doc_id1.find("ecb"):]
 			dir_num1 = int(doc_id1.split("_")[0])
@@ -173,10 +177,8 @@ class FFNNCD:
 				print("* ERROR, somehow, training pairs came from diff dir-halves")
 				exit(1)
 
-			if dm1 not in dirHalfToDMs[dirHalf1]:
-				dirHalfToDMs[dirHalf1].append(dm1)
-			if dm2 not in dirHalfToDMs[dirHalf2]:
-				dirHalfToDMs[dirHalf2].append(dm2)
+			dirHalfToDMs[dirHalf1].append(dm1)
+			dirHalfToDMs[dirHalf2].append(dm2) # correct; dirHalf1 == dirHalf2
 
 			dirHalfToDMPredictions[dirHalf1][(dm1,dm2)] = pred
 			predDevDMs.add(dm1)
@@ -199,13 +201,8 @@ class FFNNCD:
 		print("# pred:",str(len(predDevDMs)))
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
-	def clusterWDs(self, stoppingPoint2):
-		print("* FFNNCD - clusterWDs()")
-
-
-	def cluster(self, stoppingPoint):
-
-		print("* in Cluster()")
+	def clusterWDClusters(self, stoppingPoint2):
+		print("* createTraining - clusterWDs()")
 		start_time = time.time()
 		# loads test predictions
 		predTestDMs = set()
@@ -216,64 +213,37 @@ class FFNNCD:
 		dirHalfToHMPredictions = defaultdict(lambda : defaultdict(float))
 		dirHalfToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
 
-		if self.testingPairs == None and self.testingPreds == None: # read the file
-			print("* why are we in here?")
-			exit(1)
-			# sanity check:
+
+		# use the passed-in Mentions (which could be ECB or HDDCRP format)
+		for _ in range(len(self.testingPairs)):
+			(dm1,dm2) = self.testingPairs[_]
+			pred = self.testingPreds[_][0]
+			#print("testingPair:",str(dm1),"and",str(dm2))
 			if self.args.useECBTest:
-				print("* ERROR: we want to use ECBTest data, but we aren't passing it to FFNNWD")
+				doc_id1 = dm1[0]
+				doc_id2 = dm2[0]
+			else:
+				doc_id1 = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
+				doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
+
+			extension1 = doc_id1[doc_id1.find("ecb"):]
+			extension2 = doc_id2[doc_id2.find("ecb"):]
+			dir_num1 = int(doc_id1.split("_")[0])
+			dir_num2 = int(doc_id2.split("_")[0])				
+			dirHalf1 = str(dir_num1) + extension1
+			dirHalf2 = str(dir_num2) + extension2
+
+			if dirHalf1 != dirHalf2:
+				print("* ERROR, somehow, training pairs came from diff dir-halves")
 				exit(1)
 
-			# we know we are reading from HDDCRP predicted test mentions
-			f = open(self.args.dataDir + "test_" + str(self.args.devDir) + ".txt")
-			for line in f:
-				hm1,hm2,pred = line.rstrip().split(",")
-				hm1 = int(hm1)
-				hm2 = int(hm2)
-				pred = float(pred)
-				doc_id = self.hddcrp_parsed.hm_idToHMention[hm1].doc_id
-				doc_id2 = self.hddcrp_parsed.hm_idToHMention[hm2].doc_id
-				if doc_id != doc_id2:
-					print("ERROR: pairs are from diff docs")
-					exit(1)
-				if hm1 not in docToHMs[doc_id]:
-					docToHMs[doc_id].append(hm1)
-				if hm2 not in docToHMs[doc_id]:
-					docToHMs[doc_id].append(hm2)
-				docToHMPredictions[doc_id][(hm1,hm2)] = pred
-				predTestDMs.add(hm1)
-				predTestDMs.add(hm2)
-			f.close()
-		else: # use the passed-in Mentions (which could be ECB or HDDCRP format)
-			for _ in range(len(self.testingPairs)):
-				(dm1,dm2) = self.testingPairs[_]
-				pred = self.testingPreds[_][0]
-				#print("testingPair:",str(dm1),"and",str(dm2))
-				if self.args.useECBTest:
-					doc_id1 = dm1[0]
-					doc_id2 = dm2[0]
-				else:
-					doc_id1 = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
-					doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
-
-				extension1 = doc_id1[doc_id1.find("ecb"):]
-				extension2 = doc_id2[doc_id2.find("ecb"):]
-				dir_num1 = int(doc_id1.split("_")[0])
-				dir_num2 = int(doc_id2.split("_")[0])				
-				dirHalf1 = str(dir_num1) + extension1
-				dirHalf2 = str(dir_num2) + extension2
-
-				if dirHalf1 != dirHalf2:
-					print("* ERROR, somehow, training pairs came from diff dir-halves")
-					exit(1)
-
-				if dm1 not in dirHalfToHMs[dirHalf1]:
-					dirHalfToHMs[dirHalf1].append(dm1)
-				if dm2 not in dirHalfToHMs[dirHalf1]: # not an error; dirHalf1 == dirHalf2
-					dirHalfToHMs[dirHalf1].append(dm2)
-				dirHalfToHMPredictions[dirHalf1][(dm1,dm2)] = pred
-				predTestDMs.add(dm1)
-				predTestDMs.add(dm2)
+			if dm1 not in dirHalfToHMs[dirHalf1]:
+				dirHalfToHMs[dirHalf1].append(dm1)
+			if dm2 not in dirHalfToHMs[dirHalf1]: # not an error; dirHalf1 == dirHalf2
+				dirHalfToHMs[dirHalf1].append(dm2)
+			dirHalfToHMPredictions[dirHalf1][(dm1,dm2)] = pred
+			predTestDMs.add(dm1)
+			predTestDMs.add(dm2)
 
 		# sanity check: ensures we are working w/ all of the DMs
 		parsedDMs = set()
@@ -477,15 +447,27 @@ class FFNNCD:
 	def init_weights(self, shape):
 		return tf.Variable(tf.random_normal(shape, stddev=0.1))
 
+	# NOTE: DMs could be HMs; i handle for both
 	def loadDynamicData(self, dirHalfToDMs, dirHalfToDMPredictions):
 		
 		# constructs a mapping of DIRHALF -> {REF -> DM}
 		dirHalfREFToDMs = defaultdict(lambda : defaultdict(set))
-		
+		dirHalfREFToDocs = defaultdict(lambda : defaultdict(set))
+		docREFToDMs = defaultdict(lambda : defaultdict(set))
+		dirHalfDocToREFs = defaultdict(lambda : defaultdict(set))
+
 		for dirHalf in dirHalfToDMs:
 			for dm in dirHalfToDMs[dirHalf]:
 				ref_id = self.corpus.dmToREF[dm]
+				if self.args.useECBTest:
+					doc_id = dm[0]
+				else:
+					doc_id = self.hddcrp_parsed.hm_idToHMention[dm].doc_id
+				
 				dirHalfREFToDMs[dirHalf][ref_id].add(dm)
+				dirHalfREFToDocs[dirHalf][ref_id].add(doc_id)
+				docREFToDMs[doc_id][ref_id].add(dm)
+				dirHalfDocToREFs[dirHalf][doc_id].add(ref_id)
 
 		positiveData = []
 		negativeData = []
@@ -494,11 +476,11 @@ class FFNNCD:
 
 		# iterates through all dirHalves
 		for dirHalf in dirHalfToDMs:
-
+			print("dirHalf")
 			numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
 			if numDMsInDirHalf == 1:
 				print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
-				continue
+				exit(1)
 
 			# sanity check: ensures we have all predictions for the current dirHalf
 			for dm1 in dirHalfToDMs[dirHalf]:
@@ -510,6 +492,31 @@ class FFNNCD:
 						print("* ERROR: we dont have dm1-dm2")
 						exit(1)
 			
+			# looks through each doc
+			for doc_id in dirHalfDocToREFs[dirHalf].keys():
+				# looks through each REF
+				for ref_id in docREFToDMs[doc_id].keys():
+					# ensures other docs contain the ref
+
+					numDocsContainingRef = len(dirHalfREFToDocs[dirHalf][ref_id])
+					if numDocsContainingRef == 1:
+						continue
+
+					print("doc_id:",doc_id,"ref_id",ref_id)
+					curCluster = dirHalfREFToDMs[dirHalf][ref_id]
+					print("curCluster:",str(curCluster))
+
+					print("# docs containing REF:",str(numDocsContainingRef))
+					numDesiredDocsInPseudoGoldCluster = random.randint(1,numDocsContainingRef-1)
+
+					docsInPseudoGoldCluster = set() 
+					while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
+						randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)
+						if randDoc != doc_id:
+							docsInPseudoGoldCluster.add(randDoc)
+					print("pseudo gold:",docsInPseudoGoldCluster)
+					exit(1)
+
 			# pick a DM
 			for dm1 in dirHalfToDMs[dirHalf]:
 				gold_ref_id = self.corpus.dmToREF[dm1]

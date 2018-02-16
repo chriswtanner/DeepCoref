@@ -1,6 +1,7 @@
 import sys  
 import params
 import os.path
+import random
 from ECBParser import *
 from ECBHelper import *
 from HDDCRPParser import *
@@ -8,6 +9,7 @@ from StanParser import *
 from CCNN import *
 from FFNNWD import *
 from FFNNCD import *
+from FFNNCDDisjoint import *
 from get_coref_metrics import *
 from collections import defaultdict
 from sortedcontainers import SortedDict
@@ -83,9 +85,9 @@ class CorefEngine:
 					# ECBTest; FFNN to cluster (NOT IMPLEMENTED; LOWEST PRIORITY)
 					if runFFNN:
 						print("[ECBTest: FFNN Mode]")
-						ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds)
+						ffnnEngine = FFNNCDDisjoint(args, corpus, helper, hddcrp_parsed, cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds)
 						ffnnEngine.train()
-						(cd_predictedClusters, cd_goldenClusters) = ffnnEngine.clusterWDs(sp2)
+						(cd_predictedClusters, cd_goldenClusters) = ffnnEngine.clusterWDClusters(sp2)
 						# we actually use goldenClusters because it's the ECBTest (gold)
 					
 					# ECBTest; Agglomerative (WORKS)
@@ -107,9 +109,9 @@ class CorefEngine:
 					# HDDCRP Test; FFNN (HIGHEST PRIORITY TO IMPLEMENT)
 					if runFFNN:
 						print("[HDDCRPTest: FFNN Mode]")
-						ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds)
+						ffnnEngine = FFNNCDDisjoint(args, corpus, helper, hddcrp_parsed, cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds)
 						ffnnEngine.train()
-						(cd_predictedClusters, _) = ffnnEngine.clusterWDs(sp2)
+						(cd_predictedClusters, _) = ffnnEngine.clusterWDClusters(sp2)
 						# we ignore goldenClusters because that isn't the gold Truth
 
 					# HDDCRP Test; Agglomerative (WORKS)
