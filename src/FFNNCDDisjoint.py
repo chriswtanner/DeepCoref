@@ -529,9 +529,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
-					print("X:",str(X))
-					printp("Y:",str(Y))
-
+			print("X:",str(X))
+			print("Y:",str(Y))
+			print("len:",str(len(X)))
 			# pick a DM
 			for dm1 in dirHalfToDMs[dirHalf]:
 				gold_ref_id = self.corpus.dmToREF[dm1]
