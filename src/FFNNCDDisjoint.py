@@ -157,13 +157,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			
 			pred = dev_preds[i][0]
 
-			if self.args.useECBTest:
-				doc_id1 = dm1[0]
-				doc_id2 = dm2[0]
-			else:
-				doc_id1 = self.hddcrp_parsed.hm_idToHMention[dm1].doc_id
-				doc_id2 = self.hddcrp_parsed.hm_idToHMention[dm2].doc_id
-			
+			doc_id1 = dm1[0]
+			doc_id2 = dm2[0]
+
 			extension1 = doc_id1[doc_id1.find("ecb"):]
 			dir_num1 = int(doc_id1.split("_")[0])
 			
@@ -459,11 +455,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		for dirHalf in dirHalfToDMs:
 			for dm in dirHalfToDMs[dirHalf]:
 				ref_id = self.corpus.dmToREF[dm]
-				if self.args.useECBTest:
-					doc_id = dm[0]
-				else:
-					doc_id = self.hddcrp_parsed.hm_idToHMention[dm].doc_id
 				
+				doc_id = dm[0]
 				dirHalfREFToDMs[dirHalf][ref_id].add(dm)
 				dirHalfREFToDocs[dirHalf][ref_id].add(doc_id)
 				docREFToDMs[doc_id][ref_id].add(dm)
