@@ -468,6 +468,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				dirHalfREFToDocs[dirHalf][ref_id].add(doc_id)
 				docREFToDMs[doc_id][ref_id].add(dm)
 				dirHalfDocToREFs[dirHalf][doc_id].add(ref_id)
+				dirHalfToDMs.add(dm)
 
 		positiveData = []
 		negativeData = []
@@ -497,7 +498,6 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				# looks through each REF
 				for ref_id in docREFToDMs[doc_id].keys():
 					# ensures other docs contain the ref
-
 					numDocsContainingRef = len(dirHalfREFToDocs[dirHalf][ref_id])
 					if numDocsContainingRef == 1:
 						continue
@@ -515,7 +515,20 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						if randDoc != doc_id:
 							docsInPseudoGoldCluster.add(randDoc)
 					print("pseudo gold:",docsInPseudoGoldCluster)
-					exit(1)
+
+					pseudoCluster = set()
+					for otherDoc in docsInPseudoGoldCluster:
+						for dm in docREFToDMs[otherDoc][ref_id]:
+							pseudoCluster.add(dm)
+
+					curClusterSize = len(curCluster)
+					pseudoClusterSize = len(pseudoCluster)
+					potentialSizePercentage = float(curClusterSize + pseudoClusterSize) / float(numDMsInDirHalf)
+					featureVec = self.getClusterFeatures(curCluster, pseudoCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
+					positiveData.append(featureVec)
+					X.append(featureVec)
+					Y.append([0,1])
+
 
 			# pick a DM
 			for dm1 in dirHalfToDMs[dirHalf]:
@@ -541,29 +554,22 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		return (X,Y)
 
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, dm1, allDMsInCandidateCluster, dirHalfToPredictions, clusterSizePercentage):
-
-		predsIn = []
-		minPredIn = 9999
-		maxPredIn = -1
-		for dm2 in allDMsInCandidateCluster:
-
-			if dm1 == dm2:
-				continue
-			if (dm1,dm2) in dirHalfToPredictions:
-				pred = dirHalfToPredictions[(dm1,dm2)]
-			elif (dm2,dm1) in dirHalfToPredictions:
-				pred = dirHalfToPredictions[(dm2,dm1)]
-			else:
-				print("* ERROR: prediction doesn't exist")
-				exit(1)
-
-			if pred < minPredIn:
-				minPredIn = pred
-			if pred > maxPredIn:
-				maxPredIn = pred
-			predsIn.append(pred)
-
-		avgPredIn = sum(predsIn) / len(predsIn)
-		featureVec = [minPredIn, avgPredIn, maxPredIn, clusterSizePercentage] # A
+	def getClusterFeatures(self, cluster1, cluster2, dirHalfToPredictions, clusterSizePercentage):
+		dists = []
+		for dm1 in cluster1:
+			for dm2 in cluster2:
+				if dm1 == dm2 or cluster1 == cluster2:
+					continue
+				if (dm1,dm2) in dirHalfToPredictions:
+					pred = dirHalfToPredictions[(dm1,dm2)]
+				elif (dm2,dm1) in dirHalfToPredictions:
+					pred = dirHalfToPredictions[(dm2,dm1)]
+				else:
+					print("* ERROR: prediction doesn't exist")
+					exit(1)
+				dists.append(pred)
+		minDist = min(dists)
+		avgDist = sum(dists) / len(dists)
+		maxDist = max(dists)
+		featureVec = [minDist, avgDist, maxDist, clusterSizePercentage] # A
 		return featureVec

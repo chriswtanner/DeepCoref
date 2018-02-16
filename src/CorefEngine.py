@@ -20,7 +20,7 @@ from sortedcontainers import SortedDict
 class CorefEngine:
 	if __name__ == "__main__":
 
-		runFFNN = False # if False, we will use Agglomerative Cluster
+		runFFNN = True # if False, we will use Agglomerative Cluster
 		stoppingPoints = [0.501] #[0.301,0.35,0.401,0.45,0.475,0.501,0.525,0.55] #,0.501,0.55] #,0.55]                                                                   
 		stoppingPoints2 = [0.501,0.525] #[0.45,0.47,0.501,0.525,0.55,0.575,0.601,0.625,0.65,0.675,0.701]
 		# handles passed-in args
