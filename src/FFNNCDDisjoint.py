@@ -173,8 +173,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				print("* ERROR, somehow, training pairs came from diff dir-halves")
 				exit(1)
 
-			dirHalfToDMs[dirHalf1].append(dm1)
-			dirHalfToDMs[dirHalf2].append(dm2) # correct; dirHalf1 == dirHalf2
+			dirHalfToDMs[dirHalf1].add(dm1)
+			dirHalfToDMs[dirHalf2].add(dm2) # correct; dirHalf1 == dirHalf2
 
 			dirHalfToDMPredictions[dirHalf1][(dm1,dm2)] = pred
 			predDevDMs.add(dm1)
