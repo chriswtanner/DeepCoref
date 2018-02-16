@@ -153,7 +153,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		predDevDMs = set() # only used for sanity check
 	
 		print("** LOOKING AT CCNN's PREDICTIONS")
-		for i in range(dev_pairs):
+		for i in range(len(dev_pairs)):
 			(dm1,dm2) = dev_pairs[i]
 			
 			pred = dev_preds[i][0]
@@ -200,7 +200,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
 	def clusterWDClusters(self, stoppingPoint2):
-		print("* createTraining - clusterWDs()")
+		print("* FFNNCDDisjoint - clusterWDs()")
 		start_time = time.time()
 		# loads test predictions
 		predTestDMs = set()
@@ -472,7 +472,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		print("dirHalfToDMPredictions keys:",str(len(dirHalfToDMPredictions.keys())),str(dirHalfToDMPredictions.keys()))
 		print("dirHalfToDMs keys",str(len(dirHalfToDMs.keys())),str(dirHalfToDMs.keys()))
 
-		for i in range(len(self.numCorpusSamples)):
+		for i in range(self.numCorpusSamples):
 
 			# iterates through all dirHalves
 			for dirHalf in dirHalfToDMs:
