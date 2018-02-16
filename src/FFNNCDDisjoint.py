@@ -481,12 +481,15 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 			# sanity check: ensures we have all predictions for the current dirHalf
 			for dm1 in dirHalfToDMs[dirHalf]:
+				doc_id1 = dm1[0]
 				for dm2 in dirHalfToDMs[dirHalf]:
-					if dm1 == dm2:
+					doc_id2 = dm2[0]
+					if dm1 == dm2 or doc_id1 == doc_id2:
 						continue
 
 					if (dm1,dm2) not in dirHalfToDMPredictions[dirHalf] and (dm2,dm1) not in dirHalfToDMPredictions[dirHalf]:
 						print("* ERROR: we dont have",str(dm1),str(dm2),"in dirHalfToDMPredictions")
+						print("dirHalfToDMPredictions[dirHalf]:",str(dirHalfToDMPredictions[dirHalf]))
 						exit(1)
 			
 			# looks through each doc
