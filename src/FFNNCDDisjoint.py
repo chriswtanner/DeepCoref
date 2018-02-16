@@ -510,7 +510,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 					docsInPseudoGoldCluster = set() 
 					while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
-						randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)
+						randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)[0]
 						print("dirHalfREFToDocs[dirHalf][ref_id]",str(dirHalfREFToDocs[dirHalf][ref_id]))
 						print("randDoc:",str(randDoc))
 						if randDoc != doc_id:
@@ -529,7 +529,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
-
+					print("X:",str(X))
+					printp("Y:",str(Y))
 
 			# pick a DM
 			for dm1 in dirHalfToDMs[dirHalf]:
