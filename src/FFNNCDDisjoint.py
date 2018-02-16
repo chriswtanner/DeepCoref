@@ -461,7 +461,6 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				dirHalfREFToDocs[dirHalf][ref_id].add(doc_id)
 				docREFToDMs[doc_id][ref_id].add(dm)
 				dirHalfDocToREFs[dirHalf][doc_id].add(ref_id)
-				dirHalfToDMs.add(dm)
 
 		positiveData = []
 		negativeData = []
