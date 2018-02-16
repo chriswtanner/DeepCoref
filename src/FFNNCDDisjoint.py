@@ -529,45 +529,43 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					positiveData.append(featureVec)
 					X.append(featureVec)
 					Y.append([0,1])
+
+
+					'''
+					# looks for other clusters to compare DM1 to
+					for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
+						if other_ref_id == gold_ref_id:
+							continue
+						otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
+						if len(negativeData) < self.args.numNegPerPos * len(positiveData):
+							featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
+							negativeData.append(featureVec)
+							X.append(featureVec)
+							Y.append([1,0])
+					'''
 			print("X:",str(X))
 			print("Y:",str(Y))
 			print("len:",str(len(X)))
-			# pick a DM
-			for dm1 in dirHalfToDMs[dirHalf]:
-				gold_ref_id = self.corpus.dmToREF[dm1]
-				# we can only pick a positive if there are other items in the cluster
-				clusterSize = len(dirHalfREFToDMs[dirHalf][gold_ref_id])
-				if clusterSize > 1:
-					featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][gold_ref_id], dirHalfToDMPredictions[dirHalf], float(clusterSize/numDMsInDirHalf))
-					positiveData.append(featureVec)
-					X.append(featureVec)
-					Y.append([0,1])
-				# looks for other clusters to compare DM1 to
-				for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
-					if other_ref_id == gold_ref_id:
-						continue
-					otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
-					if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-						featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
-						negativeData.append(featureVec)
-						X.append(featureVec)
-						Y.append([1,0])
+
 			
 		return (X,Y)
 
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
-	def getClusterFeatures(self, cluster1, cluster2, dirHalfToPredictions, clusterSizePercentage):
+	def getClusterFeatures(self, cluster1, cluster2, dmPredictions, clusterSizePercentage):
 		dists = []
+		print("cluster1:",cluster1)
+		print("cluster2:",cluster2)
 		for dm1 in cluster1:
 			for dm2 in cluster2:
 				if dm1 == dm2 or cluster1 == cluster2:
 					continue
-				if (dm1,dm2) in dirHalfToPredictions:
-					pred = dirHalfToPredictions[(dm1,dm2)]
-				elif (dm2,dm1) in dirHalfToPredictions:
-					pred = dirHalfToPredictions[(dm2,dm1)]
+				if (dm1,dm2) in dmPredictions:
+					pred = dmPredictions[(dm1,dm2)]
+				elif (dm2,dm1) in dmPredictions:
+					pred = dmPredictions[(dm2,dm1)]
 				else:
-					print("* ERROR: prediction doesn't exist")
+					print("dmPredictions:",str(dmPredictions))
+					print("* ERROR: prediction doesn't exist",str(dm1),str(dm2))
 					exit(1)
 				dists.append(pred)
 		minDist = min(dists)
