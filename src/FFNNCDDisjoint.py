@@ -493,7 +493,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						exit(1)
 			
 			# looks through each doc
+			print("dirHalfDocToREFs:",str(dirHalfDocToREFs[dirHalf]))
 			for doc_id in dirHalfDocToREFs[dirHalf].keys():
+
+				print("docREFToDMs:",str(docREFToDMs[doc_id]))
 				# looks through each REF
 				for ref_id in docREFToDMs[doc_id].keys():
 					# ensures other docs contain the ref
@@ -502,7 +505,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						continue
 
 					print("doc_id:",doc_id,"ref_id",ref_id)
-					curCluster = docREFToDMs[doc_id][ref_id]
+					curCluster = set()
+					for dm in docREFToDMs[doc_id][ref_id]:
+						curCluster.add(dm)
+					print("fe:",str(docREFToDMs[doc_id][ref_id]))
 					print("curCluster:",str(curCluster))
 
 					print("# docs containing REF:",str(numDocsContainingRef))
