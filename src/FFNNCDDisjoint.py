@@ -20,7 +20,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-
+		self.numCorpusSamples = 4
+		
 		# print stuff
 		print("args:", str(args))
 		print("tf version:",str(tf.__version__))
@@ -471,87 +472,88 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		print("dirHalfToDMPredictions keys:",str(len(dirHalfToDMPredictions.keys())),str(dirHalfToDMPredictions.keys()))
 		print("dirHalfToDMs keys",str(len(dirHalfToDMs.keys())),str(dirHalfToDMs.keys()))
 
-		# iterates through all dirHalves
-		for dirHalf in dirHalfToDMs:
-			print("dirHalf",str(dirHalf))
-			numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
-			if numDMsInDirHalf == 1:
-				print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
-				exit(1)
+		for i in range(len(self.numCorpusSamples)):
 
-			# sanity check: ensures we have all predictions for the current dirHalf
-			for dm1 in dirHalfToDMs[dirHalf]:
-				doc_id1 = dm1[0]
-				for dm2 in dirHalfToDMs[dirHalf]:
-					doc_id2 = dm2[0]
-					if dm1 == dm2 or doc_id1 == doc_id2:
-						continue
+			# iterates through all dirHalves
+			for dirHalf in dirHalfToDMs:
+				print("dirHalf",str(dirHalf))
+				numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
+				if numDMsInDirHalf == 1:
+					print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
+					exit(1)
 
-					if (dm1,dm2) not in dirHalfToDMPredictions[dirHalf] and (dm2,dm1) not in dirHalfToDMPredictions[dirHalf]:
-						print("* ERROR: we dont have",str(dm1),str(dm2),"in dirHalfToDMPredictions")
-						print("dirHalfToDMPredictions[dirHalf]:",str(dirHalfToDMPredictions[dirHalf]))
-						exit(1)
-			
-			# looks through each doc
-			print("dirHalfDocToREFs:",str(dirHalfDocToREFs[dirHalf]))
-			for doc_id in dirHalfDocToREFs[dirHalf].keys():
-
-				print("docREFToDMs:",str(docREFToDMs[doc_id]))
-				# looks through each REF
-				for ref_id in docREFToDMs[doc_id].keys():
-					# ensures other docs contain the ref
-					numDocsContainingRef = len(dirHalfREFToDocs[dirHalf][ref_id])
-					if numDocsContainingRef == 1:
-						continue
-
-					print("doc_id:",doc_id,"ref_id",ref_id)
-					curCluster = set()
-					for dm in docREFToDMs[doc_id][ref_id]:
-						curCluster.add(dm)
-					print("fe:",str(docREFToDMs[doc_id][ref_id]))
-					print("curCluster:",str(curCluster))
-
-					print("# docs containing REF:",str(numDocsContainingRef))
-					numDesiredDocsInPseudoGoldCluster = random.randint(1,numDocsContainingRef-1)
-
-					docsInPseudoGoldCluster = set() 
-					while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
-						randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)[0]
-						print("dirHalfREFToDocs[dirHalf][ref_id]",str(dirHalfREFToDocs[dirHalf][ref_id]))
-						print("randDoc:",str(randDoc))
-						if randDoc != doc_id:
-							docsInPseudoGoldCluster.add(randDoc)
-					print("pseudo gold:",docsInPseudoGoldCluster)
-
-					pseudoCluster = set()
-					for otherDoc in docsInPseudoGoldCluster:
-						for dm in docREFToDMs[otherDoc][ref_id]:
-							pseudoCluster.add(dm)
-
-					curClusterSize = len(curCluster)
-					pseudoClusterSize = len(pseudoCluster)
-					potentialSizePercentage = float(curClusterSize + pseudoClusterSize) / float(numDMsInDirHalf)
-					featureVec = self.getClusterFeatures(curCluster, pseudoCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
-					positiveData.append(featureVec)
-					X.append(featureVec)
-					Y.append([0,1])
-
-
-					'''
-					# looks for other clusters to compare DM1 to
-					for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
-						if other_ref_id == gold_ref_id:
+				# sanity check: ensures we have all predictions for the current dirHalf
+				for dm1 in dirHalfToDMs[dirHalf]:
+					doc_id1 = dm1[0]
+					for dm2 in dirHalfToDMs[dirHalf]:
+						doc_id2 = dm2[0]
+						if dm1 == dm2 or doc_id1 == doc_id2:
 							continue
-						otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
-						if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-							featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
-							negativeData.append(featureVec)
-							X.append(featureVec)
-							Y.append([1,0])
-					'''
-			print("X:",str(X))
-			print("Y:",str(Y))
-			print("len:",str(len(X)))
+
+						if (dm1,dm2) not in dirHalfToDMPredictions[dirHalf] and (dm2,dm1) not in dirHalfToDMPredictions[dirHalf]:
+							print("* ERROR: we dont have",str(dm1),str(dm2),"in dirHalfToDMPredictions")
+							print("dirHalfToDMPredictions[dirHalf]:",str(dirHalfToDMPredictions[dirHalf]))
+							exit(1)
+				
+				# looks through each doc
+				print("docs:",str(dirHalfDocToREFs[dirHalf]))
+				for doc_id in dirHalfDocToREFs[dirHalf].keys():
+
+					print("refs:",str(docREFToDMs[doc_id]))
+					# looks through each REF
+					for ref_id in docREFToDMs[doc_id].keys():
+						# ensures other docs contain the ref
+						numDocsContainingRef = len(dirHalfREFToDocs[dirHalf][ref_id])
+						if numDocsContainingRef == 1:
+							continue
+
+						print("doc_id:",doc_id,"ref_id",ref_id)
+						curCluster = set()
+						for dm in docREFToDMs[doc_id][ref_id]:
+							curCluster.add(dm)
+						print("fe:",str(docREFToDMs[doc_id][ref_id]))
+						print("curCluster:",str(curCluster))
+
+						print("# docs containing REF:",str(numDocsContainingRef))
+						numDesiredDocsInPseudoGoldCluster = random.randint(1,numDocsContainingRef-1)
+
+						docsInPseudoGoldCluster = set() 
+						while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
+							randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)[0]
+							print("dirHalfREFToDocs[dirHalf][ref_id]",str(dirHalfREFToDocs[dirHalf][ref_id]))
+							print("randDoc:",str(randDoc))
+							if randDoc != doc_id:
+								docsInPseudoGoldCluster.add(randDoc)
+						print("pick refs from pseudo gold docs:",docsInPseudoGoldCluster)
+						pseudoCluster = set()
+						for otherDoc in docsInPseudoGoldCluster:
+							for dm in docREFToDMs[otherDoc][ref_id]:
+								pseudoCluster.add(dm)
+
+						curClusterSize = len(curCluster)
+						pseudoClusterSize = len(pseudoCluster)
+						potentialSizePercentage = float(curClusterSize + pseudoClusterSize) / float(numDMsInDirHalf)
+						featureVec = self.getClusterFeatures(curCluster, pseudoCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
+						positiveData.append(featureVec)
+						X.append(featureVec)
+						Y.append([0,1])
+
+
+						'''
+						# looks for other clusters to compare DM1 to
+						for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
+							if other_ref_id == gold_ref_id:
+								continue
+							otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
+							if len(negativeData) < self.args.numNegPerPos * len(positiveData):
+								featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
+								negativeData.append(featureVec)
+								X.append(featureVec)
+								Y.append([1,0])
+						'''
+		print("X:",str(X))
+		print("Y:",str(Y))
+		print("len:",str(len(X)))
 
 			
 		return (X,Y)
