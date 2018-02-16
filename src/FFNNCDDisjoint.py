@@ -182,6 +182,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 		# sanity check part 1: ensures we have parsed all of our predicted DMs
 		docToPredDevDMs = defaultdict(set)
+		print("# parsed:",str(len(parsedDevDMs)))
+		print("# pred:",str(len(predDevDMs)))
 		for dm in predDevDMs:
 			if dm not in parsedDevDMs:
 				print("* ERROR: we dont have",str(dm),"in parsed")
@@ -193,8 +195,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				(d1,m1) = dm
 				print("* ERROR: missing",str(dm),"and the doc has # mentions:",str(len(self.corpus.docToDMs[d1])))
 				exit(1)
-		print("# parsed:",str(len(parsedDevDMs)))
-		print("# pred:",str(len(predDevDMs)))
+
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
 	def clusterWDClusters(self, stoppingPoint2):
@@ -467,9 +468,12 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		X = []
 		Y = []
 
+		print("dirHalfToDMPredictions keys:",str(len(dirHalfToDMPredictions.keys())),str(dirHalfToDMPredictions.keys()))
+		print("dirHalfToDMs keys",str(len(dirHalfToDMs.keys())),str(dirHalfToDMs.keys()))
+
 		# iterates through all dirHalves
 		for dirHalf in dirHalfToDMs:
-			print("dirHalf")
+			print("dirHalf",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
 			if numDMsInDirHalf == 1:
 				print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
@@ -482,7 +486,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						continue
 
 					if (dm1,dm2) not in dirHalfToDMPredictions[dirHalf] and (dm2,dm1) not in dirHalfToDMPredictions[dirHalf]:
-						print("* ERROR: we dont have dm1-dm2")
+						print("* ERROR: we dont have",str(dm1),str(dm2),"in dirHalfToDMPredictions")
 						exit(1)
 			
 			# looks through each doc
