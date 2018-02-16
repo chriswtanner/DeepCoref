@@ -8,8 +8,9 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.45) #,0.55)
-stoppingPoints2=(0.55 0.601)
+stoppingPoints=(0.501) #,0.55)                                                                                                                                             
+stoppingPoints2=(0.525) # (0.45 0.47 0.501 0.525 0.55 0.575 0.601 0.625 0.65 0.675 0.701)
+
 # (0.301,0.401,0.501,0.601)
 # 0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.575,0.601,0.65,0.701)
 
@@ -194,7 +195,7 @@ if [ "$useECBTest" = false ] ; then
 		ceafe=`./scorer.pl ceafe ${goldWDFile} ${WD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 		sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 		avg=`echo "scale=2;$sum/3.0" | bc`
-		echo "CoNLLF1 (WD):" ${WD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
+		echo "HDDCRP (WD) F1:" ${WD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
 
 		for sp2 in "${stoppingPoints2[@]}"
 		do
@@ -204,11 +205,10 @@ if [ "$useECBTest" = false ] ; then
 			ceafe=`./scorer.pl ceafe ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 			sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 			avg=`echo "scale=2;$sum/3.0" | bc`
-			echo "CoNLLF1 (CD):" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
-			#rm -rf ${CD_file}
+			echo "HDDCRP (CD) F1:" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
+			rm -rf ${CD_file}
 		done
-		#rm -rf ${WD_file}
-		
+		rm -rf ${WD_file}
 	done
 fi
 

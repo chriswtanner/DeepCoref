@@ -214,6 +214,10 @@ class FFNNCD:
 		print("# pred:",str(len(predDevDMs)))
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
+	def clusterWDs(self, stoppingPoint2):
+		print("* FFNNCD - clusterWDs()")
+
+
 	def cluster(self, stoppingPoint):
 
 		print("* in Cluster()")

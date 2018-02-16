@@ -1052,8 +1052,8 @@ class ECBHelper:
 							if d1 in docsInC2:
 								containsOverlap = True
 								break
-						#if containsOverlap:
-						#    continue
+						if containsOverlap:
+							continue
 
 						avgavgdists = []
 						hmToDists = defaultdict(list)
