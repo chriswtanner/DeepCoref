@@ -502,7 +502,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						continue
 
 					print("doc_id:",doc_id,"ref_id",ref_id)
-					curCluster = dirHalfREFToDMs[dirHalf][ref_id]
+					curCluster = docREFToDMs[doc_id][ref_id]
 					print("curCluster:",str(curCluster))
 
 					print("# docs containing REF:",str(numDocsContainingRef))
