@@ -529,18 +529,19 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						X.append(featureVec)
 						Y.append([0,1])
 
+						print("* good cluster docs:",str(len(docsInPseudoGoldCluster)),"# dms:",str(len(pseudoCluster)),":",pseudoCluster)
 
 						# constructs negative sample clusters
 						while negativeDataCount < self.args.numNegPerPos * positiveDataCount:
 							other_ref = ref_id
 							while other_ref == ref_id:
 								other_ref = random.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
-
+								
 								numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
 								print("numDocsContainingOtherRef:",numDocsContainingOtherRef)
-								numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef-1)
+								numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef)
 								print("numDesiredDocsInPseudoBadCluster",numDesiredDocsInPseudoBadCluster)
-								docsInPseudoBadCluster = set() 
+								docsInPseudoBadCluster = set()
 								while len(docsInPseudoBadCluster) < numDesiredDocsInPseudoBadCluster:
 									randDoc = random.sample(dirHalfREFToDocs[dirHalf][other_ref],1)[0]
 									if randDoc != doc_id:
@@ -550,6 +551,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 									for dm in docREFToDMs[otherDoc][other_ref]:
 										pseudoBadCluster.add(dm)
 								pseudoBadClusterSize = len(pseudoBadCluster)
+
+								print("* bad cluster docs:",len(docsInPseudoBadCluster),"# dms:",len(pseudoBadCluster),":",pseudoBadCluster)
 
 								potentialSizePercentage = float(curClusterSize + pseudoBadClusterSize) / float(numDMsInDirHalf)
 								featureVec = self.getClusterFeatures(curCluster, pseudoBadCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
