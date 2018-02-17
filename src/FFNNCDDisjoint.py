@@ -531,10 +531,11 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						Y.append([0,1])
 
 						print("* good cluster docs:",str(len(docsInPseudoGoldCluster)),"# dms:",str(len(pseudoCluster)),":",pseudoCluster)
-
+						print("ref:",str(ref_id))
 						# constructs negative sample clusters
 						while negativeDataCount < self.args.numNegPerPos * positiveDataCount:
 							other_ref = random.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
+							print("other_ref:",str(other_ref))
 							if other_ref == ref_id:
 								continue
 							numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
@@ -543,7 +544,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							print("numDesiredDocsInPseudoBadCluster",numDesiredDocsInPseudoBadCluster)
 							docsInPseudoBadCluster = set()
 							while len(docsInPseudoBadCluster) < numDesiredDocsInPseudoBadCluster:
+								print("len(docsInPseudoBadCluster):",str(len(docsInPseudoBadCluster)),"numDesiredDocsInPseudoBadCluster:",str(numDesiredDocsInPseudoBadCluster))
 								randDoc = random.sample(dirHalfREFToDocs[dirHalf][other_ref],1)[0]
+								print("randDoc:",str(randDoc))
 								if randDoc != doc_id:
 									docsInPseudoBadCluster.add(randDoc)
 							pseudoBadCluster = set()
