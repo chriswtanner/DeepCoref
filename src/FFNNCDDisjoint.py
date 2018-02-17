@@ -464,8 +464,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				docREFToDMs[doc_id][ref_id].add(dm)
 				dirHalfDocToREFs[dirHalf][doc_id].add(ref_id)
 
-		positiveData = []
-		negativeData = []
+		positiveDataCount = 0
+		negativeDataCount = 0
 		X = []
 		Y = []
 
@@ -507,24 +507,15 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						if numDocsContainingRef == 1:
 							continue
 
-						print("doc_id:",doc_id,"ref_id",ref_id)
 						curCluster = set()
 						for dm in docREFToDMs[doc_id][ref_id]:
 							curCluster.add(dm)
-						print("fe:",str(docREFToDMs[doc_id][ref_id]))
-						print("curCluster:",str(curCluster))
-
-						print("# docs containing REF:",str(numDocsContainingRef))
 						numDesiredDocsInPseudoGoldCluster = random.randint(1,numDocsContainingRef-1)
-
 						docsInPseudoGoldCluster = set() 
 						while len(docsInPseudoGoldCluster) < numDesiredDocsInPseudoGoldCluster:
 							randDoc = random.sample(dirHalfREFToDocs[dirHalf][ref_id],1)[0]
-							print("dirHalfREFToDocs[dirHalf][ref_id]",str(dirHalfREFToDocs[dirHalf][ref_id]))
-							print("randDoc:",str(randDoc))
 							if randDoc != doc_id:
 								docsInPseudoGoldCluster.add(randDoc)
-						print("pick refs from pseudo gold docs:",docsInPseudoGoldCluster)
 						pseudoCluster = set()
 						for otherDoc in docsInPseudoGoldCluster:
 							for dm in docREFToDMs[otherDoc][ref_id]:
@@ -539,18 +530,31 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						Y.append([0,1])
 
 
-						'''
-						# looks for other clusters to compare DM1 to
-						for other_ref_id in dirHalfREFToDMs[dirHalf].keys():
-							if other_ref_id == gold_ref_id:
-								continue
-							otherClusterSize = len(dirHalfREFToDMs[dirHalf][other_ref_id])
-							if len(negativeData) < self.args.numNegPerPos * len(positiveData):
-								featureVec = self.getClusterFeatures(dm1, dirHalfREFToDMs[dirHalf][other_ref_id], dirHalfToDMPredictions[dirHalf], float((clusterSize + otherClusterSize)/numDMsInDirHalf))
-								negativeData.append(featureVec)
+						# constructs negative sample clusters
+						while len(negativeDataCount) < self.args.numNegPerPos * len(positiveDataCount):
+							other_ref = ref_id
+							while other_ref == ref_id:
+								other_ref = rand.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
+
+								numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
+								numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef-1)
+								docsInPseudoBadCluster = set() 
+								while len(docsInPseudoBadCluster) < numDesiredDocsInPseudoBadCluster:
+									randDoc = random.sample(dirHalfREFToDocs[dirHalf][other_ref],1)[0]
+									if randDoc != doc_id:
+										docsInPseudoBadCluster.add(randDoc)
+								pseudoBadCluster = set()
+								for otherDoc in docsInPseudoBadCluster:
+									for dm in docREFToDMs[otherDoc][other_ref]:
+										pseudoBadCluster.add(dm)
+								pseudoBadClusterSize = len(pseudoBadCluster)
+
+								potentialSizePercentage = float(curClusterSize + pseudoBadClusterSize) / float(numDMsInDirHalf)
+								featureVec = self.getClusterFeatures(curCluster, pseudoBadCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
+								negativeDataCount += 1
 								X.append(featureVec)
 								Y.append([1,0])
-						'''
+						
 		print("X:",str(X))
 		print("Y:",str(Y))
 		print("len:",str(len(X)))
