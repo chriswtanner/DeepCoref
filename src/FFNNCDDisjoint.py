@@ -534,7 +534,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						while negativeDataCount < self.args.numNegPerPos * positiveDataCount:
 							other_ref = ref_id
 							while other_ref == ref_id:
-								other_ref = rand.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
+								other_ref = random.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
 
 								numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
 								numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef-1)
