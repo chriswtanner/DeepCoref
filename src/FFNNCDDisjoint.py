@@ -525,13 +525,13 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						pseudoClusterSize = len(pseudoCluster)
 						potentialSizePercentage = float(curClusterSize + pseudoClusterSize) / float(numDMsInDirHalf)
 						featureVec = self.getClusterFeatures(curCluster, pseudoCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
-						positiveData.append(featureVec)
+						positiveDataCount += 1
 						X.append(featureVec)
 						Y.append([0,1])
 
 
 						# constructs negative sample clusters
-						while len(negativeDataCount) < self.args.numNegPerPos * len(positiveDataCount):
+						while negativeDataCount < self.args.numNegPerPos * positiveDataCount:
 							other_ref = ref_id
 							while other_ref == ref_id:
 								other_ref = rand.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
