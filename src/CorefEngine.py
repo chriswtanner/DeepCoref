@@ -71,7 +71,7 @@ class CorefEngine:
 			# performs WD via Agglomerative (HDDCRP Test Mentions)
 			else:
 				wd_predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)
-				wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
+				#wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
 				helper.writeCoNLLFile(wd_predictedClusters, sp)
 
 			# perform CD

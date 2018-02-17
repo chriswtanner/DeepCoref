@@ -270,7 +270,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				print("* ERROR: missing",str(dm),"from the parsed set of DMs")
 				exit(1)
 		print("# dms in test:",str(len(predTestDMs)))
-		print("# dms in parsedd:",str(len(parsedDMs)))
+		print("# dms in parsed:",str(len(parsedDMs)))
 		exit(1)
 		# now, the magic actually happens: time to cluster!
 		ourClusterID = 0
