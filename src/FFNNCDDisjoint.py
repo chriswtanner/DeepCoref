@@ -257,20 +257,21 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			print("# predTestDMs:",str(len(predTestDMs)))
 			print("# parsedDMs:",str(len(parsedDMs)))
 
-			# sanity check part 2: ensures we have predictions for all of our parsed DMs
-			for dm in parsedDMs:
-				if dm not in predTestDMs:
-					print("* ERROR: missing",str(dm),"from the predicted test set of DMs")
-					exit(1)
-
 		else: # hddcrp
 			for hm in self.hddcrp_parsed.hm_idToHMention:
+				parsedDMs.add(hm)
 				if hm not in predTestDMs:
 					print("* ERROR: predTestDMs is missing",str(hm))
-
 					exit(1)
-		print("# dms in test:",str(len(predTestDMs)))
 
+		# sanity check part 2: ensures we have parsed for all of our predDMs
+		for dm in predTestDMs:
+			if dm not in parsedDMs:
+				print("* ERROR: missing",str(dm),"from the parsed set of DMs")
+				exit(1)
+		print("# dms in test:",str(len(predTestDMs)))
+		print("# dms in parsed:",str(len(parsedDMs)))
+		exit(1)
 		# now, the magic actually happens: time to cluster!
 		ourClusterID = 0
 		ourClusterSuperSet = {}
@@ -559,12 +560,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 								negativeDataCount += 1
 								X.append(featureVec)
 								Y.append([1,0])
-						
 		print("X:",str(X))
 		print("Y:",str(Y))
 		print("len:",str(len(X)))
-
-			
 		return (X,Y)
 
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
