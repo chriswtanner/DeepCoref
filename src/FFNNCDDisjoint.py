@@ -541,6 +541,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
 							if doc_id in dirHalfREFToDocs[dirHalf][other_ref]:
 								numDocsContainingOtherRef = numDocsContainingOtherRef - 1
+							if numDocsContainingOtherRef < 1:
+								continue
 							print("numDocsContainingOtherRef:",numDocsContainingOtherRef)
 							numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef)
 							print("numDesiredDocsInPseudoBadCluster",numDesiredDocsInPseudoBadCluster)
