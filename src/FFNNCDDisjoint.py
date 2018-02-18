@@ -539,12 +539,16 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							if other_ref == ref_id:
 								continue
 							numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
+							if doc_id in dirHalfREFToDocs[dirHalf][other_ref]:
+								numDocsContainingOtherRef = numDocsContainingOtherRef - 1
 							print("numDocsContainingOtherRef:",numDocsContainingOtherRef)
 							numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef)
 							print("numDesiredDocsInPseudoBadCluster",numDesiredDocsInPseudoBadCluster)
 							docsInPseudoBadCluster = set()
+							print("dirHalfREFToDocs[dirHalf][other_ref]:",str(dirHalfREFToDocs[dirHalf][other_ref]))
 							while len(docsInPseudoBadCluster) < numDesiredDocsInPseudoBadCluster:
 								print("len(docsInPseudoBadCluster):",str(len(docsInPseudoBadCluster)),"numDesiredDocsInPseudoBadCluster:",str(numDesiredDocsInPseudoBadCluster))
+								print("docsInPseudoBadCluster:",docsInPseudoBadCluster)
 								randDoc = random.sample(dirHalfREFToDocs[dirHalf][other_ref],1)[0]
 								print("randDoc:",str(randDoc))
 								if randDoc != doc_id:
