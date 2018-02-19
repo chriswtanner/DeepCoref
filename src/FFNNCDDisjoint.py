@@ -20,7 +20,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.numCorpusSamples = 4
+		self.numCorpusSamples = 1
 
 		# print stuff
 		print("args:", str(args))
@@ -243,7 +243,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			dirHalfToWDClusterNums[oneKey].add(clusterNum)
 
 		for dirHalf in dirHalfToWDClusterNums:
-			print("dirHalfToWDClusterNums[dirHalf]:",dirHalfToWDClusterNums[dirHalf])
+			print("dirHalfToWDClusterNums[dirHalf]:",dirHalf,"=",dirHalfToWDClusterNums[dirHalf])
 
 		print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
 		print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
@@ -403,11 +403,11 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					c2Size = len(ourDirHalfClusters[c2])
 					potentialSizePercentage = float(c1Size + c2Size) / float(numDMsInDirHalf)
 					X = []
-					featureVec = self.getClusterFeatures(ourDirHalfClusters[c1], ourDirHalfClusters[c2], dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
+					featureVec = self.getClusterFeatures(ourDirHalfClusters[c1], ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], potentialSizePercentage)
 					X.append(np.asarray(featureVec))
 					X = np.asarray(X)
 					dist = float(self.model.predict(X)[0][0])
-					print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist)
+					print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist,potentialSizePercentage)
 					if dist in clusterDistances:
 						clusterDistances[dist].append((c1,c2))
 					else:
