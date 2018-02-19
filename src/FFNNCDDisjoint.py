@@ -492,7 +492,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 				newClusterSize = len(newCluster)
 
-				print("new cluster [",highestClusterNum"]:")
+				print("new cluster [",highestClusterNum,"]:")
 				for hm in newCluster:
 					print(self.hddcrp_parsed.hm_idToHMention[hm])
 				# compute new distance values between this new cluster and all other valid (disjoint) clusters
