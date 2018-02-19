@@ -503,10 +503,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						continue
 					docsInC1 = clusterNumToDocs[c1]
 
-					containsOverlap = false
+					containsOverlap = False
 					for d in docsInC1:
 						if d in newDocSet:
-							containsOverlap = true
+							containsOverlap = True
 							break
 
 					# skip to the next candidate cluster
