@@ -68,7 +68,7 @@ class CorefEngine:
 				(wd_predictedClusters, wd_goldenClusters) = wd_ccnnEngine.aggClusterPredictions(wd_testing_pairs, wd_testing_preds, sp)
 				(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(wd_goldenClusters, wd_predictedClusters)
 				print("ECBTest AGG WD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
-			
+				exit(1)
 			# performs WD via Agglomerative (HDDCRP Test Mentions)
 			else:
 				wd_predictedClusters = helper.clusterHPredictions(wd_testing_pairs, wd_testing_preds, sp, True)

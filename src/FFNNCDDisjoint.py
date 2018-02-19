@@ -367,12 +367,14 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					clusterNumToDocs[highestClusterNum].add(doc_id)
 				ourDirHalfClusters[highestClusterNum] = a
 				highestClusterNum += 1
+
+			'''
 			print("# WD base clusters:",str(len(ourDirHalfClusters)))
 			for base in ourDirHalfClusters:
 				print("base:",base)
 				for hm in ourDirHalfClusters[base]:
 					print(str(self.hddcrp_parsed.hm_idToHMention[hm]))
-
+			'''
 
 			# stores the cluster distances so that we don't have to do the expensive
 			# computation every time
@@ -381,10 +383,12 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			added = set()
 			for c1 in ourDirHalfClusters.keys():
 				docsInC1 = clusterNumToDocs[c1]
+				
+				'''
 				print("c1:",str(c1),"with docs:",docsInC1)
 				for hm in ourDirHalfClusters[c1]:
 					print(self.hddcrp_parsed.hm_idToHMention[hm])
-
+				'''
 				for c2 in ourDirHalfClusters.keys():
 					if (c1,c2) in added or (c2,c1) in added or c1 == c2:
 						continue
@@ -411,10 +415,13 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					X.append(np.asarray(featureVec))
 					X = np.asarray(X)
 					dist = float(self.model.predict(X)[0][0])
+					
+					'''
 					print("c2:",str(c2),"with docs:",docsInC2)
 					for hm in ourDirHalfClusters[c2]:
 						print(self.hddcrp_parsed.hm_idToHMention[hm])
 					print("dist:",str(dist),"size:",potentialSizePercentage)
+					'''
 					#print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist,potentialSizePercentage)
 					if dist in clusterDistances:
 						clusterDistances[dist].append((c1,c2))
@@ -423,13 +430,6 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					added.add((c1,c2))
 			print("# in clusterDistances:",str(len(added)))
 
-			'''
-			NOTE currently, the only items distances we store are ones that could be merged
-			so, i just pick the closest one, update the clusterNumToDocs, update the clusters,
-			and add distances but only the ones of valid candidate clusters -- so, ones that dont 
-			have the same doc contained (no overlap)
-			ALSO, sometimes we could run out of valid clusters to merge, so handle this somewhere
-			'''
 			bad = set()
 			cluster_start_time = time.time()
 			while len(ourDirHalfClusters.keys()) > 1:
@@ -452,8 +452,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						del clusterDistances[k]
 
 				if shortestDist > stoppingPoint2:
+					print("shortestDist:",shortestDist)
+					print("# clusterDistances",len(clusterDistances))
 					break
-
 				
 				(c1,c2) = shortestPair
 				bad.add(c1)
