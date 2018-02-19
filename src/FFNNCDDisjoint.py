@@ -459,7 +459,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				bad.add(c1)
 				bad.add(c2)
 
-				print("merging",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2])
+				print("shortestDist:",shortestDist,"merging",c1,"(",ourDirHalfClusters[c1],"),and",c2,"(",ourDirHalfClusters[c2],")")
 
 				# remove the clusters
 				newCluster = set()
@@ -481,7 +481,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				clusterNumToDocs.pop(c2, None)
 				clusterNumToDocs[highestClusterNum] = newDocSet
 				highestClusterNum += 1
-
+				exit(1)
 				# compute new values between this new cluster and all other clusters
 				# adds distances to new cluster
 				for c1 in ourDirHalfClusters:
