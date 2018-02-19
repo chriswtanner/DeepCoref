@@ -22,7 +22,7 @@ class CorefEngine:
 
 		runFFNN = True # if False, we will use Agglomerative Cluster
 		stoppingPoints = [0.45] # 475 501 525                                                                   
-		stoppingPoints2 = [0.375,0.401,0.425,0.45,0.475,0.501] # 0.525 0.55 0.601 0.65 0.701 0.725)
+		stoppingPoints2 = [0.375,0.401,0.425,0.45,0.475,0.501] # 0.525,0.55,0.601,0.65,0.701,0.725)
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 

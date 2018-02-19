@@ -401,8 +401,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						if d1 in docsInC2:
 							containsOverlap = True
 							break
-					if containsOverlap:
-						continue
+
+					#if containsOverlap:
+					#	continue
 
 					if len(docsInC1) != 1 or len(docsInC2) != 1:
 						print("* ERROR, a basecluster has more than 1 doc",docsInC1,docsInC2)

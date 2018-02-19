@@ -18,7 +18,7 @@ class ECBHelper:
 
 		# NOTE!: if the below is False, then "* ERROR, we have WD predicted " in CCNN.py should be commented out
 		#    if it's True, then "* ERROR, we have WD predicted " in CCNN.py's should be visible, for error checking
-		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
