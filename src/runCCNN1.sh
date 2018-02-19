@@ -2,7 +2,7 @@
 prefix="hddcrp" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
 numLayers=(2) # 3) # 1 3
-numEpochs=(4) # 20)
+numEpochs=(5) # 20)
 windowSize=(0)
 numNeg=(5)
 batchSize=(128) # 128) # 64 128

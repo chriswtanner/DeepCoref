@@ -219,7 +219,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			keys = set()
 			oneKey = None
 			oneDoc = None
-			print("wdCluster:",str(clusterNum))
+			#print("wdCluster:",str(clusterNum))
 			for hm in cluster:
 				if self.args.useECBTest:
 					doc_id = hm[0]
@@ -236,18 +236,19 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				keys.add(key)
 				oneKey = key
 
-				print("key:",key,"clusterNum:",clusterNum)
+				#print("key:",key,"clusterNum:",clusterNum)
 			if len(keys) != 1:
 				print("* ERROR: cluster had # keys:",str(len(keys)))
 
 			dirHalfToWDClusterNums[oneKey].add(clusterNum)
 
+		'''
 		for dirHalf in dirHalfToWDClusterNums:
 			print("dirHalfToWDClusterNums[dirHalf]:",dirHalf,"=",dirHalfToWDClusterNums[dirHalf])
 
 		print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
 		print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
-
+		'''
 		# (STEP 3) stores dirHalf predictions
 		# use the passed-in Mentions (which could be ECB or HDDCRP format)
 		for _ in range(len(self.testingPairs)):
@@ -285,7 +286,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 		# (STEP 4): sanity check: ensures we have all of the DMs
 		for dirHalf in dirHalfToHMs:
-			print("dirHalf:",dirHalf,"dirHalfToHMs:",len(dirHalfToHMs[dirHalf]),"self.corpus.dirHalfToHMs:",len(self.corpus.dirHalfToHMs[dirHalf]))
+			#print("dirHalf:",dirHalf,"dirHalfToHMs:",len(dirHalfToHMs[dirHalf]),"self.corpus.dirHalfToHMs:",len(self.corpus.dirHalfToHMs[dirHalf]))
 			if self.args.useECBTest:
 				if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
 					print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
@@ -345,10 +346,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		# (STEP 5): makes base clusters and then does clustering!
 		for dirHalf in dirHalfToWDClusterNums.keys():
 
-			print("dirHalf:",str(dirHalf))
+			#print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
-			print("numDMsInDirHalf:",numDMsInDirHalf)
-			print("# pairs in dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[dirHalf])))
+			#print("numDMsInDirHalf:",numDMsInDirHalf)
+			#print("# pairs in dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[dirHalf])))
 
 			# constructs our base clusters (singletons)
 			ourDirHalfClusters = {} 
@@ -428,7 +429,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					else:
 						clusterDistances[dist] = [(c1,c2)]
 					added.add((c1,c2))
-			print("# in clusterDistances:",str(len(added)))
+			#print("# in clusterDistances:",str(len(added)))
 
 			bad = set()
 			cluster_start_time = time.time()
@@ -452,14 +453,15 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						del clusterDistances[k]
 
 				if shortestDist > stoppingPoint2:
-					print("shortestDist:",shortestDist)
-					print("# clusterDistances",len(clusterDistances))
+					#print("shortestDist:",shortestDist)
+					#print("# clusterDistances",len(clusterDistances))
 					break
 				
 				(c1,c2) = shortestPair
 				bad.add(c1)
 				bad.add(c2)
 
+				'''
 				print("shortestDist:",shortestDist,"merging",c1,"(",ourDirHalfClusters[c1],"),and",c2,"(",ourDirHalfClusters[c2],")")
 				print("c1 to merge")
 				for hm in ourDirHalfClusters[c1]:
@@ -467,6 +469,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				print("c2 to merge")
 				for hm in ourDirHalfClusters[c2]:
 					print(self.hddcrp_parsed.hm_idToHMention[hm])
+				'''
 
 				# create new cluster w/ its sub cluster's DMs
 				newCluster = set()
@@ -492,10 +495,11 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				
 
 				newClusterSize = len(newCluster)
-
+				'''
 				print("new cluster [",highestClusterNum,"]:")
 				for hm in newCluster:
 					print(self.hddcrp_parsed.hm_idToHMention[hm])
+				'''
 				# compute new distance values between this new cluster and all other valid (disjoint) clusters
 				for c1 in ourDirHalfClusters:
 					
@@ -531,7 +535,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				sys.stdout.flush()
 			# end of current dirHalf
 			
-			print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
+			#print("our final clustering of dirhalf:",str(dirHalf),"yielded # clusters:",str(len(ourDirHalfClusters.keys())))
 
 			# goes through each cluster for the current dirHalf
 			for i in ourDirHalfClusters.keys():
