@@ -381,6 +381,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			added = set()
 			for c1 in ourDirHalfClusters.keys():
 				docsInC1 = clusterNumToDocs[c1]
+				print("c1:",str(c1),"with docs:",docsInC1)
+				for hm in ourDirHalfClusters[c1]:
+					print(self.hddcrp_parsed.hm_idToHMention[hm])
+
 				for c2 in ourDirHalfClusters.keys():
 					if (c1,c2) in added or (c2,c1) in added or c1 == c2:
 						continue
@@ -407,14 +411,18 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					X.append(np.asarray(featureVec))
 					X = np.asarray(X)
 					dist = float(self.model.predict(X)[0][0])
-					print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist,potentialSizePercentage)
+					print("c2:",str(c2),"with docs:",docsInC2)
+					for hm in ourDirHalfClusters[c2]:
+						print(self.hddcrp_parsed.hm_idToHMention[hm])
+					print("dist:",str(dist),"size:",potentialSizePercentage)
+					#print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist,potentialSizePercentage)
 					if dist in clusterDistances:
 						clusterDistances[dist].append((c1,c2))
 					else:
 						clusterDistances[dist] = [(c1,c2)]
 					added.add((c1,c2))
 			print("# in clusterDistances:",str(len(added)))
-			exit(1)
+
 			'''
 			NOTE currently, the only items distances we store are ones that could be merged
 			so, i just pick the closest one, update the clusterNumToDocs, update the clusters,
@@ -425,9 +433,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			bad = set()
 			cluster_start_time = time.time()
 			while len(ourDirHalfClusters.keys()) > 1:
-				goodPair = None
 				searchForShortest = True
-				shortestDist = None
+				shortestPair = None
+				shortestDist = 99999
 				while searchForShortest:
 					(k,values) = clusterDistances.peekitem(0)
 					newList = []
@@ -436,7 +444,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							newList.append((c1,c2))
 					if len(newList) > 0: # not empty, yay, we don't have to keep searching
 						searchForShortest = False
-						goodPair = newList.pop(0) # we may be making the list have 0 items now
+						shortestPair = newList.pop(0) # we may be making the list have 0 items now
 						shortestDist = k
 					if len(newList) > 0: # let's update the shortest distance's pairs
 						clusterDistances[k] = newList
@@ -446,9 +454,11 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				if shortestDist > stoppingPoint:
 					break
 				# compute new values between this and all other clusters
-				(c1,c2) = goodPair
+				(c1,c2) = shortestPair
 				bad.add(c1)
 				bad.add(c2)
+
+				print("merging",ourDirHalfClusters[c1],"and",ourDirHalfClusters[c2])
 
 				# remove the clusters
 				newCluster = set()
@@ -459,10 +469,18 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				ourDirHalfClusters.pop(c1,None)
 				ourDirHalfClusters.pop(c2,None)
 
-				#print("new cluster:",clusterNum,"=",str(newCluster))
-
 				# adds new cluster
-				ourDirHalfClusters[clusterNum] = newCluster
+				ourDirHalfClusters[highestClusterNum] = newCluster
+				newDocSet = set()
+				for _ in clusterNumToDocs[c1]:
+					newDocSet.add(_)
+				for _ in clusterNumToDocs[c2]:
+					newDocSet.add(_)
+				clusterNumToDocs.pop(c1, None)
+				clusterNumToDocs.pop(c2, None)
+				clusterNumToDocs[highestClusterNum] = newDocSet
+				highestClusterNum += 1
+				exit(1)
 				# adds distances to new cluster
 				for c1 in ourDirHalfClusters:
 					if c1 != clusterNum:
