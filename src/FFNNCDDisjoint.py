@@ -460,13 +460,21 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				bad.add(c2)
 
 				print("shortestDist:",shortestDist,"merging",c1,"(",ourDirHalfClusters[c1],"),and",c2,"(",ourDirHalfClusters[c2],")")
+				print("c1 to merge")
+				for hm in ourDirHalfClusters[c1]:
+					print(self.hddcrp_parsed.hm_idToHMention[hm])
+				print("c2 to merge")
+				for hm in ourDirHalfClusters[c2]:
+					print(self.hddcrp_parsed.hm_idToHMention[hm])
 
-				# remove the clusters
+				# create new cluster w/ its sub cluster's DMs
 				newCluster = set()
 				for _ in ourDirHalfClusters[c1]:
 					newCluster.add(_)
 				for _ in ourDirHalfClusters[c2]:
 					newCluster.add(_)
+				
+				# remove the clusters
 				ourDirHalfClusters.pop(c1,None)
 				ourDirHalfClusters.pop(c2,None)
 
@@ -480,35 +488,45 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				clusterNumToDocs.pop(c1, None)
 				clusterNumToDocs.pop(c2, None)
 				clusterNumToDocs[highestClusterNum] = newDocSet
-				highestClusterNum += 1
-				exit(1)
-				# compute new values between this new cluster and all other clusters
-				# adds distances to new cluster
+				
+
+				newClusterSize = len(newCluster)
+
+				print("new cluster [",highestClusterNum"]:")
+				for hm in newCluster:
+					print(self.hddcrp_parsed.hm_idToHMention[hm])
+				# compute new distance values between this new cluster and all other valid (disjoint) clusters
 				for c1 in ourDirHalfClusters:
-					if c1 != clusterNum:
+					
+					# don't consider the newCluster to itself (which has been stored in ourDirHalfClusters)
+					if c1 == newCluster:
+						continue
+					docsInC1 = clusterNumToDocs[c1]
 
-						shorterCluster = ourDirHalfClusters[c1]
-						longerCluster = ourDirHalfClusters[clusterNum]
+					containsOverlap = false
+					for d in docsInC1:
+						if d in newDocSet:
+							containsOverlap = true
+							break
 
-						len1 = len(ourDirHalfClusters[c1])
-						len2 = len(ourDirHalfClusters[clusterNum])
+					# skip to the next candidate cluster
+					if containsOverlap:
+						continue
 
-						# checks if we should swap these
-						if len1 > len2:
-							shorterCluster = ourDirHalfClusters[clusterNum]
-							longerCluster = ourDirHalfClusters[c1]
-
-						for dm1 in shorterCluster:
-							X = []
-							featureVec = self.getClusterFeatures(dm1, longerCluster, dirHalfToHMPredictions[dirHalf], float((len1+len2)/numDMsInDirHalf))
-							X.append(np.asarray(featureVec))
-							X = np.asarray(X)
-							dist = float(self.model.predict(X)[0][0])
-							if dist in clusterDistances:
-								clusterDistances[dist].append((c1,clusterNum))
-							else:
-								clusterDistances[dist] = [(c1,clusterNum)]
-				clusterNum += 1
+					c1Size = len(ourDirHalfClusters[c1])
+					c2Size = newClusterSize
+					potentialSizePercentage = float(c1Size + newClusterSize) / float(numDMsInDirHalf)
+					
+					featureVec = self.getClusterFeatures(ourDirHalfClusters[c1], newCluster, dirHalfToHMPredictions[dirHalf], potentialSizePercentage)
+					X = []
+					X.append(np.asarray(featureVec))
+					X = np.asarray(X)
+					dist = float(self.model.predict(X)[0][0])
+					if dist in clusterDistances:
+						clusterDistances[dist].append((c1,highestClusterNum))
+					else:
+						clusterDistances[dist] = [(c1,highestClusterNum)]
+				highestClusterNum += 1
 				sys.stdout.flush()
 			# end of current dirHalf
 			
