@@ -451,9 +451,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					else: # no good items, let's remove it from the dict
 						del clusterDistances[k]
 
-				if shortestDist > stoppingPoint:
+				if shortestDist > stoppingPoint2:
 					break
-				# compute new values between this and all other clusters
+
+				
 				(c1,c2) = shortestPair
 				bad.add(c1)
 				bad.add(c2)
@@ -469,7 +470,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				ourDirHalfClusters.pop(c1,None)
 				ourDirHalfClusters.pop(c2,None)
 
-				# adds new cluster
+				# adds new cluster and its storage of docs
 				ourDirHalfClusters[highestClusterNum] = newCluster
 				newDocSet = set()
 				for _ in clusterNumToDocs[c1]:
@@ -480,7 +481,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				clusterNumToDocs.pop(c2, None)
 				clusterNumToDocs[highestClusterNum] = newDocSet
 				highestClusterNum += 1
-				exit(1)
+
+				# compute new values between this new cluster and all other clusters
 				# adds distances to new cluster
 				for c1 in ourDirHalfClusters:
 					if c1 != clusterNum:
