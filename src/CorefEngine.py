@@ -21,8 +21,8 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = True # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.475,0.501,0.525] #[0.301,0.35,0.401,0.45,0.475,0.501,0.525,0.55] #,0.501,0.55] #,0.55]                                                                   
-		stoppingPoints2 = [0.525] #[0.45,0.47,0.501,0.525,0.55,0.575,0.601,0.625,0.65,0.675,0.701]
+		stoppingPoints = [0.501] #,0.475,0.501,0.525] #[0.301,0.35,0.401,0.45,0.475,0.501,0.525,0.55] #,0.501,0.55] #,0.55]                                                                   
+		stoppingPoints2 = [0.501] #[0.45,0.47,0.501,0.525,0.55,0.575,0.601,0.625,0.65,0.675,0.701]
 		# handles passed-in args
 		args = params.setCorefEngineParams()
 
@@ -75,7 +75,7 @@ class CorefEngine:
 				#wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
 				helper.writeCoNLLFile(wd_predictedClusters, sp)
 
-		'''
+		
 			# perform CD
 			for sp2 in stoppingPoints2:
 
@@ -126,4 +126,4 @@ class CorefEngine:
 
 		if args.useECBTest:
 			print("[FINAL",outputLabel,"RESULTS]: BEST SP",str(bestTestSP),"SP2:",str(bestTestSP2),"F1:",str(bestTestF1))
-		'''
+		

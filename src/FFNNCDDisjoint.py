@@ -20,7 +20,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.numCorpusSamples = 1
+		self.numCorpusSamples = 10
 
 		# print stuff
 		print("args:", str(args))

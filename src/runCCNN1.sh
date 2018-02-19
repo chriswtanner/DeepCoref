@@ -2,7 +2,7 @@
 prefix="hddcrp" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
 numLayers=(2) # 3) # 1 3
-numEpochs=(10) # 20)
+numEpochs=(4) # 20)
 windowSize=(0)
 numNeg=(5)
 batchSize=(128) # 128) # 64 128
@@ -12,8 +12,8 @@ embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(32)
-filterMultiplier=(2.0) # 2.0)
+numFilters=(64)
+filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
 posType=("none") # none  sum  avg
@@ -50,7 +50,7 @@ if [[ " ${featureMap[*]} " == *"5"* ]]; then
 fi
 
 # FFNN params
-FFNNnumEpochs=(3) # 5 20
+FFNNnumEpochs=(20) # 5 20
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate
