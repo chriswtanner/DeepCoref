@@ -199,7 +199,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 		self.trainX, self.trainY = self.loadDynamicData(dirHalfToDMs, dirHalfToDMPredictions)
 
-	def clusterWDClusters(self, stoppingPoint2):
+	def clusterWDClusters(self, wdClusters, stoppingPoint2):
 		print("* FFNNCDDisjoint - clusterWDs()")
 		start_time = time.time()
 		# loads test predictions
@@ -211,7 +211,44 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		dirHalfToHMPredictions = defaultdict(lambda : defaultdict(float))
 		dirHalfToHMs = defaultdict(list) # used for ensuring our predictions included ALL valid HMs
 
+		# (STEP 2)
+		# maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
+		dirHalfToWDClusterNums = defaultdict(set)
+		for clusterNum in wdClusters.keys():
+			cluster = wdClusters[clusterNum]
+			keys = set()
+			oneKey = None
+			oneDoc = None
+			print("wdCluster:",str(clusterNum))
+			for hm in cluster:
+				if self.args.useECBTest:
+					doc_id = hm[0]
+				else:
+					doc_id = self.hddcrp_parsed.hm_idToHMention[hm].doc_id
 
+				if doc_id != oneDoc and oneDoc != None:
+					print("* ERROR: multiple docs within the wd base cluster")
+					exit(1)    
+				oneDoc = doc_id
+				extension = doc_id[doc_id.find("ecb"):]
+				dir_num = int(doc_id.split("_")[0])
+				key = str(dir_num) + extension
+				keys.add(key)
+				oneKey = key
+
+				print("key:",key,"clusterNum:",clusterNum)
+			if len(keys) != 1:
+				print("* ERROR: cluster had # keys:",str(len(keys)))
+
+			dirHalfToWDClusterNums[oneKey].add(clusterNum)
+
+		for dirHalf in dirHalfToWDClusterNums:
+			print("dirHalfToWDClusterNums[dirHalf]:",dirHalfToWDClusterNums[dirHalf])
+
+		print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
+		print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
+
+		# (STEP 3) stores dirHalf predictions
 		# use the passed-in Mentions (which could be ECB or HDDCRP format)
 		for _ in range(len(self.testingPairs)):
 			(dm1,dm2) = self.testingPairs[_]
@@ -243,6 +280,17 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			predTestDMs.add(dm1)
 			predTestDMs.add(dm2)
 
+		print("per CCNN, #dirHalfs in dirHalfToHMs:",str(len(dirHalfToHMs.keys())))
+		print("per corpus, #dirHalfs in corpus.dirHalfToHMs:",str(len(self.corpus.dirHalfToHMs.keys())))
+
+		# (STEP 4): sanity check: ensures we have all of the DMs
+		for dirHalf in dirHalfToHMs:
+			print("dirHalf:",dirHalf,"dirHalfToHMs:",len(dirHalfToHMs[dirHalf]),"self.corpus.dirHalfToHMs:",len(self.corpus.dirHalfToHMs[dirHalf]))
+			if self.args.useECBTest:
+				if len(dirHalfToHMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
+					print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
+					exit(1)
+
 		# sanity check: ensures we are working w/ all of the DMs
 		parsedDMs = set()
 		if self.args.useECBTest:
@@ -253,9 +301,6 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						if dm not in predTestDMs:
 							print("* ERROR: did not have the dm:",str(dm),"which was in our parsed ECB Test")
 							exit(1)
-
-			print("# predTestDMs:",str(len(predTestDMs)))
-			print("# parsedDMs:",str(len(parsedDMs)))
 
 		else: # hddcrp
 			for hm in self.hddcrp_parsed.hm_idToHMention:
@@ -269,13 +314,16 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			if dm not in parsedDMs:
 				print("* ERROR: missing",str(dm),"from the parsed set of DMs")
 				exit(1)
+
 		print("# dms in test:",str(len(predTestDMs)))
 		print("# dms in parsed:",str(len(parsedDMs)))
-		exit(1)
+		# ---- END OF STEP 4
+
 		# now, the magic actually happens: time to cluster!
 		ourClusterID = 0
 		ourClusterSuperSet = {}
-
+		
+		# (STEP 4B - OPTIONAL): # construct the golden truth for the current dir-half
 		goldenClusterID = 0
 		goldenSuperSet = {}
 		if self.args.useECBTest: # construct golden clusters
@@ -294,51 +342,86 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 					goldenSuperSet[goldenClusterID] = tmp
 					goldenClusterID += 1
 
-		for dirHalf in dirHalfToHMPredictions.keys():
+		# (STEP 5): makes base clusters and then does clustering!
+		for dirHalf in dirHalfToWDClusterNums.keys():
 
 			print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
 			print("numDMsInDirHalf:",numDMsInDirHalf)
 			print("# pairs in dirHalfToHMPredictions:",str(len(dirHalfToHMPredictions[dirHalf])))
-			# stores all preds for the current dirHalf
-			dirHalfPreds = []
-			for pair in dirHalfToHMPredictions[dirHalf]:
-				dirHalfPreds.append(dirHalfToHMPredictions[dirHalf][pair])
 
 			# constructs our base clusters (singletons)
 			ourDirHalfClusters = {} 
-			clusterNum = 0
-			for i in range(len(dirHalfToHMs[dirHalf])):
-				hm = dirHalfToHMs[dirHalf][i]
+			clusterNumToDocs = defaultdict(set)
+			
+			highestClusterNum = 0
+			# sets base clusters to be the WD clusters
+			for wdClusterNum in dirHalfToWDClusterNums[dirHalf]:
 				a = set()
-				a.add(hm)
-				ourDirHalfClusters[clusterNum] = a
-				clusterNum += 1
-			# the following keeps merging until our shortest distance > stopping threshold,
-			# or we have 1 cluster, whichever happens first
+				for dm in wdClusters[wdClusterNum]:
+					a.add(dm)
+					if self.args.useECBTest:
+						doc_id = dm[0]
+					else:
+						doc_id = self.hddcrp_parsed.hm_idToHMention[dm].doc_id
+					clusterNumToDocs[highestClusterNum].add(doc_id)
+				ourDirHalfClusters[highestClusterNum] = a
+				highestClusterNum += 1
+			print("# WD base clusters:",str(len(ourDirHalfClusters)))
+			for base in ourDirHalfClusters:
+				print("base:",base)
+				for hm in ourDirHalfClusters[base]:
+					print(str(self.hddcrp_parsed.hm_idToHMention[hm]))
+
 
 			# stores the cluster distances so that we don't have to do the expensive
 			# computation every time
 			# seed the distances
 			clusterDistances = SortedDict()
-			i = 0
+			added = set()
 			for c1 in ourDirHalfClusters.keys():
-				for dm1 in ourDirHalfClusters[c1]:
-					j = 0
-					for c2 in ourDirHalfClusters.keys():
-						if j > i:
-							X = []
-							featureVec = self.getClusterFeatures(dm1, ourDirHalfClusters[c2], dirHalfToHMPredictions[dirHalf], float(2.0/numDMsInDirHalf))
-							X.append(np.asarray(featureVec))
-							X = np.asarray(X)
-							dist = float(self.model.predict(X)[0][0])
-							if dist in clusterDistances:
-								clusterDistances[dist].append((c1,c2))
-							else:
-								clusterDistances[dist] = [(c1,c2)]
-						j += 1
-				i += 1
+				docsInC1 = clusterNumToDocs[c1]
+				for c2 in ourDirHalfClusters.keys():
+					if (c1,c2) in added or (c2,c1) in added or c1 == c2:
+						continue
+					docsInC2 = clusterNumToDocs[c2]
 
+					# only consider merging clusters that are disjoint in their docs
+					containsOverlap = False
+					for d1 in docsInC1:
+						if d1 in docsInC2:
+							containsOverlap = True
+							break
+					if containsOverlap:
+						continue
+
+					if len(docsInC1) != 1 or len(docsInC2) != 1:
+						print("* ERROR, a basecluster has more than 1 doc",docsInC1,docsInC2)
+						exit(1)
+
+					c1Size = len(ourDirHalfClusters[c1])
+					c2Size = len(ourDirHalfClusters[c2])
+					potentialSizePercentage = float(c1Size + c2Size) / float(numDMsInDirHalf)
+					X = []
+					featureVec = self.getClusterFeatures(ourDirHalfClusters[c1], ourDirHalfClusters[c2], dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
+					X.append(np.asarray(featureVec))
+					X = np.asarray(X)
+					dist = float(self.model.predict(X)[0][0])
+					print("c1:",str(ourDirHalfClusters[c1]),"c2:",str(ourDirHalfClusters[c2]),"=",dist)
+					if dist in clusterDistances:
+						clusterDistances[dist].append((c1,c2))
+					else:
+						clusterDistances[dist] = [(c1,c2)]
+					added.add((c1,c2))
+			print("# in clusterDistances:",str(len(added)))
+			exit(1)
+			'''
+			NOTE currently, the only items distances we store are ones that could be merged
+			so, i just pick the closest one, update the clusterNumToDocs, update the clusters,
+			and add distances but only the ones of valid candidate clusters -- so, ones that dont 
+			have the same doc contained (no overlap)
+			ALSO, sometimes we could run out of valid clusters to merge, so handle this somewhere
+			'''
 			bad = set()
 			cluster_start_time = time.time()
 			while len(ourDirHalfClusters.keys()) > 1:
@@ -470,14 +553,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		X = []
 		Y = []
 
-		print("dirHalfToDMPredictions keys:",str(len(dirHalfToDMPredictions.keys())),str(dirHalfToDMPredictions.keys()))
-		print("dirHalfToDMs keys",str(len(dirHalfToDMs.keys())),str(dirHalfToDMs.keys()))
-
 		for i in range(self.numCorpusSamples):
 
 			# iterates through all dirHalves
 			for dirHalf in dirHalfToDMs:
-				print("dirHalf",str(dirHalf))
 				numDMsInDirHalf = len(dirHalfToDMs[dirHalf])
 				if numDMsInDirHalf == 1:
 					print("* DIRHALF:",str(dirHalf),"HAS SINGLETON:",str(numDMsInDirHalf))
@@ -497,10 +576,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							exit(1)
 				
 				# looks through each doc
-				print("docs:",str(dirHalfDocToREFs[dirHalf]))
 				for doc_id in dirHalfDocToREFs[dirHalf].keys():
-
-					print("refs:",str(docREFToDMs[doc_id]))
 					# looks through each REF
 					for ref_id in docREFToDMs[doc_id].keys():
 						# ensures other docs contain the ref
@@ -530,12 +606,9 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 						X.append(featureVec)
 						Y.append([0,1])
 
-						print("* good cluster docs:",str(len(docsInPseudoGoldCluster)),"# dms:",str(len(pseudoCluster)),":",pseudoCluster)
-						print("ref:",str(ref_id))
 						# constructs negative sample clusters
 						while negativeDataCount < self.args.numNegPerPos * positiveDataCount:
 							other_ref = random.sample(dirHalfREFToDMs[dirHalf].keys(),1)[0]
-							print("other_ref:",str(other_ref))
 							if other_ref == ref_id:
 								continue
 							numDocsContainingOtherRef = len(dirHalfREFToDocs[dirHalf][other_ref])
@@ -543,16 +616,10 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 								numDocsContainingOtherRef = numDocsContainingOtherRef - 1
 							if numDocsContainingOtherRef < 1:
 								continue
-							print("numDocsContainingOtherRef:",numDocsContainingOtherRef)
 							numDesiredDocsInPseudoBadCluster = random.randint(1,numDocsContainingOtherRef)
-							print("numDesiredDocsInPseudoBadCluster",numDesiredDocsInPseudoBadCluster)
 							docsInPseudoBadCluster = set()
-							print("dirHalfREFToDocs[dirHalf][other_ref]:",str(dirHalfREFToDocs[dirHalf][other_ref]))
 							while len(docsInPseudoBadCluster) < numDesiredDocsInPseudoBadCluster:
-								print("len(docsInPseudoBadCluster):",str(len(docsInPseudoBadCluster)),"numDesiredDocsInPseudoBadCluster:",str(numDesiredDocsInPseudoBadCluster))
-								print("docsInPseudoBadCluster:",docsInPseudoBadCluster)
 								randDoc = random.sample(dirHalfREFToDocs[dirHalf][other_ref],1)[0]
-								print("randDoc:",str(randDoc))
 								if randDoc != doc_id:
 									docsInPseudoBadCluster.add(randDoc)
 							pseudoBadCluster = set()
@@ -560,24 +627,19 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 								for dm in docREFToDMs[otherDoc][other_ref]:
 									pseudoBadCluster.add(dm)
 							pseudoBadClusterSize = len(pseudoBadCluster)
-
-							print("* bad cluster docs:",len(docsInPseudoBadCluster),"# dms:",len(pseudoBadCluster),":",pseudoBadCluster)
-
 							potentialSizePercentage = float(curClusterSize + pseudoBadClusterSize) / float(numDMsInDirHalf)
 							featureVec = self.getClusterFeatures(curCluster, pseudoBadCluster, dirHalfToDMPredictions[dirHalf], potentialSizePercentage)
 							negativeDataCount += 1
 							X.append(featureVec)
 							Y.append([1,0])
-		print("X:",str(X))
-		print("Y:",str(Y))
-		print("len:",str(len(X)))
+		print("positiveDataCount:",positiveDataCount)
+		print("negativeDataCount:",negativeDataCount)
 		return (X,Y)
 
 	# gets the features we care about -- how a DM relates to the passed-in cluster (set of DMs)
 	def getClusterFeatures(self, cluster1, cluster2, dmPredictions, clusterSizePercentage):
 		dists = []
-		print("cluster1:",cluster1)
-		print("cluster2:",cluster2)
+
 		for dm1 in cluster1:
 			for dm2 in cluster2:
 				if dm1 == dm2 or cluster1 == cluster2:

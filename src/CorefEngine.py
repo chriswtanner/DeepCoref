@@ -64,6 +64,7 @@ class CorefEngine:
 
 			# performs WD via Agglomerative (ECB Test Mentions)
 			if args.useECBTest: # use corpus' test mentions
+			# REGULAR agg every dm <-> cluster
 				(wd_predictedClusters, wd_goldenClusters) = wd_ccnnEngine.aggClusterPredictions(wd_testing_pairs, wd_testing_preds, sp)
 				(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(wd_goldenClusters, wd_predictedClusters)
 				print("ECBTest AGG WD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
@@ -111,7 +112,7 @@ class CorefEngine:
 						print("[HDDCRPTest: FFNN Mode]")
 						ffnnEngine = FFNNCDDisjoint(args, corpus, helper, hddcrp_parsed, cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds)
 						ffnnEngine.train()
-						(cd_predictedClusters, _) = ffnnEngine.clusterWDClusters(sp2)
+						(cd_predictedClusters, _) = ffnnEngine.clusterWDClusters(wd_predictedClusters, sp2)
 						# we ignore goldenClusters because that isn't the gold Truth
 
 					# HDDCRP Test; Agglomerative (WORKS)

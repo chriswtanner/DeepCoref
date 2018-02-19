@@ -53,249 +53,161 @@ class CCNN:
         print("-----------------------")
 
     def aggClusterWDClusters(self, wdClusters, cd_pairs, cd_predictions, stoppingPoint2):
-            clusters = {}
-            print("in aggClusterWDClusters() -- CD Model")
+        clusters = {}
+        print("in aggClusterWDClusters() -- CD Model")
 
-            dmToPredictions = {}
-            for i in range(len(cd_pairs)):
-                (dm1,dm2) = cd_pairs[i]
-                prediction = cd_predictions[i][0]
-                dmToPredictions[(dm1,dm2)] = prediction
+        # (STEP 1) pre-processing, construct predictions
+        dmToPredictions = {}
+        for i in range(len(cd_pairs)):
+            (dm1,dm2) = cd_pairs[i]
+            prediction = cd_predictions[i][0]
+            dmToPredictions[(dm1,dm2)] = prediction
 
-            # maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
-            dirHalfToWDClusterNums = defaultdict(set)
-            for clusterNum in wdClusters.keys():
-                cluster = wdClusters[clusterNum]
-                keys = set()
-                oneKey = None
-                oneDoc = None
-                for (doc_id,m_id) in cluster:
-                    if doc_id != oneDoc and oneDoc != None:
-                        print("* ERROR: multiple docs within the wd base cluster")
-                        exit(1)    
-                    oneDoc = doc_id
+        # (STEP 2) 
+        # maps the wdClusters to their dirHalf's -- so we know what our candidate clusters are
+        dirHalfToWDClusterNums = defaultdict(set)
+        for clusterNum in wdClusters.keys():
+            cluster = wdClusters[clusterNum]
+            keys = set()
+            oneKey = None
+            oneDoc = None
+            for (doc_id,m_id) in cluster:
+                if doc_id != oneDoc and oneDoc != None:
+                    print("* ERROR: multiple docs within the wd base cluster")
+                    exit(1)    
+                oneDoc = doc_id
 
-                    extension = doc_id[doc_id.find("ecb"):]
-                    dir_num = int(doc_id.split("_")[0])
-                    key = str(dir_num) + extension
-                    keys.add(key)
-                    oneKey = key
-                if len(keys) != 1:
-                    print("* ERROR: cluster had # keys:",str(len(keys)))
-                dirHalfToWDClusterNums[oneKey].add(clusterNum)
+                extension = doc_id[doc_id.find("ecb"):]
+                dir_num = int(doc_id.split("_")[0])
+                key = str(dir_num) + extension
+                keys.add(key)
+                oneKey = key
+            if len(keys) != 1:
+                print("* ERROR: cluster had # keys:",str(len(keys)))
+            dirHalfToWDClusterNums[oneKey].add(clusterNum)
 
-            print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
-            print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
+        print("per WD clusters, we have # dirHalfs:",str(len(dirHalfToWDClusterNums.keys())))
+        print("per the corpus, we have # dirHalfs:",str(len(self.corpus.dirHalfREFToDMs.keys())))
 
-            # stores predictions
-            dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
-            dirHalfToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
-            for i in range(len(cd_pairs)):
-                (dm1,dm2) = cd_pairs[i]
+        # (STEP 3) stores dirHalf predictions
+        dirHalfToDMPredictions = defaultdict(lambda : defaultdict(float))
+        dirHalfToDMs = defaultdict(set) # used for ensuring our predictions included ALL valid DMs
+        for i in range(len(cd_pairs)):
+            (dm1,dm2) = cd_pairs[i]
 
-                prediction = cd_predictions[i][0]
-                doc_id1 = dm1[0]
-                doc_id2 = dm2[0]
+            prediction = cd_predictions[i][0]
+            doc_id1 = dm1[0]
+            doc_id2 = dm2[0]
 
-                extension1 = doc_id1[doc_id1.find("ecb"):]
-                dir_num1 = int(doc_id1.split("_")[0])
+            extension1 = doc_id1[doc_id1.find("ecb"):]
+            dir_num1 = int(doc_id1.split("_")[0])
 
-                extension2 = doc_id2[doc_id2.find("ecb"):]
-                dir_num2 = int(doc_id2.split("_")[0])
+            extension2 = doc_id2[doc_id2.find("ecb"):]
+            dir_num2 = int(doc_id2.split("_")[0])
 
-                if dir_num1 != dir_num2:
-                    print("** ERROR: we are trying to cluster mentions which came from different dir-halves")
+            if dir_num1 != dir_num2:
+                print("** ERROR: we are trying to cluster mentions which came from different dir-halves")
+                exit(1)
+
+            key1 = str(dir_num1) + extension1
+            key2 = str(dir_num2) + extension2
+
+            if key1 != key2:
+                print("* ERROR, somehow, training pairs came from diff dir-halves")
+                exit(1)
+
+            if doc_id1 == doc_id2:
+                print("* ERROR, we have WD predicted values, even though we should have only generated CD ones")
+                exit(1)
+
+            dirHalfToDMs[key1].add(dm1)
+            dirHalfToDMs[key1].add(dm2)
+
+            dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
+
+        print("per CCNN, #dirHalfToDMs:",str(len(dirHalfToDMs.keys())))
+        print("per corpus, #dirHalfToDMs:",str(len(self.corpus.dirHalfToHMs.keys())))
+
+        # (STEP 4): sanity check: ensures we have all of the DMs
+        for dirHalf in dirHalfToDMs:
+            if len(dirHalfToDMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
+                print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
+                exit(1)
+
+        ourClusterID = 0
+        ourClusterSuperSet = {}
+
+        goldenClusterID = 0
+        goldenSuperSet = {}
+
+        # (STEP 4B): # construct the golden truth for the current dir-half
+        for dirHalf in dirHalfToWDClusterNums.keys():
+            
+            dir_num = int(dirHalf[0:dirHalf.find("ecb")])
+            extension = dirHalf[dirHalf.find("ecb"):]
+            refToDMs = defaultdict(set)
+            for doc_id in self.corpus.dirToDocs[dir_num]:
+                cur_ext = doc_id[doc_id.find("ecb"):]
+                if cur_ext != extension:
+                    continue
+
+                # dir is in the correct dir-half, so now
+                # let's add all of its refs
+                for ref in self.corpus.docToREFs[doc_id]:
+                    for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
+                        refToDMs[ref].add(dm)
+            
+            for ref in refToDMs:
+                # sanity check:
+                if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
+                    print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
                     exit(1)
+                goldenSuperSet[goldenClusterID] = refToDMs[ref]
+                goldenClusterID += 1
+            print("#golden clusters:",str(len(refToDMs))) #,str(refToDMs))
 
-                key1 = str(dir_num1) + extension1
-                key2 = str(dir_num2) + extension2
+        # (STEP 5): makes base clusters and then does clustering!
+        for dirHalf in dirHalfToWDClusterNums.keys():
+            ourDirHalfClusters = {}
+            clusterNumToDocs = defaultdict(set)
+            #print("dirHalf:",str(dirHalf))
 
-                if key1 != key2:
-                    print("* ERROR, somehow, training pairs came from diff dir-halves")
-                    exit(1)
+            highestClusterNum = 0
+            # sets base clusters to be the WD clusters
+            for wdClusterNum in dirHalfToWDClusterNums[dirHalf]:
+                a = set()
+                for dm in wdClusters[wdClusterNum]:
+                    a.add(dm)
+                    (doc_id,m_id) = dm
+                    clusterNumToDocs[highestClusterNum].add(doc_id)
+                ourDirHalfClusters[highestClusterNum] = a
+                #print("cluster:",str(highestClusterNum),":",str(ourDirHalfClusters[highestClusterNum]),"; DOCS:",str(clusterNumToDocs[highestClusterNum]))
+                highestClusterNum += 1
 
-                if doc_id1 == doc_id2:
-                    print("* ERROR, we have WD predicted values, even though we should have only generated CD ones")
-                    exit(1)
+            print("# WD base clusters:",str(len(ourDirHalfClusters))) #,str(ourDirHalfClusters))
 
-                dirHalfToDMs[key1].add(dm1)
-                dirHalfToDMs[key1].add(dm2)
+            # stores the cluster distances so that we don't have to do the expensive
+            # computation every time
+            # seed the distances
 
-                dirHalfToDMPredictions[key1][(dm1,dm2)] = prediction
+            # check every combination O(n^2) but n is small (e.g., 10-30)
+            while len(ourDirHalfClusters.keys()) > 1:
 
-            print("per CCNN, #dirHalfToDMs:",str(len(dirHalfToDMs.keys())))
-            print("per corpus, #dirHalfToDMs:",str(len(self.corpus.dirHalfToHMs.keys())))
+                # find best merge
+                closestDist = 999999
+                closestClusterKeys = (-1,-1)
 
-            # sanity check: ensures we have all of the DMs
-            for dirHalf in dirHalfToDMs:
-                if len(dirHalfToDMs[dirHalf]) != len(self.corpus.dirHalfToHMs[dirHalf]):
-                    print("* ERROR: differing # of DMs b/w CCNN and the Corpus")
-                    exit(1)
+                closestAvgDist = 999999
+                closestAvgClusterKeys = (-1,-1)
 
-            ourClusterID = 0
-            ourClusterSuperSet = {}
+                closestAvgAvgDist = 999999
+                closestAvgAvgClusterKeys = (-1,-1)
 
-            goldenClusterID = 0
-            goldenSuperSet = {}
+                added = set()
 
-            for dirHalf in dirHalfToWDClusterNums.keys():
-                # construct the golden truth for the current dir-half
-                dir_num = int(dirHalf[0:dirHalf.find("ecb")])
-                extension = dirHalf[dirHalf.find("ecb"):]
-                refToDMs = defaultdict(set)
-                for doc_id in self.corpus.dirToDocs[dir_num]:
-                    cur_ext = doc_id[doc_id.find("ecb"):]
-                    if cur_ext != extension:
-                        continue
-
-                    # dir is in the correct dir-half, so now
-                    # let's add all of its refs
-                    for ref in self.corpus.docToREFs[doc_id]:
-                        for dm in self.corpus.docREFsToDMs[(doc_id,ref)]:
-                            refToDMs[ref].add(dm)
-                
-                for ref in refToDMs:
-                    # sanity check:
-                    if len(refToDMs[ref]) != len(self.corpus.dirHalfREFToDMs[dirHalf][ref]):
-                        print("* ERROR: the gold clusters based on parsed corpus' dirToDocs != parsed corpus dirHalfREFToDMs")
-                        exit(1)
-                    goldenSuperSet[goldenClusterID] = refToDMs[ref]
-                    goldenClusterID += 1
-                
-
-
-
-                ourDirHalfClusters = {}
-                clusterNumToDocs = defaultdict(set)
-                #print("dirHalf:",str(dirHalf))
-
-                highestClusterNum = 0
-                # sets base clusters to be the WD clusters
-                for wdClusterNum in dirHalfToWDClusterNums[dirHalf]:
-                    a = set()
-                    for dm in wdClusters[wdClusterNum]:
-                        a.add(dm)
-                        (doc_id,m_id) = dm
-                        clusterNumToDocs[highestClusterNum].add(doc_id)
-                    ourDirHalfClusters[highestClusterNum] = a
-                    #print("cluster:",str(highestClusterNum),":",str(ourDirHalfClusters[highestClusterNum]),"; DOCS:",str(clusterNumToDocs[highestClusterNum]))
-                    highestClusterNum += 1
-                print("#golden clusters:",str(len(refToDMs))) #,str(refToDMs))
-                print("# WD base clusters:",str(len(ourDirHalfClusters))) #,str(ourDirHalfClusters))
-
-                # stores the cluster distances so that we don't have to do the expensive
-                # computation every time
-                # seed the distances
-
-                # check every combination O(n^2) but n is small (e.g., 10-30)
-                while len(ourDirHalfClusters.keys()) > 1:
-
-                    # find best merge
-                    closestDist = 999999
-                    closestClusterKeys = (-1,-1)
-
-                    closestAvgDist = 999999
-                    closestAvgClusterKeys = (-1,-1)
-
-                    closestAvgAvgDist = 999999
-                    closestAvgAvgClusterKeys = (-1,-1)
-
-                    added = set()
-
-                    for c1 in ourDirHalfClusters:
-                        docsInC1 = clusterNumToDocs[c1]
-                        for c2 in ourDirHalfClusters:
-                            if (c2,c1) in added or (c1,c2) in added or c1 == c2:
-                                continue
-                            docsInC2 = clusterNumToDocs[c2]
-
-                            # only consider merging clusters that are disjoint in their docs
-                            containsOverlap = False
-                            for d1 in docsInC1:
-                                if d1 in docsInC2:
-                                    containsOverlap = True
-                                    break
-                            if containsOverlap:
-                                continue
-
-                            avgavgdists = []
-                            dmToDists = defaultdict(list)
-                            for dm1 in ourDirHalfClusters[c1]:
-                                for dm2 in ourDirHalfClusters[c2]:
-                                    if dm1 == dm2:
-                                        print("* ERROR: somehow dm1 == dm2")
-                                        exit(1)
-
-                                    dist = 9999
-                                    if (dm1,dm2) in dirHalfToDMPredictions[dirHalf]:
-                                        dist = dirHalfToDMPredictions[dirHalf][(dm1,dm2)]
-                                    elif (dm2,dm1) in dirHalfToDMPredictions[dirHalf]:
-                                        dist = dirHalfToDMPredictions[dirHalf][(dm2,dm1)]
-                                    else:
-                                        print("* ERROR: missing dist for dm1,dm2")
-                                        print("dms:",str(dm1),str(dm2))
-                                        exit(1)
-
-
-                                    avgavgdists.append(dist)
-                                    dmToDists[dm1].append(dist)
-                                    dmToDists[dm2].append(dist)
-                                    if dist < closestDist:
-                                        closestDist = dist
-                                        closestClusterKeys = (c1,c2)
-                            for dm in dmToDists:
-                                avg = float(sum(dmToDists[dm])/float(len(dmToDists[dm])))
-                                if avg < closestAvgDist:
-                                    closestAvgDist = avg
-                                    closestAvgClusterKeys = (c1,c2)
-                            avgavg = float(sum(avgavgdists)) / float(len(avgavgdists))
-                            if avgavg < closestAvgAvgDist:
-                                closestAvgAvgDist = avgavg
-                                closestAvgAvgClusterKeys = (c1,c2)
-                            added.add((c1,c2))
-                            added.add((c2,c1))
-
-                    # min pair (could also be avg or avgavg)
-                    #dist = closestDist
-                    #(c1,c2) = closestClusterKeys
-
-                    dist = closestAvgDist
-                    (c1,c2) = closestAvgClusterKeys
-
-                    #dist = closestAvgAvgDist
-                    #(c1,c2) = closestAvgAvgClusterKeys
-
-                    if dist > stoppingPoint2: # also handles the case when no candidate clusters were used
-                        break
-
-                    newCluster = set()
-                    for _ in ourDirHalfClusters[c1]:
-                        newCluster.add(_)
-                    for _ in ourDirHalfClusters[c2]:
-                        newCluster.add(_)
-                    ourDirHalfClusters.pop(c1, None)
-                    ourDirHalfClusters.pop(c2, None)
-                    ourDirHalfClusters[highestClusterNum] = newCluster
-                    newDocSet = set()
-                    for _ in clusterNumToDocs[c1]:
-                        newDocSet.add(_)
-                    for _ in clusterNumToDocs[c2]:
-                        newDocSet.add(_)
-                    clusterNumToDocs.pop(c1, None)
-                    clusterNumToDocs.pop(c2, None)
-                    clusterNumToDocs[highestClusterNum] = newDocSet
-                    highestClusterNum += 1
-                for i in ourDirHalfClusters.keys():
-                    ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
-                    ourClusterID += 1
-
-                '''
-                clusterDistances = SortedDict()
-                added = set() # so we don't store duplicate clusterDistances
                 for c1 in ourDirHalfClusters:
                     docsInC1 = clusterNumToDocs[c1]
                     for c2 in ourDirHalfClusters:
-                        
                         if (c2,c1) in added or (c1,c2) in added or c1 == c2:
                             continue
                         docsInC2 = clusterNumToDocs[c2]
@@ -309,9 +221,8 @@ class CCNN:
                         if containsOverlap:
                             continue
 
-                        dists = []
+                        avgavgdists = []
                         dmToDists = defaultdict(list)
-                        minDist = 9999
                         for dm1 in ourDirHalfClusters[c1]:
                             for dm2 in ourDirHalfClusters[c2]:
                                 if dm1 == dm2:
@@ -325,54 +236,146 @@ class CCNN:
                                     dist = dirHalfToDMPredictions[dirHalf][(dm2,dm1)]
                                 else:
                                     print("* ERROR: missing dist for dm1,dm2")
+                                    print("dms:",str(dm1),str(dm2))
                                     exit(1)
-                                dists.append(dist)
+
+
+                                avgavgdists.append(dist)
                                 dmToDists[dm1].append(dist)
                                 dmToDists[dm2].append(dist)
-                                if dist < minDist:
-                                    minDist = dist
-
-                        minAvg = 9999
+                                if dist < closestDist:
+                                    closestDist = dist
+                                    closestClusterKeys = (c1,c2)
                         for dm in dmToDists:
-                            avg = float(sum(dmToDists[dm])/len(dmToDists[dm]))
-                            if avg < minAvg:
-                                minAvg = avg
-                        avgavg = float(sum(dists) / len(dists))
+                            avg = float(sum(dmToDists[dm])/float(len(dmToDists[dm])))
+                            if avg < closestAvgDist:
+                                closestAvgDist = avg
+                                closestAvgClusterKeys = (c1,c2)
+                        avgavg = float(sum(avgavgdists)) / float(len(avgavgdists))
+                        if avgavg < closestAvgAvgDist:
+                            closestAvgAvgDist = avgavg
+                            closestAvgAvgClusterKeys = (c1,c2)
                         added.add((c1,c2))
                         added.add((c2,c1))
 
-                        dist = minAvg # use the MIN DISTANCE B/W the two candidate clusters
-                        if dist in clusterDistances:
-                            clusterDistances[dist].append((c1,c2))
-                        else:
-                            clusterDistances[dist] = [(c1,c2)]
-                print("clusterDistances:",clusterDistances)
+                # min pair (could also be avg or avgavg)
+                #dist = closestDist
+                #(c1,c2) = closestClusterKeys
 
-                bad = set()
-                while len(ourDirHalfClusters.keys()) > 1:
-                    goodPair = None
-                    searchForShortest = True
-                    shortestDist = None
-                    while searchForShortest:
-                        (k,values) = clusterDistances.peekitem(0)
-                        newList = []
-                        for (c1,c2) in values:
-                            if c1 not in bad and c2 not in bad:
-                                newList.append((c1,c2))
-                        if len(newList) > 0: # not empty, yay, we don't have to keep searching
-                            searchForShortest = False
-                            goodPair = newList.pop(0) # we may be making the list have 0 items now
-                            shortestDist = k
-                        if len(newList) > 0: # let's update the shortest distance's pairs
-                            clusterDistances[k] = newList
-                        else: # no good items, let's remove it from the dict
-                            del clusterDistances[k]
+                dist = closestAvgDist
+                (c1,c2) = closestAvgClusterKeys
 
-                    if shortestDist > stoppingPoint:
-                        break
-                '''
-            print("# ourclusters:",str(len(ourClusterSuperSet)),";# golden:",str(len(goldenSuperSet)))
-            return (ourClusterSuperSet, goldenSuperSet)
+                #dist = closestAvgAvgDist
+                #(c1,c2) = closestAvgAvgClusterKeys
+
+                if dist > stoppingPoint2: # also handles the case when no candidate clusters were used
+                    break
+
+                newCluster = set()
+                for _ in ourDirHalfClusters[c1]:
+                    newCluster.add(_)
+                for _ in ourDirHalfClusters[c2]:
+                    newCluster.add(_)
+                ourDirHalfClusters.pop(c1, None)
+                ourDirHalfClusters.pop(c2, None)
+                ourDirHalfClusters[highestClusterNum] = newCluster
+                newDocSet = set()
+                for _ in clusterNumToDocs[c1]:
+                    newDocSet.add(_)
+                for _ in clusterNumToDocs[c2]:
+                    newDocSet.add(_)
+                clusterNumToDocs.pop(c1, None)
+                clusterNumToDocs.pop(c2, None)
+                clusterNumToDocs[highestClusterNum] = newDocSet
+                highestClusterNum += 1
+            for i in ourDirHalfClusters.keys():
+                ourClusterSuperSet[ourClusterID] = ourDirHalfClusters[i]
+                ourClusterID += 1
+
+            '''
+            clusterDistances = SortedDict()
+            added = set() # so we don't store duplicate clusterDistances
+            for c1 in ourDirHalfClusters:
+                docsInC1 = clusterNumToDocs[c1]
+                for c2 in ourDirHalfClusters:
+                    
+                    if (c2,c1) in added or (c1,c2) in added or c1 == c2:
+                        continue
+                    docsInC2 = clusterNumToDocs[c2]
+
+                    # only consider merging clusters that are disjoint in their docs
+                    containsOverlap = False
+                    for d1 in docsInC1:
+                        if d1 in docsInC2:
+                            containsOverlap = True
+                            break
+                    if containsOverlap:
+                        continue
+
+                    dists = []
+                    dmToDists = defaultdict(list)
+                    minDist = 9999
+                    for dm1 in ourDirHalfClusters[c1]:
+                        for dm2 in ourDirHalfClusters[c2]:
+                            if dm1 == dm2:
+                                print("* ERROR: somehow dm1 == dm2")
+                                exit(1)
+
+                            dist = 9999
+                            if (dm1,dm2) in dirHalfToDMPredictions[dirHalf]:
+                                dist = dirHalfToDMPredictions[dirHalf][(dm1,dm2)]
+                            elif (dm2,dm1) in dirHalfToDMPredictions[dirHalf]:
+                                dist = dirHalfToDMPredictions[dirHalf][(dm2,dm1)]
+                            else:
+                                print("* ERROR: missing dist for dm1,dm2")
+                                exit(1)
+                            dists.append(dist)
+                            dmToDists[dm1].append(dist)
+                            dmToDists[dm2].append(dist)
+                            if dist < minDist:
+                                minDist = dist
+
+                    minAvg = 9999
+                    for dm in dmToDists:
+                        avg = float(sum(dmToDists[dm])/len(dmToDists[dm]))
+                        if avg < minAvg:
+                            minAvg = avg
+                    avgavg = float(sum(dists) / len(dists))
+                    added.add((c1,c2))
+                    added.add((c2,c1))
+
+                    dist = minAvg # use the MIN DISTANCE B/W the two candidate clusters
+                    if dist in clusterDistances:
+                        clusterDistances[dist].append((c1,c2))
+                    else:
+                        clusterDistances[dist] = [(c1,c2)]
+            print("clusterDistances:",clusterDistances)
+
+            bad = set()
+            while len(ourDirHalfClusters.keys()) > 1:
+                goodPair = None
+                searchForShortest = True
+                shortestDist = None
+                while searchForShortest:
+                    (k,values) = clusterDistances.peekitem(0)
+                    newList = []
+                    for (c1,c2) in values:
+                        if c1 not in bad and c2 not in bad:
+                            newList.append((c1,c2))
+                    if len(newList) > 0: # not empty, yay, we don't have to keep searching
+                        searchForShortest = False
+                        goodPair = newList.pop(0) # we may be making the list have 0 items now
+                        shortestDist = k
+                    if len(newList) > 0: # let's update the shortest distance's pairs
+                        clusterDistances[k] = newList
+                    else: # no good items, let's remove it from the dict
+                        del clusterDistances[k]
+
+                if shortestDist > stoppingPoint:
+                    break
+            '''
+        print("# ourclusters:",str(len(ourClusterSuperSet)),";# golden:",str(len(goldenSuperSet)))
+        return (ourClusterSuperSet, goldenSuperSet)
 
     # creates clusters for our predictions
     def aggClusterPredictions(self, pairs, predictions, stoppingPoint):

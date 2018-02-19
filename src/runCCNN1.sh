@@ -50,7 +50,7 @@ if [[ " ${featureMap[*]} " == *"5"* ]]; then
 fi
 
 # FFNN params
-FFNNnumEpochs=(20) # 5 20
+FFNNnumEpochs=(3) # 5 20
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate
