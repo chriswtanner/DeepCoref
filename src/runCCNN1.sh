@@ -1,6 +1,6 @@
 #!/bin/bash
 prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
-featureMap=(2 4)
+featureMap=(2) # 4)
 numLayers=(2) # 3) # 1 3
 numEpochs=(20) # 20)
 windowSize=(0)
@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(19 20 21 22) # this # and above will be the dev dirs.  See ECBHelper.py for more
+devDir=(21 22) # this # and above will be the dev dirs.  See ECBHelper.py for more
 
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`

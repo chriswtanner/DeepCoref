@@ -1519,7 +1519,7 @@ class CCNN:
 
     def getCharEmbedding(self, charType, tokenList):
         charEmb = []
-        if charType == "none" or len(tokenList) == 0: # as opposed to sum or avg
+        if charType == "none" or len(tokenList) == 0: # as opposed to sum or avgasdf
             return charEmb
         elif charType == "sum" or charType == "avg":
             charLength = self.helper.charEmbLength
