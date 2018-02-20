@@ -1,10 +1,10 @@
 #!/bin/bash
 prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
-featureMap=(2)
-numLayers=(1) # 3) # 1 3
-numEpochs=(2) # 20)
+featureMap=(2 4)
+numLayers=(2) # 3) # 1 3
+numEpochs=(20) # 20)
 windowSize=(0)
-numNeg=(2)
+numNeg=(5)
 batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
@@ -12,7 +12,7 @@ embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(16)
+numFilters=(64)
 filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(23) # this # and above will be the dev dirs.  See ECBHelper.py for more
+devDir=(7 10 13 17 20) # this # and above will be the dev dirs.  See ECBHelper.py for more
 
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
@@ -50,8 +50,8 @@ if [[ " ${featureMap[*]} " == *"5"* ]]; then
 fi
 
 # FFNN params
-FFNNnumEpochs=(5) # 25 50 200) # 5 20
-FFNNnumCorpusSamples=(1) # 5 10 20)
+FFNNnumEpochs=(5 10 20)
+FFNNnumCorpusSamples=(1 3) # 5 10 20)
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate

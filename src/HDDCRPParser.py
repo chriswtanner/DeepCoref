@@ -7,8 +7,8 @@ class HDDCRPParser:
 		print("* loading HDDCRP's mention boundaries file:")
 		self.inputFile = inputFile
 		self.parse(inputFile)
-		print("\t* parsed",str(len(self.hmentions)), "mentions")
-		print("\t* created", str(len(self.hm_idToHMention.keys())), " hm_ids!")
+		print("\t* parsed",str(len(self.hmentions)),"mentions")
+		print("\t* created",str(len(self.hm_idToHMention.keys())),"hm_ids!")
 
 		self.loadGold("gold.WD.semeval.txt") # was NS.WD for Choubey comparison
 		#self.makeNewGoldHDDCRP(inputFile, "gold.NS.WD.semeval.txt")

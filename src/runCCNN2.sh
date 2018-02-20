@@ -8,8 +8,8 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.501)
-stoppingPoints2=(0.801)
+stoppingPoints=(0.475 0.501 0.525)
+stoppingPoints2=(0.75 0.801 0.825 0.850 0.875 0.901 0.95)
 
 if [ ${me} = "ctanner" ]
 then
@@ -192,7 +192,7 @@ if [ "$useECBTest" = false ] ; then
 		ceafe=`./scorer.pl ceafe ${goldWDFile} ${WD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 		sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 		avg=`echo "scale=2;$sum/3.0" | bc`
-		echo "HDDCRP (WD) F1:" ${WD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
+		echo "HDDCRP (WD) F1:" ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe} ${WD_file}
 
 		for sp2 in "${stoppingPoints2[@]}"
 		do
@@ -203,7 +203,7 @@ if [ "$useECBTest" = false ] ; then
 			ceafe=`./scorer.pl ceafe ${goldCDFile} ${CD_file} | grep "Coreference: Recall" | cut -d" " -f 11 | sed 's/.$//'`
 			sum=`echo ${muc}+${bcub}+${ceafe} | bc`
 			avg=`echo "scale=2;$sum/3.0" | bc`
-			echo "HDDCRP (CD) F1:" ${CD_file} ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe}
+			echo "HDDCRP (CD) F1:" ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe} ${CD_file}
 			
 			rm -rf ${TMPWD_file}
 			# rm -rf ${CD_file}

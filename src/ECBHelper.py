@@ -28,6 +28,7 @@ class ECBHelper:
 			else:
 				self.trainingDirs.append(_)
 
+		'''
 		# if we passed in one of the k-fold cross-validate ones, then let's make dev = all, training = none
 		if len(self.devDirs) == 0:
 			self.devDirs = self.nonTestingDirs
@@ -41,10 +42,12 @@ class ECBHelper:
 			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13] #,13,14,16,18,19,20,21,22]
 			self.devDirs = [14,16,18,19,20,21,22]  #[23,24,25] # will serve as Training for FFNN
 			self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+		'''
+		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 		print("trainingDirs:",str(self.trainingDirs))
 		print("devDirs:",str(self.devDirs))
 		print("testingDirs:",str(self.testingDirs))
-
+		
 		# sets passed-in params
 		self.corpus = corpus
 		self.isVerbose = args.verbose
