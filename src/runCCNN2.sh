@@ -8,8 +8,8 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.45 0.475 0.501 0.525)
-stoppingPoints2=(0.45 0.501 0.55 0.601 0.65 0.701 0.725 0.75 0.775 0.801 0.825 0.85)
+stoppingPoints=(0.501)
+stoppingPoints2=(0.801)
 
 if [ ${me} = "ctanner" ]
 then
