@@ -20,7 +20,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 	def __init__(self, args, corpus, helper, hddcrp_parsed, dev_pairs=None, dev_preds=None, testing_pairs=None, testing_preds=None):
 
 		self.ChoubeyFilter = False # if True, remove the False Positives.  Missed Mentions still exist though.
-		self.numCorpusSamples = 10
+		self.numCorpusSamples = args.FFNNnumCorpusSamples # 1, 5, 10
 
 		# print stuff
 		print("args:", str(args))
@@ -56,7 +56,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		# the passed-in params
 		self.num_epochs = int(self.args.FFNNnumEpochs)
 		self.FFNNOpt = self.args.FFNNOpt
-		pos_ratio = float(self.args.FFNNPosRatio) # 0.8
+		pos_ratio = 0.8 # float(self.args.FFNNPosRatio) # 0.8
 		neg_ratio = 1. - pos_ratio
 		self.pos_ratio = tf.constant(pos_ratio, tf.float32)
 		self.weights = tf.constant(neg_ratio / pos_ratio, tf.float32)
@@ -345,7 +345,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 
 		# (STEP 5): makes base clusters and then does clustering!
 		for dirHalf in dirHalfToWDClusterNums.keys():
-
+			
+			cluster_start_time = time.time()
 			#print("dirHalf:",str(dirHalf))
 			numDMsInDirHalf = len(dirHalfToHMs[dirHalf])
 			#print("numDMsInDirHalf:",numDMsInDirHalf)
@@ -402,8 +403,8 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 							containsOverlap = True
 							break
 
-					#if containsOverlap:
-					#	continue
+					if containsOverlap:
+						continue
 
 					if len(docsInC1) != 1 or len(docsInC2) != 1:
 						print("* ERROR, a basecluster has more than 1 doc",docsInC1,docsInC2)
@@ -433,7 +434,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 			#print("# in clusterDistances:",str(len(added)))
 
 			bad = set()
-			cluster_start_time = time.time()
+
 			while len(ourDirHalfClusters.keys()) > 1:
 				searchForShortest = True
 				shortestPair = None

@@ -56,7 +56,7 @@ class FFNNCD:
 		# the passed-in params
 		self.num_epochs = int(self.args.FFNNnumEpochs)
 		self.FFNNOpt = self.args.FFNNOpt
-		pos_ratio = float(self.args.FFNNPosRatio) # 0.8
+		pos_ratio = 0.8 # float(self.args.FFNNPosRatio) # 0.8
 		neg_ratio = 1. - pos_ratio
 		self.pos_ratio = tf.constant(pos_ratio, tf.float32)
 		self.weights = tf.constant(neg_ratio / pos_ratio, tf.float32)

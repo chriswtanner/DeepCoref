@@ -9,7 +9,7 @@ baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
 stoppingPoints=(0.45) # 475 501 525
-stoppingPoints2=(0.375 0.401 0.425 0.45 0.475 0.501 0.525 0.55 0.601 0.65 0.701 0.725)
+stoppingPoints2=(0.501 0.525) # (0.375 0.401 0.425 0.45 0.475 0.501 0.525 0.55 0.601 0.65 0.701 0.725)
 
 if [ ${me} = "ctanner" ]
 then
@@ -91,7 +91,7 @@ SSvectorSize=${24}
 SSlog=${25}
 devDir=${26}
 FFNNnumEpochs=${27}
-FFNNPosRatio=${28}
+FFNNnumCorpusSamples=${28}
 FFNNOpt=${29}
 
 stanOutputDir=${baseDir}"data/stanford_output/"
@@ -138,7 +138,7 @@ echo "SSvectorSize:" $SSvectorSize
 echo "SSlog:" $SSlog
 echo "devDir:" $devDir
 echo "FFNNnumEpochs:" $FFNNnumEpochs
-echo "FFNNPosRatio:" $FFNNPosRatio
+echo "FFNNnumCorpusSamples:" $FFNNnumCorpusSamples
 echo "FFNNOpt:" $FFNNOpt
 echo "------------------------"
 
@@ -172,7 +172,7 @@ python3 -u CorefEngine.py --resultsDir=${resultsDir} --dataDir=${dataDir} \
 --SSlog=${SSlog} \
 --devDir=${devDir} \
 --FFNNnumEpochs=${FFNNnumEpochs} \
---FFNNPosRatio=${FFNNPosRatio} \
+--FFNNnumCorpusSamples=${FFNNnumCorpusSamples} \
 --FFNNOpt=${FFNNOpt}
 
 if [ "$useECBTest" = false ] ; then

@@ -79,7 +79,7 @@ def setCorefEngineParams():
 	# for FFNN
 	parser.add_argument("--devDir", help="the directory to use for dev", type=int)
 	parser.add_argument("--FFNNnumEpochs", help="FFNN's # of epochs", default="none", type=int)
-	parser.add_argument("--FFNNPosRatio", help="the FFNN's \% of pos examples", type=float, default=0)
+	parser.add_argument("--FFNNnumCorpusSamples", help="# of times to loop through corpus, generating synthetic training data", type=int, default=1)
 	parser.add_argument("--FFNNOpt", help="optimizer for FFNNs {rms,adagrad,adam}", default="adam")
 
 	return parser.parse_args()

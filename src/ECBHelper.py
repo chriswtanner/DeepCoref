@@ -18,7 +18,7 @@ class ECBHelper:
 
 		# NOTE!: if the below is False, then "* ERROR, we have WD predicted " in CCNN.py should be commented out
 		#    if it's True, then "* ERROR, we have WD predicted " in CCNN.py's should be visible, for error checking
-		self.onlyCrossDoc = False # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
+		self.onlyCrossDoc = True # only relevant if we are doing CD, in which case True = dont use WD pairs.  False = use all WD and CD pairs
 		self.nonTestingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22,23,24,25]
 		self.trainingDirs = []
 		self.devDirs = []
@@ -38,7 +38,7 @@ class ECBHelper:
 			self.devDirs = [20,21,22] # will serve as Training for FFNN
 			self.testingDirs = [23,24,25] #,24,25]
 		else:
-			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
+			self.trainingDirs = [1,2,3] #,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21,22]
 			self.devDirs = [23,24,25] # will serve as Training for FFNN
 			self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 		print("trainingDirs:",str(self.trainingDirs))
@@ -745,7 +745,7 @@ class ECBHelper:
 			"sl" + str(self.args.SSlog) + "_" + \
 			"dd" + str(self.args.devDir) + "_" + \
 			"fn" + str(self.args.FFNNnumEpochs) + "_" + \
-			"fp" + str(self.args.FFNNPosRatio) + "_" + \
+			"fp" + str(self.args.FFNNnumCorpusSamples) + "_" + \
 			"fo" + str(self.args.FFNNOpt) + "_" + \
 			"sp" + str(stoppingPoint)
 		wdFile = fileBase + str(stoppingPoint2) + ".WD.txt"
@@ -817,7 +817,7 @@ class ECBHelper:
 			"sl" + str(self.args.SSlog) + "_" + \
 			"dd" + str(self.args.devDir) + "_" + \
 			"fn" + str(self.args.FFNNnumEpochs) + "_" + \
-			"fp" + str(self.args.FFNNPosRatio) + "_" + \
+			"fp" + str(self.args.FFNNnumCorpusSamples) + "_" + \
 			"fo" + str(self.args.FFNNOpt) + "_" + \
 			"sp" + str(stoppingPoint) + str(stoppingPoint2) + \
 			".WD.txt"
