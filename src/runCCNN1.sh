@@ -1,10 +1,10 @@
 #!/bin/bash
 prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2)
-numLayers=(1) # 3) # 1 3
-numEpochs=(5) # 20)
+numLayers=(2) # 3) # 1 3
+numEpochs=(20) # 20)
 windowSize=(0)
-numNeg=(3)
+numNeg=(5)
 batchSize=(128) # 128) # 64 128
 shuffle=(f) # t
 poolType=("max") # "avg")
@@ -12,7 +12,7 @@ embeddingsBaseFile=("6B.300") # 6B.300") # "840B.300")
 dropout=(0.0) # 0.2 0.4)
 CCNNOpt=("adam") # "rms" "adam" "adagrad"
 clusterMethod=("min")
-numFilters=(32)
+numFilters=(64)
 filterMultiplier=(1.0) # 2.0)
 hddcrpBaseFile=("predict.ran")
 featurePOS=("none") # none   onehot   emb_random   emb_glove
@@ -50,8 +50,8 @@ if [[ " ${featureMap[*]} " == *"5"* ]]; then
 fi
 
 # FFNN params
-FFNNnumEpochs=(5 10) # 5 20
-FFNNnumCorpusSamples=(1 3)
+FFNNnumEpochs=(10 25 50 200) # 5 20
+FFNNnumCorpusSamples=(1 5 10 20)
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate
