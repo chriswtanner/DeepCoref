@@ -439,7 +439,7 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 				searchForShortest = True
 				shortestPair = None
 				shortestDist = 99999
-				while searchForShortest:
+				while searchForShortest and len(clusterDistances.keys()) > 0:
 					(k,values) = clusterDistances.peekitem(0)
 					newList = []
 					for (c1,c2) in values:

@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(7 10 13 17 20) # this # and above will be the dev dirs.  See ECBHelper.py for more
+devDir=(19 20 21 22) # this # and above will be the dev dirs.  See ECBHelper.py for more
 
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
@@ -50,8 +50,8 @@ if [[ " ${featureMap[*]} " == *"5"* ]]; then
 fi
 
 # FFNN params
-FFNNnumEpochs=(5 10 20)
-FFNNnumCorpusSamples=(1 3) # 5 10 20)
+FFNNnumEpochs=(10)
+FFNNnumCorpusSamples=(1) # 5 10 20)
 FFNNPosRatio=(0.8) # 0.2 0.8
 FFNNOpt=("adam") # "rms" "adam" "adagrad"
 source ~/researchcode/DeepCoref/venv/bin/activate
