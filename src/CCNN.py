@@ -1602,7 +1602,7 @@ class CCNN:
                     if parentLemma == "ROOT":
                         curEmb = [1]*self.embeddingLength
                     else:
-                        curEmb = self.wordTypeToEmbedding[constructECBTrainingparentLemma]
+                        curEmb = self.wordTypeToEmbedding[parentLemma]
                     
                     isOOV = True
                     for _ in curEmb:
