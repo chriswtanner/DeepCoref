@@ -24,7 +24,7 @@
 \usepackage{algpseudocode}
 \usepackage{graphicx}
 
-\aclfinalcopy % Uncomment this line for the final submission
+%\aclfinalcopy % Uncomment this line for the final submission
 %\def\aclpaperid{***} %  Enter the acl Paper ID here
 
 %\setlength\titlebox{5cm}
@@ -51,7 +51,7 @@ Brown Linguistic Laboratory of Information Processing \\
 \maketitle
 \begin{abstract}
 % motivation / others' weaknesses
-Coreference resolution systems for entities and/or events almost always make use of many linguistic, parsing-based features.  In contrast, (1) we introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word embeddings, and we exhaustively illustrate the performance of other commonly-used features.  (2) The crux of our system is that it first makes pairwise event-coreference predictions by using a Conjoined Convolutional Neural Network.  Last, (3) we cluster the event mentions with a novel neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made exclusively from min-pairwise decisions.  When performed on a common test set of the ECB+ corpus, our system achieves CoNLL F1 scores of 67.2 and 59.4 for within-document and cross-document tasks, respectively.
+Coreference resolution systems for entities and/or events almost always make use of many linguistic, parsing-based features.  In contrast, (1) we introduce a new state-of-the-art event coreference resolution system which uses only lemmatization and its corresponding precomputed word/character embeddings, and we exhaustively illustrate the performance of other commonly-used features.  (2) The crux of our system is that it first makes pairwise event-coreference predictions by using a Conjoined Convolutional Neural Network.  Last, (3) we cluster event mentions with a novel neural approach which performs merges in an easy-first, cluster-holistic manner, allowing our system to be less susceptible to errors that are made exclusively from min-pairwise decisions.  When performed on a common test set of the ECB+ corpus, our system achieves CoNLL F1 scores of 67.2 and 59.3 for within-document and cross-document tasks, respectively.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,7 +60,7 @@ Coreference resolution systems for entities and/or events almost always make use
 
 \section{Introduction}
 % problem definition/statement
-Coreference resolution is the task of trying to identify -- within a single text or across multiple documents -- which \textit{mentions} refer to the same underlying discourse \textit{entity} or \textit{event}.  A \textit{mention} is defined as a particular instance of word(s) in a document (e.g., \textit{she} or \textit{announced}).  Ultimately, coreference resolution is a clustering task, whereby we wish to group all like-mentions together, as shown in Figure \ref{fig:corpus}.  Successfully doing so can be useful for several other core NLP tasks that concern natural language understanding, such as information extraction \cite{Humphreys:1997}, topic detection \cite{Allan:1998}, text summarization \cite{Daniel:2003}, knowledge base population \cite{Cross_Document_Coreference_Resolution_A_Key_Technology_for_Learning_by_Reading}, question answering \cite{Narayanan:2004:QAB:1220355.1220455}, etc.
+Coreference resolution is the task of trying to identify -- within a single text or across multiple documents -- which \textit{mentions} refer to the same underlying discourse \textit{entity} or \textit{event}.  A \textit{mention} is defined as a particular instance of word(s) in a document (e.g., \textit{she} or \textit{announced}).  Ultimately, coreference resolution is a clustering task, whereby we wish to group all like-mentions together, as shown in Figure \ref{fig:corpus}.  Successfully doing so can be useful for several other core NLP tasks that concern natural language understanding, such as information extraction \cite{Humphreys:1997}, topic detection \cite{Allan:1998}, text summarization \cite{Daniel:2003}, \cite{Narayanan:2004:QAB:1220355.1220455}, etc.
 
 \begin{figure}[ht]
 \centering
@@ -82,7 +82,7 @@ In this work, we use a novel mention-pair model that is designed to discriminate
 
 Additionally, coreference research systems typically use a plethora of relatively expensive parsing-based features, including dependency parse information, lemmatization, WordNet hypernyms/synonyms, FrameNet semantic roles, etc.  Although some research papers list their system's learned feature weights \cite{journals/tacl/YangCF15}, there has been a striking lack of work which takes the minimalist approach and illustrates the effects of using few features.  We aim to address this by starting with a basic lemma-embedding feature and then evaluate on our dev set the effectiveness of adding other commonly used features.
 
-In summary, we are interested in within-document and cross-document \textit{event} coreference, which has received drastically less attention than \textit{entity} coreference. We introduce a novel mention-pair approach, using a Conjoined Convolutional Neural Network and unusually few features.  We contribute detailed results of other commonly used features.  And last, we combine our predicted mention pairs into clusters via a simple neural approach which attempts to represent each cluster as a whole, yielding state-of-the-art results on the ECB+ corpus.
+In summary, we are interested in within-document and cross-document \textit{event} coreference, which has received drastically less attention than \textit{entity} coreference. We introduce a novel mention-pair approach, using a Conjoined Convolutional Neural Network and unusually few features.  We contribute detailed results of other commonly used features.  And last, we combine our predicted mention pairs into clusters via a simple neural approach which represents each cluster as a whole, yielding state-of-the-art results on the ECB+ corpus.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%                 2.   RELATED        WORK               %%%%%%%%%%%%%%%
@@ -128,7 +128,9 @@ Recently, Choubey and Huang \shortcite{Choubey2017EventCR} introduced the first 
 \label{sec:mentionid}
 Coreference systems are predicated upon having entity/event mentions identified.  In fact, this identification process is the focus of a different line of research: entity recognition and event detection.  This separation of tasks allows coreference systems to be evaluated precisely on their ability to cluster together appropriate mentions, independent from the mention detection.  Thus, it is common practice for coreference systems to either: (1) use an off-the-shelf entity recognition system, or (2) use gold mentions that are defined by the true annotations in the corpus.  To illustrate the effectiveness of our system, we do both, and we use the exact same set of mentions as each system we compare against:
 
-The HDDCRP model used a pre-existing event detection system to identify mentions, then they filtered many of those, yielding their system with an imperfect but reasonable set of mentions that shares a moderate overlap with the gold test mentions.  When we compare against HDDCRP, we use their exact same training and testing mentions.  Determining their \textit{test} mentions was one of the most challenging and time-consuming processes of our research.
+
+The \textbf{HDDCRP} model chose to not use the gold test mentions provided by ECB+.  Instead, they used a semantic role labeller to identify and filter all test mentions.
+To compare against their system, we worked with the HDDCRP source code and data to ensure we accurately use their same mentions.  Independent of clustering performance: of the 3,290 gold mentions in ECB+, their system failed to identify/use 676 of them.  Of their 3,109 predicted mentions, 495 were false positives and in fact not actual gold mentions.  Since their system uses these imperfect mentions, yet tests the coreference performance against the gold mentions, their system encounters a steep performance loss by default.  With complete confidence, we fairly compare our system with theirs by using the same, imperfectly-predicted mentions.
 
 The Iteratively-Unfolding system also aimed to use the same mentions as HDDCRP's.  After numerous exchanges with the author, it was clear that their set of \textit{test} mentions was similar and reasonable for research, but understandably not the same as that used by HDDCRP.  Namely, they filtered out: (1) all predicted mentions which were not in the gold set (false positives), and (2) predicted mentions which did not cluster with a mention from another document.  When we compare against this system, we followed their convention.
 
@@ -171,7 +173,7 @@ We use the ECB+ corpus \cite{ECB+}, which is the largest available dataset with 
 %%%%%%%%%%%%%%                              4.   CCNN                          %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Conjoined Convolutional Neural Network}
+\section{Conjoined Convolutional Neural Network (CCNN)}
 \label{sec:CCNN}
 \subsection{Motivation} % FIRST PASS DELETE
 In the training data, the mentions that belong to the same gold cluster often have little variance amongst their text.  This, coupled with Choubey's, et. al. \shortcite{Choubey2017EventCR} conclusion that context does not improve within-doc performance for our corpus, lends us to believe that an event-level model would be unnecessary and probably worse than a mention-pair model.  Thus, we continue the trend of using a mention-pair model for event coreference.
@@ -187,10 +189,10 @@ Conjoined Neural Networks (a.k.a. Siamese Networks) were first introduced by Bro
 
 This is critical, as the CCNN's similarity function should be independent of the ordering of its input pair.
 
-Last, CCNN's have been shown to perform well in low-resource situation \cite{Koch2015SiameseNN}.  This is ideal for our task, as it is highly likely that at test time we will encounter event mentions that are OOV.  We desire our model to discriminately learn the relationships of input mentions, rather than exclusively relying on and memorizing the input values themselves.
+Last, Conjoined Networks have been shown to perform well in low-resource situation \cite{Koch2015SiameseNN}.  This is ideal for our task, as it is highly likely that at test time we will encounter event mentions that are OOV.  We desire our model to discriminately learn the relationships of input mentions, rather than exclusively relying on and memorizing the input values themselves.  Likewise, we choose to use a Convolutional Network due to (1) their power in learning sub-regions of features and the relations thereof, and (2) their recent advances in many NLP tasks, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}.
 
 % FIRST PASS DELETE (combine w/ previous paragraph)
-As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  Likewise, we choose to use a CNN due to their power in learning sub-regions of features and the relations thereof.
+% As for the choice of Conjoined Network, Convolutional Neural Networks (CNNs) have recently proven to be highly useful for many tasks in NLP, including sentence classification \cite{DBLP:conf/emnlp/Kim14}, machine translation \cite{DBLP:conf/acl/GehringAGD17}, dependency parsing \cite{DBLP:journals/corr/YuV17}, etc.  
 
 \subsection{Input Features}
 \label{sec:features}
@@ -198,9 +200,9 @@ Since our CCNN needs each mention to be represented exclusively by its own input
 \begin{itemize}
   \item \textbf{Part-of-Speech:} LSTM-learned POS embeddings; and 1-hot representations.
   \item \textbf{Lemmatization}: Lemmatized each token and represented it by pre-trained GloVe \cite{pennington2014glove} word embeddings.\footnote{300-dimensions; built from an 840 billion token crawl.}
-  \item \textbf{Dependency Lemma:} we use the dependent parent and/or children of each token, and we represent it via the aforementioned lemma embeddings.
-  \item \textbf{Character Embeddings:} we represent each token as a concatenation of its character embeddings, where we experimented with 20-dimensional character embeddings being either random or pre-trained. % FIRST PASS DELETE (combine w/ previous paragraph)
-  \item \textbf{Word Embeddings:} the same embeddings used for the lemma feature, only the token is represented by its actual word, not lemma.
+  \item \textbf{Dependency Lemma:} we represent the dependent parent/children of each token via their aforementioned lemma embeddings.
+  \item \textbf{Character Embeddings:} each token is represented as a concatenation of its character embeddings.
+  \item \textbf{Word Embeddings:} pre-trained GloVe word embeddings.
 \end{itemize}
 We account for mentions' having varying token lengths by summing their tokens in place, thus representing each mention as a fixed-length vector.
 
@@ -228,13 +230,13 @@ We start with 64 kernels and ReLU as our activation function.  We apply dropout 
 \begin{figure*}[h]
 \centering
 	\includegraphics[width=1\textwidth]{architecture.pdf}
-	\caption{One half of the Conjoined Convolutional Neural Network's Architecture.  Blocks A, C, and F represent sets of unique kernels.  Blocks B, D, and G represent Convolution with ReLU activation and dropout applied.  Blocks E and H represent MaxPooling.  The Lambda function represents the Euclidean Distance of the merged univariate vectors from the identical networks halves.}
+	\caption{One half of the Conjoined Convolutional Neural Network's Architecture.  The Lambda function represents the Euclidean Distance of the merged univariate vectors from the identical networks halves.}
 	%\caption{Conjoined Convolutional Neural Network's Architecture.  The left half shares the same weights with the right half.  Blocks A, C, and F represent 32, 64, and 128 kernels, respectively.  The kernel size is 1x3, and different colors denote distinct kernels.  Blocks B, D, and G represent Convolution with stride of 1, ReLU activation, then 10\% dropout.  Blocks E and H represent MaxPooling with kernel size 1x2.  The Lambda function in the center represents the Euclidean Distance of the merged univariate vectors.}
 	\label{fig:ccnn}
 \end{figure*}
 
 \subsection{Loss / Optimization}
-Our goal is to maximize discriminability of different event mentions, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}, as shown in Equation \ref{eq:contrastive}. Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.  We use Adagrad for optimization.
+Our goal is to maximize discriminability of different event mentions, while enforcing features to be as similar as possible when they are of the same event.  Contrastive Loss, shown in Equation \ref{eq:contrastive}, is perfectly suited for this objective \cite{SchroffKP15,pmlr-v48-liud16}. Our training set has a strong class imbalance (most input pairs are not co-referent), so we down-sample to a 5:1 ratio of negative-to-positive examples.  We use Adagrad for optimization.
 \begin{equation}
 \begin{aligned}
 L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
@@ -248,15 +250,15 @@ L(&\hat{y},y)=\frac{1}{2N}\sum_{n=1}^{N}[(y)d^2 \\
 %%%%%%%%%%%%%                5.   NEURAL CLUSTERING                %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Neural Clustering}
+\section{Neural Clustering (NC)}
 \label{sec:clustering}
 It is common practice for mention-pair models to first assign a probability score to every mention-pair, and then cluster with a different model.
 
 \subsection{Existing Clustering Approaches}
 \textbf{Agglomerative Clustering} is a simple but effective approach.  It first assigns each mention to its own singleton cluster.  Then, it repeatedly merges the two distinct clusters which contain the shortest-distance mention pairs.  Although this is a strong baseline, as seen in Yang, et. al. \shortcite{journals/tacl/YangCF15}, there are three main weaknesses:
 \begin{enumerate}
-\item One must define a heuristic to stop merging.
-\item If one uses a threshold value $\alpha$ to stop merging (i.e., merge while the shortest pair of mentions from distinct clusters is $<\alpha$), this relies on the data being uniform across documents. Yet, the distribution of pairwise predictions inevitable differs for each document, causing any given $\alpha$ to be appropriate for some documents but sub-optimal for others.
+\item One must define a stopping threshold $\alpha$.
+\item Any given $\alpha$ hinges on the data being uniform across documents.  In reality, distances between mention-pairs could vary significantly between documents and topics.
 \item Most significant, each cluster merge is based solely on two individual mentions, yet these mentions may not be representative of the cluster at large.
 \end{enumerate}
 
@@ -273,17 +275,17 @@ Specifically, we learn a function $f(C_x,C_y)$ that predicts the likelihood of a
   \item size of candidate cluster: $\frac{\|C_x\| + \|C_y\|}{\sum_{z}{\|C_z\|}}$
 \end{itemize}
 
-The first three features serve to better represent the cluster at large (issue \#3 from above).  For example, a given cluster $C_1$, when evaluated against two other candidate clusters $C_2$ and $C_3$, may have the same minimum mention-pair distance score with both $C_2$ and $C_3$  Yet, the average and maximum distance scores shed more light onto which cluster has more similar mentions. The last feature (cluster size) represents the size percentage of our considered merge, relative to all mentions in our current set.  This serves is an explicit measure to help prevent clusters from growing too large.
+The first three features serve to better represent the cluster at large (issue \#3 from above).  For example, a given cluster $C_1$, when evaluated against two other candidate clusters $C_2$ and $C_3$, may have the same minimum mention-pair distance score with both $C_2$ and $C_3$  Yet, the average and maximum distance scores shed more light onto which cluster has more similar mentions. The last feature (cluster size) represents the size percentage of our considered merge, relative to all mentions in our current set.  This serves is an explicit measure to help prevent clusters from growing too large, and is not as vulnerable to issue \#2.
 
 \subsection{Architecture}
-We define $f$ as a feed-forward neural network\footnote{We used 1 hidden layer of 25 units, ReLU activation without dropout, and Adagrad as our optimizer} which predicts the probability of a positive cluster merge, via a two-class softmax function.  Our loss function is weighted binary cross-entropy, to account for the class imbalance situation that most pairs of clusters should not be merged together.  
+We define $f$ as a feed-forward neural network\footnote{We used 1 hidden layer of 25 units, ReLU activation without dropout, and Adagrad as our optimizer.} which predicts the probability of a positive cluster merge, via a two-class softmax function.  Our loss function is weighted binary cross-entropy, to account for the class imbalance situation that most pairs of clusters should not be merged together.  
 
-\subsection{Training and Testing}
-Our coreference system will incrementally build up clusters, starting with each cluster having just one mention.  Thus, it is important to train our Neural Clustering model on positive and negative examples of clusters in varying states of completeness.  Our gold truth data informs us which mentions are co-referent, but since there is no particularly correct ordering in which mentions should become co-referent, we generate synthetic data to represent possible positive and negative examples of when clusters should be merged.
+\subsection{Inference}
+Our system will incrementally build up clusters, starting with each cluster having just one mention (in the within-document scenario).  Thus, it is important to train our Neural Clustering model on positive and negative examples of clusters in varying states of completeness.  Our gold truth data informs us which mentions are co-referent, but since there is no single canonical ordering in which mentions should become co-referent, we generate synthetic data to represent possible positive and negative examples of when clusters should be merged.
 
-Specifically, during training time, we generate a positive example by randomly sampling a golden cluster, followed by splitting the cluster into two random subsets.  The above features are calculated for these two subsets of clusters, and the target output is a positive case.  Likewise, we generate negative examples by sampling random subsets from disjoint golden clusters.
+Specifically, for training, we generate a positive example by randomly sampling a golden cluster, followed by splitting the cluster into two random subsets.  The above four features are calculated for these two subsets of clusters, and the target output is a positive case.  Likewise, we generate negative examples by sampling random subsets from disjoint golden clusters.
 
-Again, at test time, our coreference system will start with each mention belonging to its own cluster.  We use Neural Cluster to evaluate every possible $(C_x, C_y)$ cluster pair in an easy-first manner.  That is, at each iteration, we merge only the $(C_x,C_y)$ pair that yielded the highest score (likelihood of a positive merge).  Then, we re-evaluate all pairs with our newly merged cluster, and repeat this process until the model no longer predicts any merge.  Thus, unlike the aforementioned models, we do not \textit{require} an additional parameter for our stopping criterion.  However, we could optionally use one since our model predicts a likelihood score for each merge.
+Again, at test time, we use Neural Cluster to evaluate every possible $(C_x, C_y)$ cluster pair in an easy-first manner.  That is, at each iteration, we merge only the $(C_x,C_y)$ pair that yielded the highest score (likelihood of a positive merge).  Then, we re-evaluate all pairs with our newly merged cluster, and repeat this process until the model no longer predicts any merge.  Thus, unlike the aforementioned models, we do not \textit{require} an additional parameter for our stopping criterion.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%           6.   COREFERENCE SYSTEMS           %%%%%%%%%%%%%%%
@@ -291,16 +293,16 @@ Again, at test time, our coreference system will start with each mention belongi
 \section{Our Coreference Systems}
 \label{sec:coreference}
 
-We use our CCNN and Neural Clustering (NC) models together to perform coreference resolution for both within-document and cross-document scenarios.  The only difference between these two scenarios is our data and evaluation metric, as described below.
+We use our CCNN and Neural Clustering (NC) models together to perform coreference resolution. The only differences between the within-document and cross-document scenarios are our data and evaluation metric, as described below.
+
+\subsection{Training / Development / Testing Data}
+We adhere to the same data splits as previous researchers, whereby the dev set is topics 23-25, and the test set is topics 26-45.  Traditionally, topics 1-22 are used as training.  However, since our NC model relies on our CCNN's predictions, we remove topics 19-22 from the training set and instead use them as dev sets for our NC models.  The complete details are provided in our Supplemental Materials document.
 
 \subsection{Within-Document}
-We train the CCNN model on mention-pairs which appear in the same document, and using its predictions on a held-out, we train the NC to predict when to merge clusters.
+We train a CCNN model on mention-pairs which appear in the same document, and using its predictions on a held-out set, we train the NC to predict when to merge clusters.
 
 \subsection{Cross-Document}
-Cross-document resolution is a superset of within-document; it concerns all coreference chains, regardless if mentions in a cluster were originally from the same document or not.  Our cross-document system is identical to our within-document one, but: (1) we train the CCNN only on mention-pairs which are from different documents; (2) instead of starting with each mention serving as its own cluster, we use our within-document predictions as starting clusters; (3) at each iteration, we only consider merging clusters $(C_x,C_y)$ if $C_x$ and $C_y$ have no mentions from the same document.  In other words, we rely on our within-document system to accurately form zero or one clusters for each unique event.
-
-Table \ref{tab:datasplits} illustrates how we divided the corpus for training/development/testing.
-
+Cross-document resolution is a superset of the within-document task; it concerns all coreference chains, regardless if mentions in a cluster were originally from the same document or not.  Our cross-document system is identical to our within-document one, but: (1) we train a separate CCNN only on mention-pairs which are from different documents; (2) instead of initializing our clustering with each mention serving as a singleton cluster, we use our within-document NC predictions as starting clusters; (3) at each iteration, we only consider merging clusters $(C_x,C_y)$ if $C_x$ and $C_y$ contain mentions from disjoint sets of documents.  Thus, our cross-document NC only uses cross-document mention pairs distances for its decisions. Since we will never merge two within-doc clusters from the same document, we rely on our within-document NC to accurately form zero or one clusters for each unique event.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%                         7.          RESULTS                  %%%%%%%%%%%%%%%
@@ -315,73 +317,74 @@ As a recap, our research concerns three independent axis of investigation:
 
 Our metric is CoNLL F1 score, which is a clustering-based metric that combines the F1 scores of MUC, $B^{3}$, and $CEAF_{e}$, and we use the official scorer script (v8.01) \cite{Pradhan+etal:14a}.
 
-We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We tested all combinations of features on the Dev Set, and Lemma yielded the best results (see Figure \ref{fig:allfeatures}).  Thus, our CCNN + Neural Clustering system used only the Lemma feature, and we evaluated it against other systems, as illustrated in Table \ref{tab:others}.  The results further show that our CCNN model outperforms a FFNN, and that our Neural Clustering outperforms Agglomerative Clustering.  Using just the lemma feature, we achieved a CoNLL F1 score of \textbf{81.2} on the ECB+ Test Set.  We denote this score as the new baseline to which to compare future systems.
+We were interested in the five common, non-relational embedding features which are detailed in Section \ref{sec:features}: POS, Lemma, Dependency Lemma, Character, Word.  We tested all combinations of features on the Dev Set, and Lemma + Character Embedding yielded the best dev results (see Figure \ref{fig:allfeatures}).  Thus, our CCNN + Neural Clustering system used only these two features in its evaluation against other systems, as illustrated in Table \ref{tab:others}.  The results show that our CCNN model outperforms a FFNN, and that our Neural Clustering outperforms Agglomerative Clustering.  Further, when training and testing on gold mentions, we achieved CoNLL F1 scores of \textbf{81.2} and \textbf{72.4} for within-document and cross-document, respectively.  We denote these scores as the new baseline to which to compare future systems.
 
 \begin{figure*}[h]
 \centering
 	\includegraphics[width=0.82\textwidth]{features.pdf}
-	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using various features.  The CCNN mention-pair predictions for the Dev Set are normally used to train our Neural Clustering model.  So, in order to fairly evaluate our Neural Clustering on the \textit{Dev Set} Mentions, we removed Topics 18-20 from the CCNN's Training Set and used them to train our Neural Clustering.}
+	\caption{The CoNLL F1 performance of our flagship CCNN + Neural Clustering system, using all combinations of features.}
 	\label{fig:allfeatures}
 \end{figure*}
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering
-\tabcolsep=0.11cm
-\begin{tabular}{|r|ccc|c|}
+\tabcolsep=0.15cm
+\begin{tabular}{r|ccc|c|ccc|c|}
+\cline{2-9}
+& \multicolumn{4}{|c|}{Within-Document} & \multicolumn{4}{|c|}{Cross-Document}\\
+\cline{2-9}
+& \multicolumn{1}{c}{MUC} & B$^3$ & CEAF & CoNLL F1 & \multicolumn{1}{c}{MUC}& B$^3$ & CEAF & CoNLL F1\\
+\hline
+ \multicolumn{9}{|c|}{Test Set: ECB+ Gold Mentions} \\
  \hline
- \multicolumn{5}{|c|}{Test Set: ECB+ Gold Test Mentions} \\
- \hline
-& MUC & B$^3$ & CEAF & CoNLL F1\\
- \hline
- SameLemma& 58.3 & 83.0 & 75.9 & 72.4\\
-FFNN+AGG & 59.9 & 85.6 & 78.4 & 74.6 \\
-FFNN+NC & 60.7 & 86.7 &  79.4 & 75.6 \\
-CCNN+AGG & 70.5 & 89.1 & 83.5  & 81.0\\
-\textbf{CCNN+NC}  & 70.9 & 88.9 & 83.6 & \textbf{81.2} \\
+ \multicolumn{1}{ |c| }{SameLemma}& 58.3 & 83.0 & 75.9 & 72.4 & - & - & - & -\\
+\multicolumn{1}{ |c| }{FFNN+AGG} & 59.9 & 85.6 & 78.4 & 74.6 & - & - & - & -\\
+\multicolumn{1}{ |c| }{FFNN+NC} & 60.7 & 86.7 &  79.4 & 75.6 & - & - & - & -\\
+\multicolumn{1}{ |c| }{CCNN+AGG} & 70.5 & 89.1 & 83.5  & 81.0 & - & - & - & -\\
+\multicolumn{1}{ |c| }{\textbf{CCNN+NC}}& 70.9 & 88.9 & 83.6 & \textbf{81.2} & - & - & - & -\\
 \hline
 \hline
- \multicolumn{5}{|c|}{Test Set: HDDCRP's Predicted Mentions} \\
+ \multicolumn{9}{|c|}{Test Set: HDDCRP's Predicted Mentions} \\
  \hline
- SameLemma& 40.4 & 66.4 & 66.2 & 57.7\\
- HDDCRP & 53.4 & 75.4 & 71.7  & 66.8\\
- \textbf{CCNN+NC} & 53.7 & 75.2 & 71.9  & \textbf{66.9}\\
+\multicolumn{1}{ |c| }{SameLemma}& 40.4 & 66.4 & 66.2 & 57.7 & - & - & - & -\\
+\multicolumn{1}{ |c| }{HDDCRP}& 53.4 & 75.4 & 71.7  & 66.8 & - & - & - & -\\
+\multicolumn{1}{ |c| }{\textbf{CCNN+NC}} & 53.7 & 75.2 & 71.9  & \textbf{66.9} & - & - & - & -\\
  \hline
 \hline
- \multicolumn{5}{|c|}{Test Set: Choubey's et. al. Mentions} \\
+ \multicolumn{9}{|c|}{Test Set: Choubey's et. al. Mentions} \\
  \hline
- SameLemma& 48.8 & 66.7 & 65.1 & 60.2\\
- Choubey & 62.6 & 72.4 & 71.8  & 68.9\\
- \textbf{CCNN+NC} & 67.3 & 73.0 & 69.5  & \textbf{69.9}\\
+\multicolumn{1}{ |c| }{SameLemma}& 48.8 & 66.7 & 65.1 & 60.2& - & - & - & -\\
+\multicolumn{1}{ |c| }{Choubey}& 62.6 & 72.4 & 71.8  & 68.9& - & - & - & -\\
+\multicolumn{1}{ |c| }{\textbf{CCNN+NC}} & 67.3 & 73.0 & 69.5  & \textbf{69.9}& - & - & - & -\\
  \hline
 \end{tabular}
-\caption{Comparison against other systems, while our models use only the Lemma Embedding feature.  \textbf{Note:} CCNN+NC achieves even stronger results when using Lemma+Char features (\textbf{81.5, 67.2,} and \textbf{70.0} for the three sections, respectively). FFNN denotes a Feed-Forward Neural Network Mention-Pair model.  AGG denotes Agglomerative Clustering.  NC denotes our Neural Clustering model.}
+\caption{Comparison against other systems, while our models use only the Lemma + Character Embedding features.  FFNN denotes a Feed-Forward Neural Network Mention-Pair model.  AGG denotes Agglomerative Clustering.}
 \label{tab:others}
-\end{table}
+\end{table*}
 
-\textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  Using the embeddings of the lemmas, especially with the power of the CCNN, provides much more expression than the mere boolean feature of \textit{SameLemma}.
+\textbf{Lemma Embeddings} were the most useful feature, followed closely by Character Embeddings.  Since \textit{SameLemma} has historically been a strong baseline, this is unsurprising.  
 
 \textbf{Character Embeddings} were effective for the same reason String Edit Distance is often a strong feature: there tends to be a direct correlation between the textual similarity of mentions and their likelihood of being co-referent. Both random character embeddings and pre-trained ones yielded the same performance, suggesting that the power comes from the uniqueness of characters, not any \textit{meaning} conveyed in the characters.
 
-Combining Lemma + Character Embeddings gave even higher performance on all three Test Sets, illustrating that these two features are complementary; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
+Empirically, Lemma + Character Embeddings are complementary features; the semantic information conveyed within the lemma embeddings complement the syntactic information of character embeddings.  Related, POS by itself was a poor feature, but combining it with either Lemma or Character Embeddings offered strong results. 
 
-Ideally, a classifier should precisely learn how to combine all features smartly, such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then to expand appropriately.
+Ideally, a classifier should precisely learn how to combine all features such that the unhelpful features are given no weight.  However, in practice, that is often extremely difficult, due to both the large parameter space and the high entropy wherein some combinations of features seem to equally help as much as hurt.  Thus, we conclude that one should try to use the fewest features as possible for coreference resolution, then expand appropriately.
 
 Interestingly, in all experiments, our results were inversely correlated with the amount of context our CCNN used.  That is, our best performance came when we used no context, only the mention words.  This agrees with the Choubey's, et. al. findings \shortcite{Choubey2017EventCR}.
 
 \subsection{Comparison to Other Systems}
-\textbf{HDDCRP} chose to not use the gold test mentions provided by ECB+.  Instead, they used a semantic role labeller to identify all test mentions.
-To compare against their system, we worked with the HDDCRP source code and data to ensure we accurately use their same mentions.  Independent of clustering performance: of the 3,290 gold mentions in ECB+, their system failed to identify/use 676 of them.  Of their 3,109 predicted mentions, 495 were false positives and in fact not actual gold mentions.  Since their system uses these imperfect mentions, yet tests the coreference performance against the gold mentions, their system encounters a steep performance loss by default.  With complete confidence, we fairly compare our system with theirs by using the same, imperfectly-predicted mentions.  We outperform their system on this exact test set, as shown in Table \ref{tab:others}.
+\textit{SameLemma} has historically proven to be a strong baseline.  That is, anytime two mentions have identical lemmas, simply mark them as being co-referent.
 
-\textbf{Iteratively-Unfolding} attempted to use the same predicted test mentions as HDDCRP.  However, their test set actually differed, as detailed in Section \ref{sec:mentionid}.  We compare against theirs in Table \ref{tab:others}.
+Using the same mentions that were used by the HDDCRP and Choubey (Iteratively-Unfolding) systems, our flagship CCNN+NC system yielded the highest results, despite using few features.
 
-For event within-doc coreference, our system outperforms both HDDCRP and Iteratively-Unfolding.  Notably, both systems also perform cross-document coreference in a manner that helps inform and improve their within-doc performance; yet, we demonstrate state-of-the-art results without using this process.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%                     8.         CONCLUSION               %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
-In summary, we researched within-doc event coreference resolution, and our approach was novel by using a Conjoined Convolutional Neural Network as a mention-pair model, followed by a neural clustering model.  Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} pair of mentions satisfying a criterion, we used simple mention-cluster features which represent clusters more holistically.  Our system achieved state-of-the-art performance of 66.9 CoNLL F1 on a common test set, and we set a new baseline of 81.2 CoNLL F1 for the entire ECB+ test set.   
+In summary, we researched event coreference resolution, and our approach was novel by using a Conjoined Convolutional Neural Network as a mention-pair model, followed by a Neural Clustering model.  Unlike most coreference systems which rely on dozens of features, we used only lemmatization and pre-trained word/character embeddings.  We illustrate the performance of five commonly used features, demonstrating the effectiveness of using few features.  Our Neural Clustering model addressed a common weakness in mention-pair models: instead of forming clusters based on just \textit{one} mention-pair satisfying a criterion, we used features which represent clusters more holistically.  On a common test set, our system achieved state-of-the-art performance with CoNLL F1 scores of 67.2 and 59.3 for within-document and cross-document, respectively.  Further, when using gold mentions, we set a new within-document baseline of 81.2 and cross-document baseline of 72.4.
 
 % include your own bib file like this:
 %\bibliographystyle{acl}
@@ -390,32 +393,6 @@ In summary, we researched within-doc event coreference resolution, and our appro
 \bibliographystyle{acl_natbib}
 
 \appendix
-\section{Supplemental Material}
-\label{sec:supplemental}
-ACL 2018 also encourages the submission of supplementary material
-to report preprocessing decisions, model parameters, and other details
-necessary for the replication of the experiments reported in the 
-paper. Seemingly small preprocessing decisions can sometimes make
-a large difference in performance, so it is crucial to record such
-decisions to precisely characterize state-of-the-art methods.
 
-Nonetheless, supplementary material should be supplementary (rather
-than central) to the paper. \textbf{Submissions that misuse the supplementary 
-material may be rejected without review.}
-Essentially, supplementary material may include explanations or details
-of proofs or derivations that do not fit into the paper, lists of
-features or feature templates, sample inputs and outputs for a system,
-pseudo-code or source code, and data. (Source code and data should
-be separate uploads, rather than part of the paper).
-
-The paper should not rely on the supplementary material: while the paper
-may refer to and cite the supplementary material and the supplementary material will be available to the
-reviewers, they will not be asked to review the
-supplementary material.
-
-Appendices ({\em i.e.} supplementary material in the form of proofs, tables,
-or pseudo-code) should come after the references, as shown here. Use
-\verb|\appendix| before any appendix section to switch the section
-numbering over to letters.
 
 \end{document}

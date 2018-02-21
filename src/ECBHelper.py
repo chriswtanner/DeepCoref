@@ -14,7 +14,7 @@ class ECBHelper:
 #neg: 4526
 	def __init__(self, args, corpus, hddcrp_parsed, runFFNN):
 
-		self.useDoubleDevDirs = False # should only be True when using ECBTest Dev w/ FFNN
+		self.useDoubleDevDirs = True # should only be True when using ECBTest Dev w/ FFNN
 
 		# NOTE!: if the below is False, then "* ERROR, we have WD predicted " in CCNN.py should be commented out
 		#    if it's True, then "* ERROR, we have WD predicted " in CCNN.py's should be visible, for error checking
@@ -28,26 +28,26 @@ class ECBHelper:
 			else:
 				self.trainingDirs.append(_)
 
-		'''
+		
 		# if we passed in one of the k-fold cross-validate ones, then let's make dev = all, training = none
 		if len(self.devDirs) == 0:
 			self.devDirs = self.nonTestingDirs
 			self.trainingDirs = []
 
 		if self.useDoubleDevDirs and runFFNN: # if true, we will use some of the Training dirs as a separate, smaller Dev A set (20-22)
-			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19]
-			self.devDirs = [20,21,22] # will serve as Training for FFNN
+			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,18,19,20,21]
+			self.devDirs = [22] # will serve as Training for FFNN
 			self.testingDirs = [23,24,25] #,24,25]
 		else:
 			self.trainingDirs = [1,2,3,4,5,6,7,8,9,10,11,12,13] #,13,14,16,18,19,20,21,22]
 			self.devDirs = [14,16,18,19,20,21,22]  #[23,24,25] # will serve as Training for FFNN
 			self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
-		'''
-		self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
+		
+		#self.testingDirs = [26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45]
 		print("trainingDirs:",str(self.trainingDirs))
 		print("devDirs:",str(self.devDirs))
 		print("testingDirs:",str(self.testingDirs))
-		
+
 		# sets passed-in params
 		self.corpus = corpus
 		self.isVerbose = args.verbose

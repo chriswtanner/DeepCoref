@@ -24,7 +24,7 @@ SSType=("none") # "none" "sum" "avg"
 SSwindowSize=(0) # 3 5 7
 SSvectorSize=(0) #100 400 800)
 SSlog=("True")
-devDir=(21 22) # this # and above will be the dev dirs.  See ECBHelper.py for more
+devDir=(23) # this # and above will be the dev dirs.  See ECBHelper.py for more
 
 cd /home/christanner/researchcode/DeepCoref/src/
 hn=`hostname`
