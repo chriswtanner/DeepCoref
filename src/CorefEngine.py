@@ -20,9 +20,9 @@ from sortedcontainers import SortedDict
 class CorefEngine:
 	if __name__ == "__main__":
 
-		runFFNN = True # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.475,0.501] #[0.475,0.501,0.525] # 475 501 525
-		stoppingPoints2 = [0.401,0.45,0.501,0.55,0.601,0.65,0.701,0.75,0.801,0.901,0.925] #[0.75,0.801,0.825,0.850,0.875,0.901,0.95] # [0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.601,0.65,0.701,0.725]
+		runFFNN = False # if False, we will use Agglomerative Cluster
+		stoppingPoints = [0.501] #,0.501 [0.475,0.501,0.525] # 475 501 525
+		stoppingPoints2 = [0.501] # ,0.45] #,0.501,0.55,0.601,0.65,0.701,0.75,0.801,0.901,0.925] #[0.75,0.801,0.825,0.850,0.875,0.901,0.95] # [0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.601,0.65,0.701,0.725]
 		
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -77,7 +77,6 @@ class CorefEngine:
 				#wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
 				helper.writeCoNLLFile(wd_predictedClusters, sp)
 
-		
 			# perform CD
 			for sp2 in stoppingPoints2:
 
