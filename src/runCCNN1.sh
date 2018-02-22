@@ -1,5 +1,5 @@
 #!/bin/bash
-prefix="" # used to help identify experiments' outputs, as the output files will have this prefix
+prefix="dev" # used to help identify experiments' outputs, as the output files will have this prefix
 featureMap=(2) # 4)
 numLayers=(2) # 3) # 1 3
 numEpochs=(20) # 20)
