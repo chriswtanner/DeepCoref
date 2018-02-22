@@ -756,7 +756,7 @@ class ECBHelper:
 
 		fin = open(wdFile, 'r')
 		fout = open(cdFile, 'w')
-		print("ECHelper writing out:",str(cdFile))
+		print("ECBHelper writing out:",str(cdFile))
 		dirHalfToLines = defaultdict(lambda : defaultdict(list))
 		for line in fin:
 			line = line.rstrip()
