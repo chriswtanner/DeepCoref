@@ -1,0 +1,49 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[hyperref]{acl2018}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{graphicx}
+
+%\def\aclpaperid{***} %  Enter the acl Paper ID here
+
+\title{Supplemental Material to: \\
+Toward Featureless Event Coreference Resolution via Conjoined Convolutional Neural Networks}
+\begin{document}
+\maketitle
+
+\section{Learned Parameters for the CCNN Model, per the Dev Set}
+\begin{itemize}
+\item Features: Lemma and Character Embeddings
+\item \# Training Epochs: 20
+\item Context Window Size: 0 (this agrees with the Choubey's, et. al. findings \shortcite{Choubey2017EventCR}).
+\item \#Negative Examples per Positive (training): 5
+\item Batch Size: 128
+\item Pool Type: MaxPooling
+\item Word Embeddings (used for Lemma Embeddings): GloVe, 300 dimension, trained on 6 Billion Token Corpus
+\item Dropout: 0.0
+\item Optimizer: Adam
+\item \#Kernels: 64 (at every level)
+\end{itemize}
+
+\section{Learned Parameters for the Neural Clustering (NC) Model, per its own Dev Set}
+\begin{itemize}
+\item \# Hidden Units: 50
+\item Batch Size: 5
+\item \#Negative Examples per Positive (training): 5
+\item Initializer: Normal
+\item Optimizer: Adam
+\item Learning Rate: 0.001
+\end{itemize}
+
+\section{Training / Development / Test Data}
+Other researchers who have used the ECB+ corpus use Topics 1-22 for training, 23-25 as development, and 26-45 as testing.  We adhere to the same; however, since our NC model needs CCNN's predictions as training data, we must remove some of the training data and use it for separate development sets instead.  Our ful
+\bibliography{acl2018}
+\bibliographystyle{acl_natbib}
+\end{document}
