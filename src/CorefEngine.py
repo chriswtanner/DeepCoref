@@ -21,8 +21,8 @@ class CorefEngine:
 	if __name__ == "__main__":
 
 		runFFNN = False # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.501] #,0.501 [0.475,0.501,0.525] # 475 501 525
-		stoppingPoints2 = [0.501] # ,0.45] #,0.501,0.55,0.601,0.65,0.701,0.75,0.801,0.901,0.925] #[0.75,0.801,0.825,0.850,0.875,0.901,0.95] # [0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.601,0.65,0.701,0.725]
+		stoppingPoints = [0.475,0.501] #,0.501 [0.475,0.501,0.525] # 475 501 525
+		stoppingPoints2 = [0.25,0.35] # ,0.45] #,0.501,0.55,0.601,0.65,0.701,0.75,0.801,0.901,0.925] #[0.75,0.801,0.825,0.850,0.875,0.901,0.95] # [0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.601,0.65,0.701,0.725]
 		
 		# handles passed-in args
 		args = params.setCorefEngineParams()
@@ -58,9 +58,10 @@ class CorefEngine:
 			outputLabel += "AGG"
 
 		# perform WD first, then CD
+		bestWDF1 = -1
 		bestTestSP = -1
 		bestTestSP2 = -1
-		bestTestF1 = -1
+		bestCDF1 = -1
 		for sp in stoppingPoints:
 
 			print("SP:",sp)
@@ -70,6 +71,8 @@ class CorefEngine:
 				(wd_predictedClusters, wd_goldenClusters) = wd_ccnnEngine.aggClusterPredictions(wd_testing_pairs, wd_testing_preds, sp)
 				(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(wd_goldenClusters, wd_predictedClusters)
 				print("ECBTest AGG WD F1 sp:",str(sp),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
+				if conll_f1 > bestWDF1:
+					bestWDF1 = conll_f1
 
 			# performs WD via Agglomerative (HDDCRP Test Mentions)
 			else:
@@ -77,11 +80,8 @@ class CorefEngine:
 				#wd_ccnnEngine.analyzeResults(wd_testing_pairs, wd_testing_preds, wd_predictedClusters)
 				helper.writeCoNLLFile(wd_predictedClusters, sp)
 
-			continue
-
 			# perform CD
 			for sp2 in stoppingPoints2:
-
 				print("SP2:",sp2)
 				# ECB Test Mentions
 				if args.useECBTest:
@@ -104,8 +104,8 @@ class CorefEngine:
 					print("# goldencluster:",str(len(cd_goldenClusters)),"# predicted:",str(len(cd_predictedClusters)))		
 					(bcub_p, bcub_r, bcub_f1, muc_p, muc_r, muc_f1, ceafe_p, ceafe_r, ceafe_f1, conll_f1) = get_conll_scores(cd_goldenClusters, cd_predictedClusters)
 					print("ECBTest - CD F1 sp2:",str(sp2),"=",str(conll_f1),"MUC:",str(muc_f1),"BCUB:",str(bcub_f1),"CEAF:",str(ceafe_f1))
-					if conll_f1 > bestTestF1:
-						bestTestF1 = conll_f1
+					if conll_f1 > bestCDF1:
+						bestCDF1 = conll_f1
 						bestTestSP = sp
 						bestTestSP2 = sp2
 				
@@ -129,5 +129,5 @@ class CorefEngine:
 					helper.convertWDFileToCDFile(sp, sp2)
 
 		if args.useECBTest:
-			print("[FINAL",outputLabel,"RESULTS]: BEST SP",str(bestTestSP),"SP2:",str(bestTestSP2),"F1:",str(bestTestF1))
+			print("[FINAL",outputLabel,"RESULTS]: BEST WD:",str(bestWDF1),"BEST CD:",str(bestCDF1),"-- which came from SP",str(bestTestSP),"SP2:",str(bestTestSP2))
 		
