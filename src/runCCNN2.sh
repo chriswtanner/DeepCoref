@@ -206,7 +206,7 @@ if [ "$useECBTest" = false ] ; then
 			echo "HDDCRP (CD) F1:" ${avg} "MUC:" ${muc} "BCUB:" ${bcub} "CEAF:" ${ceafe} ${CD_file}
 			
 			rm -rf ${TMPWD_file}
-			# rm -rf ${CD_file}
+			rm -rf ${CD_file}
 		done
 		rm -rf ${WD_file}
 		
