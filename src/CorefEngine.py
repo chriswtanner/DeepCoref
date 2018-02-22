@@ -43,8 +43,8 @@ class CorefEngine:
 		wd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, True) # creates WD-CCNN model
 		(wd_dev_pairs, wd_dev_preds, wd_testing_pairs, wd_testing_preds) = wd_ccnnEngine.trainAndTest()
 
-		#cd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
-		#(cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds) = cd_ccnnEngine.trainAndTest()
+		cd_ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, False) # creates CD-CCNN model
+		(cd_dev_pairs, cd_dev_preds, cd_testing_pairs, cd_testing_preds) = cd_ccnnEngine.trainAndTest()
 
 		# creates output label, for displaying results clearly
 		outputLabel = ""
