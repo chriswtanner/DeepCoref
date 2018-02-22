@@ -702,5 +702,5 @@ class FFNNCDDisjoint: # this class handles CCNN CD model, but training/testing i
 		avgDist = sum(dists) / len(dists)
 		maxDist = max(dists)
 		#featureVec = [avgDist, clusterSizePercentage]
-		featureVec = [minDist, avgDist, maxDist], clusterSizePercentage] # A
+		featureVec = [minDist, avgDist, maxDist, clusterSizePercentage] # A
 		return featureVec
