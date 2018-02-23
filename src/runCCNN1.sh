@@ -1,6 +1,6 @@
 #!/bin/bash
-prefix="devA" # used to help identify experiments' outputs, as the output files will have this prefix
-featureMap=(2) # 4)
+prefix="dev" # used to help identify experiments' outputs, as the output files will have this prefix
+featureMap=(2 3) # 4)
 numLayers=(2) # 3) # 1 3
 numEpochs=(10) # 20)
 windowSize=(0)
@@ -33,20 +33,25 @@ hn=`hostname`
 if [[ " ${featureMap[*]} " == *"1"* ]]; then
 	featurePOS=("emb_glove")
 	posType=("sum")
+	prefix=${prefix}1
 fi
 if [[ " ${featureMap[*]} " == *"2"* ]]; then
 	lemmaType=("sum")
+	prefix=${prefix}2
 fi
 if [[ " ${featureMap[*]} " == *"3"* ]]; then
 	dependencyType=("sum")
+	prefix=${prefix}3
 fi
 if [[ " ${featureMap[*]} " == *"4"* ]]; then
 	charType=("concat")
+	prefix=${prefix}4
 fi
 if [[ " ${featureMap[*]} " == *"5"* ]]; then
 	SSType=("sum")
 	SSwindowSize=(5)
 	SSvectorSize=(400)
+	prefix=${prefix}5
 fi
 
 # FFNN params
