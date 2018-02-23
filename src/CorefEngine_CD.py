@@ -17,7 +17,7 @@ class CorefEngine:
 	if __name__ == "__main__":
 		isWDModel = False
 		runFFNN = True # if False, we will use Agglomerative Cluster
-		stoppingPoints = [0.601,0.625,0.65,0.675,0.701,0.725,0.75,0.775,0.801,0.825,0.85]
+		stoppingPoints = [0.601] #,0.625,0.65,0.675,0.701,0.725,0.75,0.775,0.801,0.825,0.85]
 		# [0.15,0.201,0.25,0.275,0.301,0.325,0.35,0.375,0.401,0.425,0.45,0.475,0.501,0.525,0.55,0.575,0.601,0.65,0.701]
 
 		# handles passed-in args
@@ -42,7 +42,7 @@ class CorefEngine:
 			ccnnEngine = CCNN(args, corpus, helper, hddcrp_parsed, isWDModel)
 
 			# uses args.useECBTest to return the appropriate test set
-			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.run()
+			(dev_pairs, dev_preds, testing_pairs, testing_preds) = ccnnEngine.trainAndTest()
 			ffnnEngine = FFNNCD(args, corpus, helper, hddcrp_parsed, dev_pairs, dev_preds, testing_pairs, testing_preds) # reads in a saved prediction file instead
 		
 			ffnnEngine.train()

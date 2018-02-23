@@ -8,8 +8,8 @@ hn=`hostname`
 baseDir="/Users/christanner/research/DeepCoref/"
 brownDir="/home/ctanner/researchcode/DeepCoref/"
 
-stoppingPoints=(0.35 0.375 0.401 0.425 0.45 0.475)
-stoppingPoints2=(0.35 0.401 0.45 0.475 0.501 0.525 0.55 0.601)
+stoppingPoints=(0.501) # 0.375 0.401 0.425 0.45 0.475)
+stoppingPoints2=(0.525) # 0.401 0.45 0.475 0.501 0.525 0.55 0.601)
 
 if [ ${me} = "ctanner" ]
 then
@@ -64,7 +64,7 @@ stoplistFile=${baseDir}"data/stopwords.txt"
 mentionsFile=${baseDir}"data/goldTruth_events.txt"
 embeddingsFile=${gloveOutput}
 embeddingsType="type"
-useECBTest=true
+useECBTest=false
 device=$2
 numLayers=$3
 poolType=$4
