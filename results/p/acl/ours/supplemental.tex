@@ -10,8 +10,9 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{graphicx}
-
-%\def\aclpaperid{***} %  Enter the acl Paper ID here
+\usepackage{tikz}
+\def\checkmark{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+\def\aclpaperid{1355} %  Enter the acl Paper ID here
 
 \title{Supplemental Material to: \\
 Toward Featureless Event Coreference Resolution via Conjoined Convolutional Neural Networks}
@@ -43,7 +44,31 @@ Toward Featureless Event Coreference Resolution via Conjoined Convolutional Neur
 \end{itemize}
 
 \section{Training / Development / Test Data}
-Other researchers who have used the ECB+ corpus use Topics 1-22 for training, 23-25 as development, and 26-45 as testing.  We adhere to the same; however, since our NC model needs CCNN's predictions as training data, we must remove some of the training data and use it for separate development sets instead.  Our ful
+Other researchers who have used the ECB+ corpus use Topics 1-22 for training, 23-25 as development, and 26-45 as testing.  We adhere to the same; however, since our NC model needs CCNN's predictions as training data, we must remove some of the training data and use it for separate development sets instead.  Our full splits are shown in Table \ref{tab:splits}.
+
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+\begin{table*}[h]
+\centering
+\begin{tabular}{lr|c|c|c|c|c|c|c|}
+\cline{3-9}
+\multicolumn{1}{c}{}                           & \multicolumn{1}{l|}{} & \multicolumn{7}{c|}{ECB+ Topics}          \\ \cline{3-9} 
+\multicolumn{1}{c}{}                           & \multicolumn{1}{l|}{} & 1-18 & 19 & 20 & 21 & 22 & 23-25 & 26-45 \\ \hline
+\multicolumn{1}{|c|}{\multirow{3}{*}{CCNN}}    & TRAIN                 & \checkmark    &    &    &    &    &       &       \\ \cline{2-9} 
+\multicolumn{1}{|c|}{}                         & DEV                   &      &    &    &    &    & \checkmark     &       \\ \cline{2-9} 
+\multicolumn{1}{|c|}{}                         & PREDICT               &      & \checkmark  & \checkmark  & \checkmark  & \checkmark  &       & \checkmark     \\ \hline
+\multicolumn{1}{|l|}{\multirow{3}{*}{NC (WD)}} & TRAIN                 &      & \checkmark  &    &    &    &       &       \\ \cline{2-9} 
+\multicolumn{1}{|l|}{}                         & DEV                   &      &    & \checkmark  &    &    &       &       \\ \cline{2-9} 
+\multicolumn{1}{|l|}{}                         & PREDICT               &      &    &    & \checkmark  & \checkmark  &       & \checkmark     \\ \hline
+\multicolumn{1}{|l|}{\multirow{3}{*}{NC (CD)}} & TRAIN                 &      &    &    & \checkmark  &    &       &       \\ \cline{2-9} 
+\multicolumn{1}{|l|}{}                         & DEV                   &      &    &    &    & \checkmark  &       &       \\ \cline{2-9} 
+\multicolumn{1}{|l|}{}                         & PREDICT               &      &    &    &    &    &       & \checkmark     \\ \hline
+\end{tabular}
+\caption{The data splits used by each of our models.  Note, ``predict'' means that we use the model to make predictions on the given data.}
+\label{tab:splits}
+\end{table*}
+
+
 \bibliography{acl2018}
 \bibliographystyle{acl_natbib}
 \end{document}
